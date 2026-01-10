@@ -1,14 +1,94 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>롤렉스 매입 관리</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+  <header>
+    <h1>롤렉스 매입 관리</h1>
+    <p class="subtitle">총 <span id="total-count">0</span>개 제품</p>
+  </header>
+
+  <div class="container">
+    <!-- 필터 섹션 -->
+    <aside class="filters">
+      <div class="filter-section">
+        <h3>매입 상태</h3>
+        <div class="status-filters">
+          <label class="status-label buy">
+            <input type="checkbox" value="buy" checked>
+            <span class="status-dot buy"></span> 무조건 매입
+            <span class="count" id="count-buy">0</span>
+          </label>
+          <label class="status-label pending">
+            <input type="checkbox" value="pending" checked>
+            <span class="status-dot pending"></span> 검토 필요
+            <span class="count" id="count-pending">0</span>
+          </label>
+          <label class="status-label no">
+            <input type="checkbox" value="no" checked>
+            <span class="status-dot no"></span> 매입 불가
+            <span class="count" id="count-no">0</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h3>검색</h3>
+        <input type="text" id="search-input" placeholder="모델명, 모델번호 검색...">
+      </div>
+
+      <div class="filter-section">
+        <h3>라인</h3>
+        <select id="line-filter">
+          <option value="">전체 라인</option>
+        </select>
+      </div>
+
+      <div class="filter-section">
+        <h3>소재</h3>
+        <select id="material-filter">
+          <option value="">전체 소재</option>
+        </select>
+      </div>
+
+      <div class="filter-section">
+        <h3>가격대</h3>
+        <select id="price-filter">
+          <option value="">전체 가격</option>
+          <option value="0-20000000">2천만원 이하</option>
+          <option value="20000000-50000000">2천~5천만원</option>
+          <option value="50000000-100000000">5천만~1억원</option>
+          <option value="100000000-999999999">1억원 이상</option>
+        </select>
+      </div>
+
+      <button id="reset-filters" class="reset-btn">필터 초기화</button>
+    </aside>
+
+    <!-- 제품 목록 -->
+    <main class="products">
+      <div class="products-header">
+        <span id="filtered-count">0</span>개 표시 중
+        <select id="sort-select">
+          <option value="price-asc">가격 낮은순</option>
+          <option value="price-desc">가격 높은순</option>
+          <option value="name-asc">이름순</option>
+        </select>
+      </div>
+      <div id="product-grid" class="product-grid">
+        <!-- 제품 카드들이 여기에 렌더링됨 -->
+      </div>
+      <div id="loading" class="loading">로딩 중...</div>
+      <div id="no-results" class="no-results" style="display:none;">
+        검색 결과가 없습니다.
+      </div>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
 </body>
 </html>
