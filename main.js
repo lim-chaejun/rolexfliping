@@ -14,6 +14,8 @@ let testLine = '';
 // 인증 관련 변수
 let currentUser = null;
 let isAdmin = false;
+let userProfile = null;
+let isApproved = false;
 
 // 상태 오버라이드 (Firestore에서 로드)
 let statusOverrides = {};
@@ -537,17 +539,7 @@ const loginModal = document.getElementById('login-modal');
 const loginModalClose = document.getElementById('login-modal-close');
 const googleLoginBtn = document.getElementById('google-login-btn');
 
-// 인증 상태 감시
-auth.onAuthStateChanged(async (user) => {
-  currentUser = user;
-  isAdmin = user ? ADMIN_EMAILS.includes(user.email) : false;
-  updateAuthUI();
-
-  // 관리자 로그인/로그아웃 시 UI 다시 렌더링 (관리자 컨트롤 표시/숨김)
-  if (watches.length > 0) {
-    applyFilters();
-  }
-});
+// 인증 상태 감시는 아래 handleAuthStateChange 함수에서 처리
 
 // 인증 UI 업데이트
 function updateAuthUI() {
@@ -1156,4 +1148,424 @@ function updateStatusCountsWithOverrides() {
   document.getElementById('count-buy').textContent = counts.buy.toLocaleString();
   document.getElementById('count-pending').textContent = counts.pending.toLocaleString();
   document.getElementById('count-no').textContent = counts.no.toLocaleString();
+}
+
+// ==========================================
+// 사용자 프로필 및 승인 시스템
+// ==========================================
+
+// 프로필 관련 DOM 요소
+const profileModal = document.getElementById('profile-modal');
+const profileForm = document.getElementById('profile-form');
+const pendingApproval = document.getElementById('pending-approval');
+const adminSection = document.getElementById('admin-section');
+const navAdmin = document.getElementById('nav-admin');
+
+// 사용자 프로필 확인 및 로드
+async function checkUserProfile() {
+  if (!currentUser) return null;
+
+  try {
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      const data = userDoc.data();
+      return {
+        name: data.name,
+        phone: data.phone,
+        referrer: data.referrer,
+        status: data.status || 'pending', // pending, approved, rejected
+        createdAt: data.createdAt
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('프로필 로드 실패:', error);
+    return null;
+  }
+}
+
+// 프로필 모달 표시
+function showProfileModal() {
+  profileModal.style.display = 'flex';
+}
+
+// 프로필 모달 숨기기
+function hideProfileModal() {
+  profileModal.style.display = 'none';
+}
+
+// 승인 대기 화면 표시
+function showPendingApproval() {
+  pendingApproval.style.display = 'flex';
+  mainContainer.style.display = 'none';
+  vizSection.style.display = 'none';
+  lineTabsWrapper.style.display = 'none';
+  testSection.style.display = 'none';
+  if (statsSection) statsSection.style.display = 'none';
+  if (adminSection) adminSection.style.display = 'none';
+}
+
+// 승인 대기 화면 숨기기
+function hidePendingApproval() {
+  pendingApproval.style.display = 'none';
+}
+
+// 프로필 폼 제출 처리
+async function submitProfile(e) {
+  e.preventDefault();
+
+  const name = document.getElementById('profile-name').value.trim();
+  const phone = document.getElementById('profile-phone').value.trim();
+  const referrer = document.getElementById('profile-referrer').value.trim();
+
+  if (!name || !phone) {
+    alert('이름과 연락처는 필수입니다.');
+    return;
+  }
+
+  try {
+    // 기존 데이터 유지하면서 프로필 정보 저장
+    const userRef = db.collection('users').doc(currentUser.uid);
+    const existingDoc = await userRef.get();
+    const existingData = existingDoc.exists ? existingDoc.data() : {};
+
+    await userRef.set({
+      ...existingData,
+      name,
+      phone,
+      referrer,
+      email: currentUser.email,
+      photoURL: currentUser.photoURL,
+      status: 'pending', // 가입 신청 시 대기 상태
+      createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    hideProfileModal();
+
+    // 프로필 저장 후 승인 대기 화면 표시
+    userProfile = { name, phone, referrer, status: 'pending' };
+    isApproved = false;
+    showPendingApproval();
+
+  } catch (error) {
+    console.error('프로필 저장 실패:', error);
+    alert('프로필 저장에 실패했습니다. 다시 시도해주세요.');
+  }
+}
+
+// 인증 상태 변경 시 프로필/승인 상태 확인
+async function handleAuthStateChange(user) {
+  currentUser = user;
+  isAdmin = user ? ADMIN_EMAILS.includes(user.email) : false;
+
+  if (user) {
+    // 프로필 확인
+    userProfile = await checkUserProfile();
+
+    if (!userProfile || !userProfile.name) {
+      // 프로필이 없으면 프로필 입력 모달 표시
+      isApproved = false;
+      hidePendingApproval();
+      showProfileModal();
+    } else if (isAdmin) {
+      // 관리자는 항상 승인된 상태
+      isApproved = true;
+      hideProfileModal();
+      hidePendingApproval();
+      showAdminNav();
+    } else if (userProfile.status === 'approved') {
+      // 승인된 사용자
+      isApproved = true;
+      hideProfileModal();
+      hidePendingApproval();
+      hideAdminNav();
+    } else if (userProfile.status === 'rejected') {
+      // 거절된 사용자
+      isApproved = false;
+      hideProfileModal();
+      showRejectedScreen();
+    } else {
+      // 대기 중인 사용자
+      isApproved = false;
+      hideProfileModal();
+      showPendingApproval();
+    }
+  } else {
+    // 로그아웃 상태
+    userProfile = null;
+    isApproved = false;
+    hideProfileModal();
+    hidePendingApproval();
+    hideAdminNav();
+    // 메인 화면 표시
+    switchTab('main');
+  }
+
+  updateAuthUI();
+
+  // 관리자 로그인/로그아웃 시 UI 다시 렌더링
+  if (watches.length > 0) {
+    applyFilters();
+  }
+}
+
+// 거절 화면 표시
+function showRejectedScreen() {
+  pendingApproval.style.display = 'flex';
+  document.querySelector('.pending-icon').textContent = '❌';
+  document.querySelector('.pending-title').textContent = '가입이 거절되었습니다';
+  document.querySelector('.pending-message').textContent = '관리자에게 문의해주세요.';
+
+  mainContainer.style.display = 'none';
+  vizSection.style.display = 'none';
+  lineTabsWrapper.style.display = 'none';
+  testSection.style.display = 'none';
+  if (statsSection) statsSection.style.display = 'none';
+  if (adminSection) adminSection.style.display = 'none';
+}
+
+// 관리자 네비게이션 표시
+function showAdminNav() {
+  if (navAdmin) navAdmin.style.display = 'flex';
+}
+
+// 관리자 네비게이션 숨기기
+function hideAdminNav() {
+  if (navAdmin) navAdmin.style.display = 'none';
+}
+
+// 프로필 폼 이벤트 리스너
+if (profileForm) {
+  profileForm.addEventListener('submit', submitProfile);
+}
+
+// 인증 상태 감시 업데이트 (기존 함수 교체)
+auth.onAuthStateChanged(handleAuthStateChange);
+
+// ==========================================
+// 관리자 페이지 기능
+// ==========================================
+
+let currentAdminTab = 'pending';
+let allUsers = [];
+
+// 관리자 탭 전환
+function switchAdminTab(tab) {
+  currentAdminTab = tab;
+
+  // 탭 활성화
+  document.querySelectorAll('.admin-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.adminTab === tab);
+  });
+
+  // 사용자 목록 렌더링
+  renderAdminUserList();
+}
+
+// 관리자 페이지 로드
+async function loadAdminPage() {
+  if (!isAdmin) return;
+
+  try {
+    const snapshot = await db.collection('users')
+      .where('name', '!=', '')
+      .get();
+
+    allUsers = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      allUsers.push({
+        id: doc.id,
+        ...data
+      });
+    });
+
+    // 대기 중인 사용자 수 업데이트
+    const pendingCount = allUsers.filter(u => u.status === 'pending').length;
+    const pendingCountEl = document.getElementById('pending-count');
+    if (pendingCountEl) {
+      pendingCountEl.textContent = pendingCount;
+    }
+
+    renderAdminUserList();
+  } catch (error) {
+    console.error('사용자 목록 로드 실패:', error);
+  }
+}
+
+// 관리자 사용자 목록 렌더링
+function renderAdminUserList() {
+  const userList = document.getElementById('admin-user-list');
+  if (!userList) return;
+
+  const filteredUsers = allUsers.filter(user => {
+    if (currentAdminTab === 'pending') return user.status === 'pending';
+    if (currentAdminTab === 'approved') return user.status === 'approved';
+    if (currentAdminTab === 'rejected') return user.status === 'rejected';
+    return true;
+  });
+
+  if (filteredUsers.length === 0) {
+    userList.innerHTML = '<div class="empty-user-list">해당하는 사용자가 없습니다.</div>';
+    return;
+  }
+
+  userList.innerHTML = filteredUsers.map(user => {
+    const createdAt = user.createdAt?.toDate?.();
+    const dateStr = createdAt
+      ? `${createdAt.getFullYear()}.${createdAt.getMonth()+1}.${createdAt.getDate()}`
+      : '-';
+
+    return `
+      <div class="admin-user-card" data-user-id="${user.id}">
+        <div class="user-avatar">
+          <img src="${user.photoURL || 'https://via.placeholder.com/48'}" alt="">
+        </div>
+        <div class="user-info">
+          <div class="user-name">${user.name}</div>
+          <div class="user-email">${user.email}</div>
+          <div class="user-phone">${user.phone || '-'}</div>
+          <div class="user-referrer">${user.referrer ? '추천인: ' + user.referrer : ''}</div>
+          <div class="user-date">가입신청: ${dateStr}</div>
+        </div>
+        <div class="user-actions">
+          ${user.status === 'pending' ? `
+            <button class="approve-btn" onclick="approveUser('${user.id}')">승인</button>
+            <button class="reject-btn" onclick="rejectUser('${user.id}')">거절</button>
+          ` : ''}
+          ${user.status === 'approved' ? `
+            <button class="reject-btn" onclick="rejectUser('${user.id}')">승인 취소</button>
+          ` : ''}
+          ${user.status === 'rejected' ? `
+            <button class="approve-btn" onclick="approveUser('${user.id}')">승인</button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 사용자 승인
+async function approveUser(userId) {
+  if (!isAdmin) return;
+
+  try {
+    await db.collection('users').doc(userId).update({
+      status: 'approved',
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      approvedBy: currentUser.email
+    });
+
+    // 로컬 데이터 업데이트
+    const user = allUsers.find(u => u.id === userId);
+    if (user) user.status = 'approved';
+
+    // UI 업데이트
+    const pendingCount = allUsers.filter(u => u.status === 'pending').length;
+    const pendingCountEl = document.getElementById('pending-count');
+    if (pendingCountEl) {
+      pendingCountEl.textContent = pendingCount;
+    }
+
+    renderAdminUserList();
+
+  } catch (error) {
+    console.error('승인 실패:', error);
+    alert('승인 처리에 실패했습니다.');
+  }
+}
+
+// 사용자 거절
+async function rejectUser(userId) {
+  if (!isAdmin) return;
+
+  try {
+    await db.collection('users').doc(userId).update({
+      status: 'rejected',
+      rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      rejectedBy: currentUser.email
+    });
+
+    // 로컬 데이터 업데이트
+    const user = allUsers.find(u => u.id === userId);
+    if (user) user.status = 'rejected';
+
+    // UI 업데이트
+    const pendingCount = allUsers.filter(u => u.status === 'pending').length;
+    const pendingCountEl = document.getElementById('pending-count');
+    if (pendingCountEl) {
+      pendingCountEl.textContent = pendingCount;
+    }
+
+    renderAdminUserList();
+
+  } catch (error) {
+    console.error('거절 실패:', error);
+    alert('거절 처리에 실패했습니다.');
+  }
+}
+
+// 관리자 탭 네비게이션 이벤트 리스너
+document.querySelectorAll('.admin-tab').forEach(tab => {
+  tab.addEventListener('click', () => switchAdminTab(tab.dataset.adminTab));
+});
+
+// 네비게이션에 관리자 탭 추가
+if (navAdmin) {
+  navAdmin.addEventListener('click', () => {
+    if (!isAdmin) return;
+    switchTab('admin');
+  });
+}
+
+// switchTab 함수 업데이트 - 관리자 탭 추가
+const originalSwitchTab = switchTab;
+switchTab = function(tab) {
+  currentTab = tab;
+
+  // 네비게이션 탭 활성화
+  document.querySelectorAll('.main-nav-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+
+  // 컨텐츠 전환
+  if (tab === 'main') {
+    mainContainer.style.display = 'block';
+    vizSection.style.display = 'block';
+    lineTabsWrapper.style.display = 'block';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+  } else if (tab === 'test') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'block';
+    if (statsSection) statsSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+    showTestStart();
+  } else if (tab === 'stats') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'block';
+    if (adminSection) adminSection.style.display = 'none';
+    loadStatsPage();
+  } else if (tab === 'admin') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'block';
+    loadAdminPage();
+  }
+}
+
+// 승인 대기 화면 로그아웃 버튼 이벤트
+const logoutPendingBtn = document.getElementById('logout-pending-btn');
+if (logoutPendingBtn) {
+  logoutPendingBtn.addEventListener('click', logout);
 }

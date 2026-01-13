@@ -1660,3 +1660,395 @@ body {
     margin: 16px;
   }
 }
+
+/* ==========================================
+   프로필 입력 모달 스타일
+   ========================================== */
+
+#profile-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+#profile-modal .modal-content {
+  background: var(--bg-secondary);
+  padding: 32px;
+  border-radius: 16px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.modal-subtitle {
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-group input {
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1);
+}
+
+.form-group input::placeholder {
+  color: var(--text-muted);
+}
+
+.submit-profile-btn {
+  margin-top: 8px;
+  padding: 14px 24px;
+  background: var(--accent-gold);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.submit-profile-btn:hover {
+  background: #8b6541;
+}
+
+.submit-profile-btn:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================
+   승인 대기 화면 스타일
+   ========================================== */
+
+.pending-approval-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+
+.pending-approval-content {
+  text-align: center;
+  padding: 48px;
+  max-width: 400px;
+}
+
+.pending-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.pending-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.pending-message {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.pending-logout-btn {
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.pending-logout-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-muted);
+}
+
+/* ==========================================
+   관리자 페이지 스타일
+   ========================================== */
+
+.admin-section {
+  min-height: calc(100vh - 200px);
+  padding: 24px;
+  background: var(--bg-primary);
+}
+
+.admin-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.admin-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.admin-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+}
+
+.admin-tab {
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-tab:hover {
+  background: var(--bg-secondary);
+}
+
+.admin-tab.active {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-tab .badge {
+  background: var(--status-pending);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.admin-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-user-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.admin-user-card .user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.admin-user-card .user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-user-card .user-info {
+  flex: 1;
+}
+
+.admin-user-card .user-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.admin-user-card .user-email {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.admin-user-card .user-phone {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.admin-user-card .user-referrer {
+  font-size: 12px;
+  color: var(--accent-gold);
+  margin-top: 4px;
+}
+
+.admin-user-card .user-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.admin-user-card .user-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.approve-btn {
+  padding: 10px 20px;
+  background: var(--status-buy);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.approve-btn:hover {
+  background: #1db954;
+}
+
+.approve-btn:active {
+  transform: scale(0.98);
+}
+
+.reject-btn {
+  padding: 10px 20px;
+  background: var(--status-no);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.reject-btn:hover {
+  background: #dc2626;
+}
+
+.reject-btn:active {
+  transform: scale(0.98);
+}
+
+.empty-user-list {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+/* 관리자 탭 네비게이션 */
+#nav-admin {
+  display: none;
+}
+
+/* 반응형 - 관리자 페이지 */
+@media (max-width: 768px) {
+  .admin-user-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .admin-user-card .user-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-tabs {
+    flex-wrap: wrap;
+  }
+
+  .admin-tab {
+    flex: 1;
+    justify-content: center;
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-section {
+    padding: 16px;
+  }
+
+  .admin-page-title {
+    font-size: 22px;
+  }
+
+  .admin-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .approve-btn,
+  .reject-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  #profile-modal .modal-content {
+    padding: 24px;
+    margin: 16px;
+  }
+}
