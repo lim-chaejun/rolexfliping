@@ -412,17 +412,18 @@ body {
   position: relative;
   background: #f8f8f8;
   aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
   overflow: hidden;
 }
 
 .product-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 250%;
   height: 250%;
   object-fit: contain;
+  object-position: center center;
 }
 
 .product-badge {
