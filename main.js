@@ -89,7 +89,11 @@ async function init() {
 
     createLineTabs();
     populateFilters();
-    updateStatusCounts();
+
+    // Firestore에서 상태 오버라이드 로드 (모든 사용자)
+    await loadStatusOverrides();
+
+    updateStatusCountsWithOverrides();
     applyFilters();
     renderCharts();
 
@@ -539,9 +543,8 @@ auth.onAuthStateChanged(async (user) => {
   isAdmin = user ? ADMIN_EMAILS.includes(user.email) : false;
   updateAuthUI();
 
-  // 관리자면 상태 오버라이드 로드 후 다시 렌더링
-  if (isAdmin) {
-    await loadStatusOverrides();
+  // 관리자 로그인/로그아웃 시 UI 다시 렌더링 (관리자 컨트롤 표시/숨김)
+  if (watches.length > 0) {
     applyFilters();
   }
 });
