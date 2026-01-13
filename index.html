@@ -36,10 +36,39 @@
         <div id="login-btn-container">
           <button class="login-btn" id="login-btn">로그인</button>
         </div>
-        <div id="user-info-container" style="display:none;">
-          <img id="user-avatar" class="user-avatar" src="" alt="프로필">
-          <span id="user-name" class="user-name"></span>
-          <button class="logout-btn" id="logout-btn">로그아웃</button>
+        <div id="user-info-container" class="user-dropdown-wrapper" style="display:none;">
+          <button class="user-profile-btn" id="user-profile-btn">
+            <img id="user-avatar" class="user-avatar" src="" alt="프로필">
+            <span id="user-name" class="user-name"></span>
+            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="dropdown-user-info">
+              <img id="dropdown-avatar" class="dropdown-avatar" src="" alt="">
+              <div class="dropdown-user-details">
+                <span id="dropdown-name" class="dropdown-name"></span>
+                <span id="dropdown-email" class="dropdown-email"></span>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="dropdown-my-info">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              내 정보
+            </button>
+            <button class="dropdown-item logout" id="logout-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16,17 21,12 16,7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              로그아웃
+            </button>
+          </div>
         </div>
       </div>
     </div>

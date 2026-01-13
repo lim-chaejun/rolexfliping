@@ -543,6 +543,13 @@ const loginModal = document.getElementById('login-modal');
 const loginModalClose = document.getElementById('login-modal-close');
 const googleLoginBtn = document.getElementById('google-login-btn');
 
+// 드롭다운 관련 요소
+const userProfileBtn = document.getElementById('user-profile-btn');
+const userDropdown = document.getElementById('user-dropdown');
+const dropdownAvatar = document.getElementById('dropdown-avatar');
+const dropdownName = document.getElementById('dropdown-name');
+const dropdownEmail = document.getElementById('dropdown-email');
+
 // 인증 상태 감시는 아래 handleAuthStateChange 함수에서 처리
 
 // 인증 UI 업데이트
@@ -550,12 +557,62 @@ function updateAuthUI() {
   if (currentUser) {
     loginBtnContainer.style.display = 'none';
     userInfoContainer.style.display = 'flex';
-    userAvatar.src = currentUser.photoURL || 'https://via.placeholder.com/32';
-    userName.textContent = currentUser.displayName || currentUser.email?.split('@')[0] || '사용자';
+
+    const photoURL = currentUser.photoURL || 'https://via.placeholder.com/32';
+    const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || '사용자';
+
+    // 헤더 프로필
+    userAvatar.src = photoURL;
+    userName.textContent = displayName;
+
+    // 드롭다운 정보
+    if (dropdownAvatar) dropdownAvatar.src = photoURL;
+    if (dropdownName) dropdownName.textContent = displayName;
+    if (dropdownEmail) dropdownEmail.textContent = currentUser.email || '';
   } else {
     loginBtnContainer.style.display = 'block';
     userInfoContainer.style.display = 'none';
+    closeUserDropdown();
   }
+}
+
+// 드롭다운 토글
+function toggleUserDropdown() {
+  if (userDropdown) {
+    userDropdown.classList.toggle('active');
+  }
+}
+
+// 드롭다운 닫기
+function closeUserDropdown() {
+  if (userDropdown) {
+    userDropdown.classList.remove('active');
+  }
+}
+
+// 드롭다운 이벤트 리스너
+if (userProfileBtn) {
+  userProfileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleUserDropdown();
+  });
+}
+
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click', (e) => {
+  if (userDropdown && !userDropdown.contains(e.target) && !userProfileBtn?.contains(e.target)) {
+    closeUserDropdown();
+  }
+});
+
+// 내 정보 버튼
+const dropdownMyInfo = document.getElementById('dropdown-my-info');
+if (dropdownMyInfo) {
+  dropdownMyInfo.addEventListener('click', () => {
+    closeUserDropdown();
+    // 내 정보 모달 표시 (추후 구현 가능)
+    alert('이름: ' + (userProfile?.name || '-') + '\n연락처: ' + (userProfile?.phone || '-') + '\n추천인: ' + (userProfile?.referrer || '-'));
+  });
 }
 
 // 로그인 모달 표시/숨기기
