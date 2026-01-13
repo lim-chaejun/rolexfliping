@@ -4,6 +4,16 @@ let filteredWatches = [];
 let displayedCount = 50;
 let selectedLine = '';
 
+// 테스트 관련 변수
+let testMode = false;
+let testQuestions = [];
+let currentQuestion = 0;
+let testAnswers = [];
+let testLine = '';
+
+// 인증 관련 변수
+let currentUser = null;
+
 // DOM 요소
 const productGrid = document.getElementById('product-grid');
 const loading = document.getElementById('loading');
@@ -488,3 +498,544 @@ function debounce(func, wait) {
 
 // 시작
 init();
+
+// ==========================================
+// 인증 관련 기능
+// ==========================================
+
+// 인증 DOM 요소
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const loginBtnContainer = document.getElementById('login-btn-container');
+const userInfoContainer = document.getElementById('user-info-container');
+const userAvatar = document.getElementById('user-avatar');
+const userName = document.getElementById('user-name');
+const loginModal = document.getElementById('login-modal');
+const loginModalClose = document.getElementById('login-modal-close');
+const googleLoginBtn = document.getElementById('google-login-btn');
+
+// 인증 상태 감시
+auth.onAuthStateChanged((user) => {
+  currentUser = user;
+  updateAuthUI();
+});
+
+// 인증 UI 업데이트
+function updateAuthUI() {
+  if (currentUser) {
+    loginBtnContainer.style.display = 'none';
+    userInfoContainer.style.display = 'flex';
+    userAvatar.src = currentUser.photoURL || 'https://via.placeholder.com/32';
+    userName.textContent = currentUser.displayName || currentUser.email?.split('@')[0] || '사용자';
+  } else {
+    loginBtnContainer.style.display = 'block';
+    userInfoContainer.style.display = 'none';
+  }
+}
+
+// 로그인 모달 표시/숨기기
+function showLoginModal() {
+  loginModal.classList.add('active');
+}
+
+function hideLoginModal() {
+  loginModal.classList.remove('active');
+}
+
+// Google 로그인
+async function loginWithGoogle() {
+  try {
+    await auth.signInWithPopup(googleProvider);
+    hideLoginModal();
+  } catch (error) {
+    console.error('로그인 실패:', error);
+    if (error.code !== 'auth/popup-closed-by-user') {
+      alert('로그인에 실패했습니다: ' + error.message);
+    }
+  }
+}
+
+// 로그아웃
+async function logout() {
+  try {
+    await auth.signOut();
+  } catch (error) {
+    console.error('로그아웃 실패:', error);
+  }
+}
+
+// 인증 이벤트 리스너
+loginBtn.addEventListener('click', showLoginModal);
+logoutBtn.addEventListener('click', logout);
+loginModalClose.addEventListener('click', hideLoginModal);
+googleLoginBtn.addEventListener('click', loginWithGoogle);
+loginModal.addEventListener('click', (e) => {
+  if (e.target === loginModal) hideLoginModal();
+});
+
+// ==========================================
+// 테스트 모드 기능
+// ==========================================
+
+// 테스트 DOM 요소
+const testModeBtn = document.getElementById('test-mode-btn');
+const testSection = document.getElementById('test-section');
+const mainContainer = document.getElementById('main-container');
+const testStart = document.getElementById('test-start');
+const testProgress = document.getElementById('test-progress');
+const testResult = document.getElementById('test-result');
+const testOptions = document.getElementById('test-options');
+const startTestBtn = document.getElementById('start-test-btn');
+const retryBtn = document.getElementById('retry-btn');
+const viewStatsBtn = document.getElementById('view-stats-btn');
+
+// 테스트 모드 전환
+function toggleTestMode() {
+  testMode = !testMode;
+  testModeBtn.classList.toggle('active', testMode);
+
+  if (testMode) {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    testSection.style.display = 'block';
+    showTestStart();
+  } else {
+    mainContainer.style.display = 'block';
+    vizSection.style.display = 'block';
+    testSection.style.display = 'none';
+  }
+}
+
+// 테스트 시작 화면 표시
+function showTestStart() {
+  testStart.style.display = 'block';
+  testProgress.style.display = 'none';
+  testResult.style.display = 'none';
+
+  // 라인 옵션 생성
+  const lines = [...new Set(watches.map(w => w.line))].sort();
+
+  testOptions.innerHTML = `
+    <label class="test-option">
+      <input type="radio" name="test-line" value="" checked>
+      <span>전체 라인</span>
+    </label>
+    ${lines.map(line => `
+      <label class="test-option">
+        <input type="radio" name="test-line" value="${line}">
+        <span>${lineNames[line] || line}</span>
+      </label>
+    `).join('')}
+  `;
+}
+
+// 테스트 시작
+function startTest() {
+  const selectedTestLine = document.querySelector('input[name="test-line"]:checked').value;
+  testLine = selectedTestLine;
+
+  // 문제 생성 (무작위 10개)
+  let pool = selectedTestLine
+    ? watches.filter(w => w.line === selectedTestLine)
+    : watches;
+
+  // 셔플 후 10개 선택
+  testQuestions = shuffleArray([...pool]).slice(0, 10);
+  currentQuestion = 0;
+  testAnswers = [];
+
+  testStart.style.display = 'none';
+  testProgress.style.display = 'block';
+
+  showQuestion();
+}
+
+// 배열 셔플
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// 문제 표시
+function showQuestion() {
+  const question = testQuestions[currentQuestion];
+  const imagePath = `images/${question.line}/${question.model_number}.jpg`;
+
+  document.getElementById('current-q').textContent = currentQuestion + 1;
+  document.getElementById('progress-fill').style.width = `${(currentQuestion / 10) * 100}%`;
+
+  const testImage = document.getElementById('test-image');
+  testImage.src = imagePath;
+  testImage.onerror = function() {
+    this.src = question.image_url;
+  };
+
+  document.getElementById('test-line-name').textContent = lineNames[question.line] || question.line;
+  document.getElementById('test-title').textContent = question.title;
+  document.getElementById('test-model').textContent = question.model_number;
+  document.getElementById('test-price').textContent = question.formatted_price;
+  document.getElementById('test-material').textContent = materialNames[question.material] || question.material;
+
+  // 버튼 초기화
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.classList.remove('selected', 'correct', 'wrong');
+    btn.disabled = false;
+  });
+}
+
+// 답 선택
+function selectAnswer(choice) {
+  const question = testQuestions[currentQuestion];
+  const isCorrect = choice === question.buy_status;
+
+  testAnswers.push({
+    question,
+    userChoice: choice,
+    correctAnswer: question.buy_status,
+    isCorrect
+  });
+
+  // 피드백 표시
+  const buttons = document.querySelectorAll('.choice-btn');
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.choice === choice) {
+      btn.classList.add(isCorrect ? 'correct' : 'wrong');
+    }
+    if (btn.dataset.choice === question.buy_status) {
+      btn.classList.add('correct');
+    }
+  });
+
+  // 다음 문제로 (1초 후)
+  setTimeout(() => {
+    currentQuestion++;
+    if (currentQuestion < 10) {
+      showQuestion();
+    } else {
+      showResult();
+    }
+  }, 1000);
+}
+
+// 결과 표시
+function showResult() {
+  testProgress.style.display = 'none';
+  testResult.style.display = 'block';
+
+  const correctCount = testAnswers.filter(a => a.isCorrect).length;
+  document.getElementById('score-value').textContent = correctCount;
+
+  // 등급 계산
+  let grade = '';
+  if (correctCount >= 9) grade = '우수';
+  else if (correctCount >= 7) grade = '양호';
+  else if (correctCount >= 5) grade = '보통';
+  else grade = '노력필요';
+
+  document.getElementById('result-grade').textContent = grade;
+
+  // 상세 결과
+  const detailsHtml = testAnswers.map((answer) => {
+    const imagePath = `images/${answer.question.line}/${answer.question.model_number}.jpg`;
+    return `
+      <div class="result-item ${answer.isCorrect ? 'correct' : 'wrong'}">
+        <img class="result-item-image" src="${imagePath}"
+             onerror="this.src='${answer.question.image_url}'" alt="">
+        <div class="result-item-info">
+          <div class="result-item-title">${answer.question.title}</div>
+          <div class="result-item-answer">
+            선택: ${statusText[answer.userChoice]} / 정답: ${statusText[answer.correctAnswer]}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('result-details').innerHTML = detailsHtml;
+
+  // 로그인된 경우 점수 저장
+  if (currentUser) {
+    saveTestScore(correctCount);
+  }
+}
+
+// 점수 저장 (Firebase)
+async function saveTestScore(score) {
+  if (!currentUser) return;
+
+  try {
+    const scoreData = {
+      score,
+      totalQuestions: 10,
+      line: testLine || 'all',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      answers: testAnswers.map(a => ({
+        model: a.question.model_number,
+        line: a.question.line,
+        userChoice: a.userChoice,
+        correctAnswer: a.correctAnswer,
+        isCorrect: a.isCorrect
+      }))
+    };
+
+    await db.collection('users').doc(currentUser.uid)
+      .collection('scores').add(scoreData);
+
+    // 통계 업데이트
+    await updateUserStats(score);
+  } catch (error) {
+    console.error('점수 저장 실패:', error);
+  }
+}
+
+// 사용자 통계 업데이트
+async function updateUserStats(score) {
+  const statsRef = db.collection('users').doc(currentUser.uid);
+
+  try {
+    const statsDoc = await statsRef.get();
+
+    if (!statsDoc.exists) {
+      // 초기 통계 생성
+      const initialStats = {
+        totalTests: 1,
+        totalCorrect: score,
+        totalQuestions: 10,
+        lineStats: {},
+        wrongModels: {}
+      };
+
+      // 라인별 통계
+      const line = testLine || 'all';
+      initialStats.lineStats[line] = { correct: score, total: 10 };
+
+      // 틀린 모델 추적
+      testAnswers.forEach(a => {
+        if (!a.isCorrect) {
+          initialStats.wrongModels[a.question.model_number] = 1;
+        }
+      });
+
+      await statsRef.set(initialStats);
+    } else {
+      const stats = statsDoc.data();
+
+      // 전체 통계 업데이트
+      stats.totalTests = (stats.totalTests || 0) + 1;
+      stats.totalCorrect = (stats.totalCorrect || 0) + score;
+      stats.totalQuestions = (stats.totalQuestions || 0) + 10;
+
+      // 라인별 통계
+      const line = testLine || 'all';
+      if (!stats.lineStats) stats.lineStats = {};
+      if (!stats.lineStats[line]) {
+        stats.lineStats[line] = { correct: 0, total: 0 };
+      }
+      stats.lineStats[line].correct += score;
+      stats.lineStats[line].total += 10;
+
+      // 틀린 모델 추적
+      if (!stats.wrongModels) stats.wrongModels = {};
+      testAnswers.forEach(a => {
+        if (!a.isCorrect) {
+          const modelKey = a.question.model_number;
+          stats.wrongModels[modelKey] = (stats.wrongModels[modelKey] || 0) + 1;
+        }
+      });
+
+      await statsRef.update(stats);
+    }
+  } catch (error) {
+    console.error('통계 업데이트 실패:', error);
+  }
+}
+
+// 테스트 이벤트 리스너
+testModeBtn.addEventListener('click', toggleTestMode);
+startTestBtn.addEventListener('click', startTest);
+retryBtn.addEventListener('click', showTestStart);
+
+document.querySelectorAll('.choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => selectAnswer(btn.dataset.choice));
+});
+
+// ==========================================
+// 통계 모달 기능
+// ==========================================
+
+const statsModal = document.getElementById('stats-modal');
+const statsModalClose = document.getElementById('stats-modal-close');
+
+// 통계 모달 열기
+async function showStatsModal() {
+  statsModal.classList.add('active');
+
+  if (!currentUser) {
+    document.getElementById('stats-summary').innerHTML = `
+      <div class="login-required">
+        <p>통계를 보려면 로그인이 필요합니다.</p>
+        <button class="login-required-btn" onclick="hideStatsModal(); showLoginModal();">
+          로그인하기
+        </button>
+      </div>
+    `;
+    document.getElementById('line-stats-chart').innerHTML = '';
+    document.getElementById('wrong-models-list').innerHTML = '';
+    document.getElementById('recent-tests-list').innerHTML = '';
+    return;
+  }
+
+  await loadUserStats();
+}
+
+// 통계 모달 닫기
+function hideStatsModal() {
+  statsModal.classList.remove('active');
+}
+
+// 사용자 통계 로드
+async function loadUserStats() {
+  try {
+    // 통계 문서 가져오기
+    const statsDoc = await db.collection('users').doc(currentUser.uid).get();
+
+    // 최근 테스트 기록 가져오기
+    const scoresSnapshot = await db.collection('users').doc(currentUser.uid)
+      .collection('scores')
+      .orderBy('timestamp', 'desc')
+      .limit(10)
+      .get();
+
+    if (statsDoc.exists) {
+      const stats = statsDoc.data();
+      renderStats(stats, scoresSnapshot.docs);
+    } else {
+      renderEmptyStats();
+    }
+  } catch (error) {
+    console.error('통계 로드 실패:', error);
+    renderEmptyStats();
+  }
+}
+
+// 통계 렌더링
+function renderStats(stats, recentScores) {
+  // 요약 통계
+  const accuracy = stats.totalQuestions > 0
+    ? Math.round((stats.totalCorrect / stats.totalQuestions) * 100)
+    : 0;
+  const avgScore = stats.totalTests > 0
+    ? (stats.totalCorrect / stats.totalTests).toFixed(1)
+    : 0;
+
+  document.getElementById('stats-summary').innerHTML = `
+    <div class="stats-card">
+      <span class="stats-value">${stats.totalTests || 0}</span>
+      <span class="stats-label">총 시도 횟수</span>
+    </div>
+    <div class="stats-card">
+      <span class="stats-value">${accuracy}%</span>
+      <span class="stats-label">전체 정답률</span>
+    </div>
+    <div class="stats-card">
+      <span class="stats-value">${avgScore}</span>
+      <span class="stats-label">평균 점수</span>
+    </div>
+  `;
+
+  // 라인별 정답률
+  const lineStatsHtml = Object.entries(stats.lineStats || {})
+    .map(([line, data]) => {
+      const lineAccuracy = data.total > 0
+        ? Math.round((data.correct / data.total) * 100)
+        : 0;
+      const lineName = line === 'all' ? '전체' : (lineNames[line] || line);
+      return `
+        <div class="line-stat-item">
+          <span class="line-stat-name">${lineName}</span>
+          <div class="line-stat-bar">
+            <div class="line-stat-fill" style="width: ${lineAccuracy}%"></div>
+          </div>
+          <span class="line-stat-value">${lineAccuracy}%</span>
+        </div>
+      `;
+    }).join('');
+
+  document.getElementById('line-stats-chart').innerHTML = lineStatsHtml || '<p class="empty-message">데이터 없음</p>';
+
+  // 자주 틀리는 모델 (상위 5개)
+  const wrongModels = Object.entries(stats.wrongModels || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const wrongModelsHtml = wrongModels.map(([modelNumber, count]) => {
+    const watch = watches.find(w => w.model_number === modelNumber);
+    if (!watch) return '';
+
+    const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
+    return `
+      <div class="wrong-model-item">
+        <img class="wrong-model-image" src="${imagePath}"
+             onerror="this.src='${watch.image_url}'" alt="">
+        <div class="wrong-model-info">
+          <div class="wrong-model-name">${watch.title}</div>
+          <div class="wrong-model-line">${lineNames[watch.line] || watch.line}</div>
+        </div>
+        <span class="wrong-model-count">${count}회 오답</span>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('wrong-models-list').innerHTML = wrongModelsHtml || '<p class="empty-message">데이터 없음</p>';
+
+  // 최근 테스트 기록
+  const recentTestsHtml = recentScores.map(doc => {
+    const data = doc.data();
+    const date = data.timestamp?.toDate();
+    const dateStr = date ? `${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` : '-';
+    const lineName = data.line === 'all' ? '전체' : (lineNames[data.line] || data.line);
+
+    return `
+      <div class="recent-test-item">
+        <span class="recent-test-date">${dateStr}</span>
+        <span class="recent-test-line">${lineName}</span>
+        <span class="recent-test-score">${data.score}/10</span>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('recent-tests-list').innerHTML = recentTestsHtml || '<p class="empty-message">테스트 기록 없음</p>';
+}
+
+// 빈 통계 렌더링
+function renderEmptyStats() {
+  document.getElementById('stats-summary').innerHTML = `
+    <div class="stats-card">
+      <span class="stats-value">0</span>
+      <span class="stats-label">총 시도 횟수</span>
+    </div>
+    <div class="stats-card">
+      <span class="stats-value">0%</span>
+      <span class="stats-label">전체 정답률</span>
+    </div>
+    <div class="stats-card">
+      <span class="stats-value">0</span>
+      <span class="stats-label">평균 점수</span>
+    </div>
+  `;
+
+  document.getElementById('line-stats-chart').innerHTML = '<p class="empty-message">테스트를 진행해주세요</p>';
+  document.getElementById('wrong-models-list').innerHTML = '<p class="empty-message">데이터 없음</p>';
+  document.getElementById('recent-tests-list').innerHTML = '<p class="empty-message">테스트 기록 없음</p>';
+}
+
+// 통계 이벤트 리스너
+viewStatsBtn.addEventListener('click', showStatsModal);
+statsModalClose.addEventListener('click', hideStatsModal);
+statsModal.addEventListener('click', (e) => {
+  if (e.target === statsModal) hideStatsModal();
+});

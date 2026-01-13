@@ -32,17 +32,36 @@
           <span class="stat-label">매입 불가</span>
         </div>
       </div>
+      <div class="user-area">
+        <div id="login-btn-container">
+          <button class="login-btn" id="login-btn">로그인</button>
+        </div>
+        <div id="user-info-container" style="display:none;">
+          <img id="user-avatar" class="user-avatar" src="" alt="프로필">
+          <span id="user-name" class="user-name"></span>
+          <button class="logout-btn" id="logout-btn">로그아웃</button>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- 라인 탭 필터 (KREAM 스타일) -->
   <nav class="line-tabs-wrapper">
-    <div class="line-tabs" id="line-tabs">
-      <button class="line-tab active" data-line="">
-        <span class="tab-name">전체</span>
-        <span class="tab-count" id="tab-count-all">0</span>
+    <div class="tabs-container">
+      <div class="line-tabs" id="line-tabs">
+        <button class="line-tab active" data-line="">
+          <span class="tab-name">전체</span>
+          <span class="tab-count" id="tab-count-all">0</span>
+        </button>
+        <!-- JS에서 동적 생성 -->
+      </div>
+      <button class="test-mode-btn" id="test-mode-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+        <span>테스트</span>
       </button>
-      <!-- JS에서 동적 생성 -->
     </div>
   </nav>
 
@@ -70,8 +89,82 @@
     </button>
   </section>
 
+  <!-- 테스트 모드 섹션 -->
+  <section class="test-section" id="test-section" style="display:none;">
+    <div class="test-container">
+      <!-- 테스트 시작 화면 -->
+      <div class="test-start" id="test-start">
+        <h2>매입 판단 테스트</h2>
+        <p>10개의 시계에 대한 매입 판단을 테스트합니다.</p>
+        <div class="test-options" id="test-options">
+          <label class="test-option">
+            <input type="radio" name="test-line" value="" checked>
+            <span>전체 라인</span>
+          </label>
+        </div>
+        <button class="start-test-btn" id="start-test-btn">테스트 시작</button>
+      </div>
+
+      <!-- 테스트 진행 화면 -->
+      <div class="test-progress" id="test-progress" style="display:none;">
+        <div class="test-header">
+          <span class="test-count">문제 <span id="current-q">1</span>/10</span>
+          <div class="test-progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="test-card" id="test-card">
+          <div class="test-image-wrapper">
+            <img id="test-image" src="" alt="테스트 시계">
+          </div>
+          <div class="test-info">
+            <div class="test-line" id="test-line-name"></div>
+            <div class="test-title" id="test-title"></div>
+            <div class="test-model" id="test-model"></div>
+            <div class="test-price" id="test-price"></div>
+            <div class="test-material" id="test-material"></div>
+          </div>
+        </div>
+
+        <div class="test-choices">
+          <button class="choice-btn buy" data-choice="buy">
+            <span class="choice-icon">O</span>
+            <span>매입 가능</span>
+          </button>
+          <button class="choice-btn pending" data-choice="pending">
+            <span class="choice-icon">△</span>
+            <span>검토 필요</span>
+          </button>
+          <button class="choice-btn no" data-choice="no">
+            <span class="choice-icon">X</span>
+            <span>매입 불가</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 테스트 결과 화면 -->
+      <div class="test-result" id="test-result" style="display:none;">
+        <h2>테스트 결과</h2>
+        <div class="result-score">
+          <span class="score-value" id="score-value">0</span>
+          <span class="score-total">/10</span>
+        </div>
+        <div class="result-grade" id="result-grade">우수</div>
+
+        <div class="result-details" id="result-details">
+        </div>
+
+        <div class="result-actions">
+          <button class="retry-btn" id="retry-btn">다시 테스트</button>
+          <button class="view-stats-btn" id="view-stats-btn">통계 보기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 메인 컨텐츠 -->
-  <div class="container">
+  <div class="container" id="main-container">
     <!-- 필터 바 -->
     <div class="filter-bar">
       <div class="filter-left">
@@ -151,6 +244,68 @@
     </div>
   </div>
 
+  <!-- 로그인 모달 -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal-content">
+      <button class="modal-close" id="login-modal-close">&times;</button>
+      <h2 class="modal-title">로그인</h2>
+      <div class="login-options">
+        <button class="google-login-btn" id="google-login-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          <span>Google로 로그인</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 통계 모달 -->
+  <div class="modal-overlay" id="stats-modal">
+    <div class="modal-content stats-modal-content">
+      <button class="modal-close" id="stats-modal-close">&times;</button>
+      <h2 class="modal-title">나의 테스트 통계</h2>
+
+      <div class="stats-summary" id="stats-summary">
+        <div class="stats-card">
+          <span class="stats-value" id="stats-total-tests">0</span>
+          <span class="stats-label">총 시도 횟수</span>
+        </div>
+        <div class="stats-card">
+          <span class="stats-value" id="stats-accuracy">0%</span>
+          <span class="stats-label">전체 정답률</span>
+        </div>
+        <div class="stats-card">
+          <span class="stats-value" id="stats-avg-score">0</span>
+          <span class="stats-label">평균 점수</span>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <h3>라인별 정답률</h3>
+        <div class="line-stats-chart" id="line-stats-chart"></div>
+      </div>
+
+      <div class="stats-section">
+        <h3>자주 틀리는 모델</h3>
+        <div class="wrong-models-list" id="wrong-models-list"></div>
+      </div>
+
+      <div class="stats-section">
+        <h3>최근 테스트 기록</h3>
+        <div class="recent-tests-list" id="recent-tests-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
