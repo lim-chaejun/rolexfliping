@@ -574,13 +574,19 @@ loginModal.addEventListener('click', (e) => {
 });
 
 // ==========================================
-// 테스트 모드 기능
+// 메인 네비게이션 탭 기능
 // ==========================================
 
-// 테스트 DOM 요소
-const testModeBtn = document.getElementById('test-mode-btn');
+// 네비게이션 DOM 요소
+const navMain = document.getElementById('nav-main');
+const navTest = document.getElementById('nav-test');
+const navStats = document.getElementById('nav-stats');
+const lineTabsWrapper = document.getElementById('line-tabs-wrapper');
 const testSection = document.getElementById('test-section');
 const mainContainer = document.getElementById('main-container');
+const statsSection = document.getElementById('stats-section');
+
+// 테스트 DOM 요소
 const testStart = document.getElementById('test-start');
 const testProgress = document.getElementById('test-progress');
 const testResult = document.getElementById('test-result');
@@ -589,22 +595,46 @@ const startTestBtn = document.getElementById('start-test-btn');
 const retryBtn = document.getElementById('retry-btn');
 const viewStatsBtn = document.getElementById('view-stats-btn');
 
-// 테스트 모드 전환
-function toggleTestMode() {
-  testMode = !testMode;
-  testModeBtn.classList.toggle('active', testMode);
+// 현재 활성 탭
+let currentTab = 'main';
 
-  if (testMode) {
-    mainContainer.style.display = 'none';
-    vizSection.style.display = 'none';
-    testSection.style.display = 'block';
-    showTestStart();
-  } else {
+// 탭 전환
+function switchTab(tab) {
+  currentTab = tab;
+
+  // 네비게이션 탭 활성화
+  document.querySelectorAll('.main-nav-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+
+  // 컨텐츠 전환
+  if (tab === 'main') {
     mainContainer.style.display = 'block';
     vizSection.style.display = 'block';
+    lineTabsWrapper.style.display = 'block';
     testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+  } else if (tab === 'test') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'block';
+    if (statsSection) statsSection.style.display = 'none';
+    showTestStart();
+  } else if (tab === 'stats') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'block';
+    loadStatsPage();
   }
 }
+
+// 네비게이션 이벤트 리스너
+navMain.addEventListener('click', () => switchTab('main'));
+navTest.addEventListener('click', () => switchTab('test'));
+navStats.addEventListener('click', () => switchTab('stats'));
 
 // 테스트 시작 화면 표시
 function showTestStart() {
@@ -855,7 +885,7 @@ async function updateUserStats(score) {
 }
 
 // 테스트 이벤트 리스너
-testModeBtn.addEventListener('click', toggleTestMode);
+// 테스트 이벤트 리스너
 startTestBtn.addEventListener('click', startTest);
 retryBtn.addEventListener('click', showTestStart);
 
@@ -864,41 +894,31 @@ document.querySelectorAll('.choice-btn').forEach(btn => {
 });
 
 // ==========================================
-// 통계 모달 기능
+// 통계 페이지 기능
 // ==========================================
 
-const statsModal = document.getElementById('stats-modal');
-const statsModalClose = document.getElementById('stats-modal-close');
-
-// 통계 모달 열기
-async function showStatsModal() {
-  statsModal.classList.add('active');
-
+// 통계 페이지 로드
+async function loadStatsPage() {
   if (!currentUser) {
-    document.getElementById('stats-summary').innerHTML = `
+    document.getElementById('stats-page-summary').innerHTML = `
       <div class="login-required">
         <p>통계를 보려면 로그인이 필요합니다.</p>
-        <button class="login-required-btn" onclick="hideStatsModal(); showLoginModal();">
+        <button class="login-required-btn" onclick="showLoginModal();">
           로그인하기
         </button>
       </div>
     `;
-    document.getElementById('line-stats-chart').innerHTML = '';
-    document.getElementById('wrong-models-list').innerHTML = '';
-    document.getElementById('recent-tests-list').innerHTML = '';
+    document.getElementById('page-line-stats').innerHTML = '';
+    document.getElementById('page-wrong-models').innerHTML = '';
+    document.getElementById('page-recent-tests').innerHTML = '';
     return;
   }
 
-  await loadUserStats();
+  await loadUserStatsForPage();
 }
 
-// 통계 모달 닫기
-function hideStatsModal() {
-  statsModal.classList.remove('active');
-}
-
-// 사용자 통계 로드
-async function loadUserStats() {
+// 사용자 통계 로드 (페이지용)
+async function loadUserStatsForPage() {
   try {
     // 통계 문서 가져오기
     const statsDoc = await db.collection('users').doc(currentUser.uid).get();
@@ -912,18 +932,18 @@ async function loadUserStats() {
 
     if (statsDoc.exists) {
       const stats = statsDoc.data();
-      renderStats(stats, scoresSnapshot.docs);
+      renderStatsPage(stats, scoresSnapshot.docs);
     } else {
-      renderEmptyStats();
+      renderEmptyStatsPage();
     }
   } catch (error) {
     console.error('통계 로드 실패:', error);
-    renderEmptyStats();
+    renderEmptyStatsPage();
   }
 }
 
-// 통계 렌더링
-function renderStats(stats, recentScores) {
+// 통계 페이지 렌더링
+function renderStatsPage(stats, recentScores) {
   // 요약 통계
   const accuracy = stats.totalQuestions > 0
     ? Math.round((stats.totalCorrect / stats.totalQuestions) * 100)
@@ -932,7 +952,7 @@ function renderStats(stats, recentScores) {
     ? (stats.totalCorrect / stats.totalTests).toFixed(1)
     : 0;
 
-  document.getElementById('stats-summary').innerHTML = `
+  document.getElementById('stats-page-summary').innerHTML = `
     <div class="stats-card">
       <span class="stats-value">${stats.totalTests || 0}</span>
       <span class="stats-label">총 시도 횟수</span>
@@ -965,7 +985,7 @@ function renderStats(stats, recentScores) {
       `;
     }).join('');
 
-  document.getElementById('line-stats-chart').innerHTML = lineStatsHtml || '<p class="empty-message">데이터 없음</p>';
+  document.getElementById('page-line-stats').innerHTML = lineStatsHtml || '<p class="empty-message">데이터 없음</p>';
 
   // 자주 틀리는 모델 (상위 5개)
   const wrongModels = Object.entries(stats.wrongModels || {})
@@ -990,7 +1010,7 @@ function renderStats(stats, recentScores) {
     `;
   }).join('');
 
-  document.getElementById('wrong-models-list').innerHTML = wrongModelsHtml || '<p class="empty-message">데이터 없음</p>';
+  document.getElementById('page-wrong-models').innerHTML = wrongModelsHtml || '<p class="empty-message">데이터 없음</p>';
 
   // 최근 테스트 기록
   const recentTestsHtml = recentScores.map(doc => {
@@ -1008,12 +1028,12 @@ function renderStats(stats, recentScores) {
     `;
   }).join('');
 
-  document.getElementById('recent-tests-list').innerHTML = recentTestsHtml || '<p class="empty-message">테스트 기록 없음</p>';
+  document.getElementById('page-recent-tests').innerHTML = recentTestsHtml || '<p class="empty-message">테스트 기록 없음</p>';
 }
 
-// 빈 통계 렌더링
-function renderEmptyStats() {
-  document.getElementById('stats-summary').innerHTML = `
+// 빈 통계 페이지 렌더링
+function renderEmptyStatsPage() {
+  document.getElementById('stats-page-summary').innerHTML = `
     <div class="stats-card">
       <span class="stats-value">0</span>
       <span class="stats-label">총 시도 횟수</span>
@@ -1028,14 +1048,10 @@ function renderEmptyStats() {
     </div>
   `;
 
-  document.getElementById('line-stats-chart').innerHTML = '<p class="empty-message">테스트를 진행해주세요</p>';
-  document.getElementById('wrong-models-list').innerHTML = '<p class="empty-message">데이터 없음</p>';
-  document.getElementById('recent-tests-list').innerHTML = '<p class="empty-message">테스트 기록 없음</p>';
+  document.getElementById('page-line-stats').innerHTML = '<p class="empty-message">테스트를 진행해주세요</p>';
+  document.getElementById('page-wrong-models').innerHTML = '<p class="empty-message">데이터 없음</p>';
+  document.getElementById('page-recent-tests').innerHTML = '<p class="empty-message">테스트 기록 없음</p>';
 }
 
-// 통계 이벤트 리스너
-viewStatsBtn.addEventListener('click', showStatsModal);
-statsModalClose.addEventListener('click', hideStatsModal);
-statsModal.addEventListener('click', (e) => {
-  if (e.target === statsModal) hideStatsModal();
-});
+// 통계 버튼 이벤트 리스너 (테스트 결과에서 통계 탭으로 이동)
+viewStatsBtn.addEventListener('click', () => switchTab('stats'));
