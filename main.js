@@ -13,6 +13,10 @@ let testLine = '';
 
 // 인증 관련 변수
 let currentUser = null;
+let isAdmin = false;
+
+// 상태 오버라이드 (Firestore에서 로드)
+let statusOverrides = {};
 
 // DOM 요소
 const productGrid = document.getElementById('product-grid');
@@ -178,8 +182,9 @@ function applyFilters() {
     // 라인 필터
     if (selectedLine && watch.line !== selectedLine) return false;
 
-    // 상태 필터
-    if (!selectedStatuses.includes(watch.buy_status)) return false;
+    // 상태 필터 (오버라이드 적용)
+    const currentStatus = statusOverrides[watch.model_number] || watch.buy_status;
+    if (!selectedStatuses.includes(currentStatus)) return false;
 
     // 검색 필터
     if (searchTerm) {
@@ -247,11 +252,24 @@ function renderProducts() {
 
   productGrid.innerHTML = displayWatches.map(watch => {
     const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
+    // 상태 오버라이드 적용
+    const currentStatus = statusOverrides[watch.model_number] || watch.buy_status;
+
+    // 관리자용 상태 변경 드롭다운
+    const adminControls = isAdmin ? `
+      <div class="admin-status-control">
+        <select class="status-select" data-model="${watch.model_number}" onchange="updateWatchStatus(this)">
+          <option value="buy" ${currentStatus === 'buy' ? 'selected' : ''}>무조건 매입</option>
+          <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>검토 필요</option>
+          <option value="no" ${currentStatus === 'no' ? 'selected' : ''}>매입 불가</option>
+        </select>
+      </div>
+    ` : '';
 
     return `
       <div class="product-card">
         <div class="product-image-wrapper">
-          <span class="product-badge ${watch.buy_status}">${statusText[watch.buy_status]}</span>
+          <span class="product-badge ${currentStatus}">${statusText[currentStatus]}</span>
           <img
             class="product-image"
             src="${imagePath}"
@@ -266,6 +284,7 @@ function renderProducts() {
           <div class="product-model">${watch.model_number}</div>
           <div class="product-price">${watch.formatted_price}</div>
           <div class="product-material">${materialNames[watch.material] || watch.material}</div>
+          ${adminControls}
         </div>
       </div>
     `;
@@ -515,9 +534,16 @@ const loginModalClose = document.getElementById('login-modal-close');
 const googleLoginBtn = document.getElementById('google-login-btn');
 
 // 인증 상태 감시
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
   currentUser = user;
+  isAdmin = user ? ADMIN_EMAILS.includes(user.email) : false;
   updateAuthUI();
+
+  // 관리자면 상태 오버라이드 로드 후 다시 렌더링
+  if (isAdmin) {
+    await loadStatusOverrides();
+    applyFilters();
+  }
 });
 
 // 인증 UI 업데이트
@@ -1055,3 +1081,76 @@ function renderEmptyStatsPage() {
 
 // 통계 버튼 이벤트 리스너 (테스트 결과에서 통계 탭으로 이동)
 viewStatsBtn.addEventListener('click', () => switchTab('stats'));
+
+// ==========================================
+// 관리자 기능 - 상태 관리
+// ==========================================
+
+// Firestore에서 상태 오버라이드 로드
+async function loadStatusOverrides() {
+  try {
+    const snapshot = await db.collection('watchStatus').get();
+    statusOverrides = {};
+    snapshot.forEach(doc => {
+      statusOverrides[doc.id] = doc.data().status;
+    });
+    console.log('상태 오버라이드 로드됨:', Object.keys(statusOverrides).length);
+  } catch (error) {
+    console.error('상태 로드 실패:', error);
+  }
+}
+
+// 시계 상태 업데이트 (관리자 전용)
+async function updateWatchStatus(selectElement) {
+  if (!isAdmin) return;
+
+  const modelNumber = selectElement.dataset.model;
+  const newStatus = selectElement.value;
+
+  try {
+    // Firestore에 저장
+    await db.collection('watchStatus').doc(modelNumber).set({
+      status: newStatus,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: currentUser.email
+    });
+
+    // 로컬 오버라이드 업데이트
+    statusOverrides[modelNumber] = newStatus;
+
+    // 해당 카드의 뱃지 업데이트
+    const card = selectElement.closest('.product-card');
+    const badge = card.querySelector('.product-badge');
+    badge.className = `product-badge ${newStatus}`;
+    badge.textContent = statusText[newStatus];
+
+    // 상태 카운트 업데이트
+    updateStatusCountsWithOverrides();
+
+    console.log(`상태 변경: ${modelNumber} -> ${newStatus}`);
+  } catch (error) {
+    console.error('상태 변경 실패:', error);
+    alert('상태 변경에 실패했습니다.');
+    // 원래 값으로 되돌리기
+    const originalStatus = statusOverrides[modelNumber] ||
+      watches.find(w => w.model_number === modelNumber)?.buy_status;
+    if (originalStatus) {
+      selectElement.value = originalStatus;
+    }
+  }
+}
+
+// 상태 카운트 업데이트 (오버라이드 포함)
+function updateStatusCountsWithOverrides() {
+  const counts = { buy: 0, pending: 0, no: 0 };
+  watches.forEach(w => {
+    const status = statusOverrides[w.model_number] || w.buy_status;
+    if (counts.hasOwnProperty(status)) {
+      counts[status]++;
+    }
+  });
+
+  document.getElementById('count-buy').textContent = counts.buy.toLocaleString();
+  document.getElementById('count-pending').textContent = counts.pending.toLocaleString();
+  document.getElementById('count-no').textContent = counts.no.toLocaleString();
+}

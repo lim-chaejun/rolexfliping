@@ -1502,6 +1502,37 @@ body {
 }
 
 /* ==========================================
+   관리자 컨트롤
+   ========================================== */
+
+.admin-status-control {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.status-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.status-select:hover {
+  border-color: var(--accent-gold);
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+/* ==========================================
    통계 페이지
    ========================================== */
 

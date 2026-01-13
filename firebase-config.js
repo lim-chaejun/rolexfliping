@@ -1,3 +1,6 @@
+// 관리자 이메일 설정
+const ADMIN_EMAILS = ['lcjun37@gmail.com'];
+
 // Firebase 설정
 const firebaseConfig = {
   apiKey: "AIzaSyBunJyCChJ4GdpJwjVDrfeS9UTdyTqwssk",
