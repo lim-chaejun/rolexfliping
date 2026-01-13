@@ -261,14 +261,18 @@ function renderProducts() {
     // 상태 오버라이드 적용
     const currentStatus = statusOverrides[watch.model_number] || watch.buy_status;
 
-    // 관리자용 상태 변경 드롭다운
+    // 관리자용 상태 변경 버튼 (○, △, ✕)
     const adminControls = isAdmin ? `
       <div class="admin-status-control">
-        <select class="status-select" data-model="${watch.model_number}" onchange="updateWatchStatus(this)">
-          <option value="buy" ${currentStatus === 'buy' ? 'selected' : ''}>무조건 매입</option>
-          <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>검토 필요</option>
-          <option value="no" ${currentStatus === 'no' ? 'selected' : ''}>매입 불가</option>
-        </select>
+        <button class="status-btn buy ${currentStatus === 'buy' ? 'active' : ''}"
+                data-model="${watch.model_number}" data-status="buy"
+                onclick="updateWatchStatusBtn(this)">○</button>
+        <button class="status-btn pending ${currentStatus === 'pending' ? 'active' : ''}"
+                data-model="${watch.model_number}" data-status="pending"
+                onclick="updateWatchStatusBtn(this)">△</button>
+        <button class="status-btn no ${currentStatus === 'no' ? 'active' : ''}"
+                data-model="${watch.model_number}" data-status="no"
+                onclick="updateWatchStatusBtn(this)">✕</button>
       </div>
     ` : '';
 
@@ -1095,12 +1099,17 @@ async function loadStatusOverrides() {
   }
 }
 
-// 시계 상태 업데이트 (관리자 전용)
-async function updateWatchStatus(selectElement) {
+// 시계 상태 업데이트 - 버튼용 (관리자 전용)
+async function updateWatchStatusBtn(btn) {
   if (!isAdmin) return;
 
-  const modelNumber = selectElement.dataset.model;
-  const newStatus = selectElement.value;
+  const modelNumber = btn.dataset.model;
+  const newStatus = btn.dataset.status;
+
+  // 이미 같은 상태면 무시
+  if (statusOverrides[modelNumber] === newStatus) return;
+  const watch = watches.find(w => w.model_number === modelNumber);
+  if (!statusOverrides[modelNumber] && watch?.buy_status === newStatus) return;
 
   try {
     // Firestore에 저장
@@ -1113,25 +1122,28 @@ async function updateWatchStatus(selectElement) {
     // 로컬 오버라이드 업데이트
     statusOverrides[modelNumber] = newStatus;
 
-    // 해당 카드의 뱃지 업데이트
-    const card = selectElement.closest('.product-card');
-    const badge = card.querySelector('.product-badge');
-    badge.className = `product-badge ${newStatus}`;
-    badge.textContent = statusText[newStatus];
-
     // 상태 카운트 업데이트
     updateStatusCountsWithOverrides();
+
+    // 전체 리렌더링 대신 해당 카드만 업데이트
+    const card = btn.closest('.product-card');
+    if (card) {
+      // 뱃지 업데이트
+      const badge = card.querySelector('.product-badge');
+      if (badge) {
+        badge.className = `product-badge ${newStatus}`;
+        badge.textContent = statusText[newStatus];
+      }
+      // 버튼 활성화 상태 업데이트
+      card.querySelectorAll('.status-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.status === newStatus);
+      });
+    }
 
     console.log(`상태 변경: ${modelNumber} -> ${newStatus}`);
   } catch (error) {
     console.error('상태 변경 실패:', error);
     alert('상태 변경에 실패했습니다.');
-    // 원래 값으로 되돌리기
-    const originalStatus = statusOverrides[modelNumber] ||
-      watches.find(w => w.model_number === modelNumber)?.buy_status;
-    if (originalStatus) {
-      selectElement.value = originalStatus;
-    }
   }
 }
 
@@ -1210,6 +1222,33 @@ function hidePendingApproval() {
   pendingApproval.style.display = 'none';
 }
 
+// 로그인 필요 화면 표시
+function showLoginRequired() {
+  const loginRequired = document.getElementById('login-required');
+  if (loginRequired) loginRequired.style.display = 'flex';
+  mainContainer.style.display = 'none';
+  vizSection.style.display = 'none';
+  lineTabsWrapper.style.display = 'none';
+  testSection.style.display = 'none';
+  if (statsSection) statsSection.style.display = 'none';
+  if (adminSection) adminSection.style.display = 'none';
+}
+
+// 로그인 필요 화면 숨기기
+function hideLoginRequired() {
+  const loginRequired = document.getElementById('login-required');
+  if (loginRequired) loginRequired.style.display = 'none';
+}
+
+// 메인 컨텐츠 표시 (승인된 사용자용)
+function showMainContent() {
+  hideLoginRequired();
+  hidePendingApproval();
+  mainContainer.style.display = 'block';
+  vizSection.style.display = 'block';
+  lineTabsWrapper.style.display = 'block';
+}
+
 // 프로필 폼 제출 처리
 async function submitProfile(e) {
   e.preventDefault();
@@ -1266,19 +1305,20 @@ async function handleAuthStateChange(user) {
     if (!userProfile || !userProfile.name) {
       // 프로필이 없으면 프로필 입력 모달 표시
       isApproved = false;
+      hideLoginRequired();
       hidePendingApproval();
       showProfileModal();
     } else if (isAdmin) {
       // 관리자는 항상 승인된 상태
       isApproved = true;
       hideProfileModal();
-      hidePendingApproval();
+      showMainContent();
       showAdminNav();
     } else if (userProfile.status === 'approved') {
       // 승인된 사용자
       isApproved = true;
       hideProfileModal();
-      hidePendingApproval();
+      showMainContent();
       hideAdminNav();
     } else if (userProfile.status === 'rejected') {
       // 거절된 사용자
@@ -1298,8 +1338,8 @@ async function handleAuthStateChange(user) {
     hideProfileModal();
     hidePendingApproval();
     hideAdminNav();
-    // 메인 화면 표시
-    switchTab('main');
+    // 로그인 필요 화면 표시
+    showLoginRequired();
   }
 
   updateAuthUI();
@@ -1568,4 +1608,10 @@ switchTab = function(tab) {
 const logoutPendingBtn = document.getElementById('logout-pending-btn');
 if (logoutPendingBtn) {
   logoutPendingBtn.addEventListener('click', logout);
+}
+
+// 로그인 필요 화면 로그인 버튼 이벤트
+const loginRequiredBtn = document.getElementById('login-required-btn');
+if (loginRequiredBtn) {
+  loginRequiredBtn.addEventListener('click', loginWithGoogle);
 }

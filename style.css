@@ -1510,27 +1510,61 @@ body {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 8px;
+  justify-content: center;
 }
 
-.status-select {
-  width: 100%;
-  padding: 8px 12px;
+.status-btn {
+  width: 36px;
+  height: 36px;
   border: 2px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 600;
   background: var(--bg-secondary);
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.status-select:hover {
-  border-color: var(--accent-gold);
+.status-btn:hover {
+  transform: scale(1.1);
 }
 
-.status-select:focus {
-  outline: none;
-  border-color: var(--accent-gold);
+.status-btn.buy {
+  color: var(--status-buy);
+}
+
+.status-btn.buy:hover,
+.status-btn.buy.active {
+  background: var(--status-buy);
+  border-color: var(--status-buy);
+  color: #fff;
+}
+
+.status-btn.pending {
+  color: var(--status-pending);
+}
+
+.status-btn.pending:hover,
+.status-btn.pending.active {
+  background: var(--status-pending);
+  border-color: var(--status-pending);
+  color: #fff;
+}
+
+.status-btn.no {
+  color: var(--status-no);
+}
+
+.status-btn.no:hover,
+.status-btn.no.active {
+  background: var(--status-no);
+  border-color: var(--status-no);
+  color: #fff;
 }
 
 /* ==========================================
@@ -1812,6 +1846,67 @@ body {
 .pending-logout-btn:hover {
   background: var(--bg-tertiary);
   border-color: var(--text-muted);
+}
+
+/* ==========================================
+   로그인 필요 화면 스타일
+   ========================================== */
+
+.login-required-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-required-content {
+  text-align: center;
+  padding: 48px;
+  max-width: 400px;
+}
+
+.login-required-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.login-required-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.login-required-message {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.login-required-btn {
+  padding: 14px 32px;
+  background: var(--accent-gold);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.login-required-btn:hover {
+  background: #8b6541;
+}
+
+.login-required-btn:active {
+  transform: scale(0.98);
 }
 
 /* ==========================================
