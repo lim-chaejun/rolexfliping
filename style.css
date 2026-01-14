@@ -1883,31 +1883,34 @@ body {
   padding-top: 12px;
   border-top: 1px solid var(--border-color);
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
 }
 
 .status-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 2px solid var(--border-color);
   border-radius: 50%;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   background: var(--bg-secondary);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .status-btn:hover {
   transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .status-btn.buy {
   color: var(--status-buy);
+  border-color: var(--status-buy);
 }
 
 .status-btn.buy:hover,
@@ -1915,10 +1918,12 @@ body {
   background: var(--status-buy);
   border-color: var(--status-buy);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
 }
 
 .status-btn.pending {
   color: var(--status-pending);
+  border-color: var(--status-pending);
 }
 
 .status-btn.pending:hover,
@@ -1926,10 +1931,12 @@ body {
   background: var(--status-pending);
   border-color: var(--status-pending);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
 }
 
 .status-btn.no {
   color: var(--status-no);
+  border-color: var(--status-no);
 }
 
 .status-btn.no:hover,
@@ -1937,6 +1944,7 @@ body {
   background: var(--status-no);
   border-color: var(--status-no);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 /* ==========================================

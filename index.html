@@ -6,7 +6,7 @@
   <title>ROLEXFLIP</title>
   <link rel="icon" type="image/png" href="favicon/favicon.png">
   <link rel="apple-touch-icon" href="favicon/favicon.png">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <!-- 헤더 -->
@@ -23,15 +23,15 @@
         </div>
         <div class="stat-item buy">
           <span class="stat-value" id="count-buy">0</span>
-          <span class="stat-label">매입 가능</span>
+          <span class="stat-label">매입</span>
         </div>
         <div class="stat-item pending">
           <span class="stat-value" id="count-pending">0</span>
-          <span class="stat-label">검토 필요</span>
+          <span class="stat-label">컨펌</span>
         </div>
         <div class="stat-item no">
           <span class="stat-value" id="count-no">0</span>
-          <span class="stat-label">매입 불가</span>
+          <span class="stat-label">불가</span>
         </div>
       </div>
       <div class="user-area">
@@ -216,15 +216,15 @@
         <div class="test-choices">
           <button class="choice-btn buy" data-choice="buy">
             <span class="choice-icon">O</span>
-            <span>매입 가능</span>
+            <span>매입</span>
           </button>
           <button class="choice-btn pending" data-choice="pending">
             <span class="choice-icon">△</span>
-            <span>검토 필요</span>
+            <span>컨펌</span>
           </button>
           <button class="choice-btn no" data-choice="no">
             <span class="choice-icon">X</span>
-            <span>매입 불가</span>
+            <span>불가</span>
           </button>
         </div>
       </div>
@@ -386,17 +386,17 @@
           <label class="status-chip buy">
             <input type="checkbox" value="buy" checked>
             <span class="chip-dot"></span>
-            <span class="chip-text">무조건 매입</span>
+            <span class="chip-text">매입</span>
           </label>
           <label class="status-chip pending">
             <input type="checkbox" value="pending" checked>
             <span class="chip-dot"></span>
-            <span class="chip-text">검토 필요</span>
+            <span class="chip-text">컨펌</span>
           </label>
           <label class="status-chip no">
             <input type="checkbox" value="no" checked>
             <span class="chip-dot"></span>
-            <span class="chip-text">매입 불가</span>
+            <span class="chip-text">불가</span>
           </label>
         </div>
       </div>
