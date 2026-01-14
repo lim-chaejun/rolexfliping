@@ -457,6 +457,9 @@ function applyFilters() {
 
   // 렌더링
   renderProducts();
+
+  // 차트 업데이트 (필터링된 데이터 기준)
+  renderCharts();
 }
 
 // 정렬
@@ -679,19 +682,19 @@ function calculateBuyRates(watchList, field) {
     .slice(0, 5);
 }
 
-// 속성별 매입률 차트
+// 속성별 매입률 차트 - 필터링된 데이터 기준
 function renderAttributeRatesChart() {
   const lineChart = document.getElementById('line-chart');
-  const baseWatches = getBaseFilteredWatches();
+  const targetWatches = filteredWatches.length > 0 ? filteredWatches : watches;
 
-  if (baseWatches.length === 0) {
+  if (targetWatches.length === 0) {
     lineChart.innerHTML = '<div class="no-data">데이터 없음</div>';
     return;
   }
 
-  const materialRates = calculateBuyRates(baseWatches, 'material');
-  const bezelRates = calculateBuyRates(baseWatches, 'bezel');
-  const braceletRates = calculateBuyRates(baseWatches, 'bracelet');
+  const materialRates = calculateBuyRates(targetWatches, 'material');
+  const bezelRates = calculateBuyRates(targetWatches, 'bezel');
+  const braceletRates = calculateBuyRates(targetWatches, 'bracelet');
 
   const renderRateSection = (title, rates) => `
     <div class="rate-section">
@@ -717,18 +720,23 @@ function renderAttributeRatesChart() {
   `;
 }
 
-// 상태별 차트 (도넛)
+// 상태별 차트 (도넛) - 필터링된 데이터 기준
 function renderStatusChart() {
   const statusChart = document.getElementById('status-chart');
+  const targetWatches = filteredWatches.length > 0 ? filteredWatches : watches;
   const counts = { buy: 0, pending: 0, no: 0 };
 
-  watches.forEach(w => {
+  targetWatches.forEach(w => {
     if (counts.hasOwnProperty(w.buy_status)) {
       counts[w.buy_status]++;
     }
   });
 
   const total = counts.buy + counts.pending + counts.no;
+  if (total === 0) {
+    statusChart.innerHTML = '<div class="no-data">데이터 없음</div>';
+    return;
+  }
   const buyPercent = (counts.buy / total) * 100;
   const pendingPercent = (counts.pending / total) * 100;
 
@@ -791,10 +799,10 @@ function renderStatusChart() {
   `;
 }
 
-// 가격대별 차트 (스택 바)
+// 가격대별 차트 (스택 바) - 필터링된 데이터 기준
 function renderPriceChart() {
   const priceChart = document.getElementById('price-chart');
-  const baseWatches = getBaseFilteredWatches();
+  const targetWatches = filteredWatches.length > 0 ? filteredWatches : watches;
 
   const priceRanges = [
     { label: '2천 이하', min: 0, max: 20000000 },
@@ -806,7 +814,7 @@ function renderPriceChart() {
   ];
 
   const counts = priceRanges.map(range => {
-    const rangeWatches = baseWatches.filter(w => w.price >= range.min && w.price < range.max);
+    const rangeWatches = targetWatches.filter(w => w.price >= range.min && w.price < range.max);
     return {
       label: range.label,
       total: rangeWatches.length,
