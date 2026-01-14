@@ -359,7 +359,7 @@ function renderProducts() {
     const sizeClass = sizeMatch ? `size-${sizeMatch[1]}` : '';
 
     return `
-      <div class="product-card line-${watch.line} ${sizeClass}">
+      <div class="product-card line-${watch.line} ${sizeClass}" data-model="${watch.model_number}" onclick="showWatchDetail('${watch.model_number}')">
         <div class="product-image-wrapper">
           <span class="product-badge ${watch.buy_status}">${statusText[watch.buy_status]}</span>
           <img
@@ -397,6 +397,55 @@ function loadMore() {
   displayedCount += 50;
   renderProducts();
 }
+
+// ==========================================
+// 시계 상세 모달
+// ==========================================
+
+const watchDetailModal = document.getElementById('watch-detail-modal');
+const watchDetailClose = document.getElementById('watch-detail-close');
+
+function showWatchDetail(modelNumber) {
+  // 관리자 버튼 클릭 시 모달 열리지 않도록
+  if (event && event.target.closest('.admin-status-control')) {
+    return;
+  }
+
+  const watch = watches.find(w => w.model_number === modelNumber);
+  if (!watch) return;
+
+  const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
+
+  // 모달 내용 채우기
+  document.getElementById('watch-detail-image').src = imagePath;
+  document.getElementById('watch-detail-image').onerror = function() {
+    this.src = watch.image_url;
+  };
+  document.getElementById('watch-detail-badge').textContent = statusText[watch.buy_status];
+  document.getElementById('watch-detail-badge').className = `watch-detail-badge ${watch.buy_status}`;
+  document.getElementById('watch-detail-line').textContent = lineNames[watch.line] || watch.line;
+  document.getElementById('watch-detail-title').textContent = watch.title;
+  document.getElementById('watch-detail-model').textContent = watch.model_number;
+  document.getElementById('watch-detail-price').textContent = watch.formatted_price;
+  document.getElementById('watch-detail-material').textContent = materialNames[watch.material] || watch.material;
+  document.getElementById('watch-detail-case').textContent = watch.case_description || '-';
+  document.getElementById('watch-detail-dial').textContent = watch.dial || '-';
+  document.getElementById('watch-detail-bracelet').textContent = watch.bracelet || '-';
+
+  watchDetailModal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function hideWatchDetail() {
+  watchDetailModal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// 모달 닫기 이벤트
+watchDetailClose.addEventListener('click', hideWatchDetail);
+watchDetailModal.addEventListener('click', (e) => {
+  if (e.target === watchDetailModal) hideWatchDetail();
+});
 
 // 필터 초기화
 function resetFilters() {
