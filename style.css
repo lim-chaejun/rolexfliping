@@ -474,62 +474,52 @@ body {
 .line-cosmograph-daytona .product-image {
   width: 220%;
   height: 220%;
-  transform: translate(-50%, -48%);
 }
 
 .line-submariner .product-image {
   width: 210%;
   height: 210%;
-  transform: translate(-50%, -48%);
 }
 
 .line-gmt-master-ii .product-image {
   width: 210%;
   height: 210%;
-  transform: translate(-50%, -48%);
 }
 
 .line-explorer .product-image {
   width: 220%;
   height: 220%;
-  transform: translate(-50%, -48%);
 }
 
 .line-sea-dweller .product-image {
   width: 200%;
   height: 200%;
-  transform: translate(-50%, -48%);
 }
 
 .line-deepsea .product-image {
   width: 190%;
   height: 190%;
-  transform: translate(-50%, -48%);
 }
 
 .line-air-king .product-image {
   width: 220%;
   height: 220%;
-  transform: translate(-50%, -48%);
 }
 
 .line-yacht-master .product-image {
   width: 210%;
   height: 210%;
-  transform: translate(-50%, -48%);
 }
 
 /* 클래식 라인 */
 .line-datejust .product-image {
   width: 230%;
   height: 230%;
-  transform: translate(-50%, -48%);
 }
 
 .line-day-date .product-image {
   width: 230%;
   height: 230%;
-  transform: translate(-50%, -48%);
 }
 
 .line-oyster-perpetual .product-image {
@@ -547,19 +537,16 @@ body {
 .line-sky-dweller .product-image {
   width: 210%;
   height: 210%;
-  transform: translate(-50%, -48%);
 }
 
 .line-1908 .product-image {
   width: 240%;
   height: 240%;
-  transform: translate(-50%, -48%);
 }
 
 .line-land-dweller .product-image {
   width: 210%;
   height: 210%;
-  transform: translate(-50%, -48%);
 }
 
 .product-badge {
