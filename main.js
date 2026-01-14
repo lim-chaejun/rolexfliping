@@ -1222,19 +1222,37 @@ async function updateWatchStatusBtn(event, btn) {
     // 상태 카운트 업데이트
     updateStatusCounts();
 
-    // 해당 카드만 업데이트
+    // 현재 선택된 상태 필터 확인
+    const selectedStatuses = Array.from(statusCheckboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+
     const card = btn.closest('.product-card');
-    if (card) {
-      // 뱃지 업데이트
-      const badge = card.querySelector('.product-badge');
-      if (badge) {
-        badge.className = `product-badge ${newStatus}`;
-        badge.textContent = statusText[newStatus];
+
+    // 새 상태가 현재 필터에 포함되지 않으면 카드 제거
+    if (!selectedStatuses.includes(newStatus)) {
+      if (card) {
+        card.remove();
+        // filteredWatches에서도 제거
+        const filteredIndex = filteredWatches.findIndex(w => w.model_number === modelNumber);
+        if (filteredIndex !== -1) {
+          filteredWatches.splice(filteredIndex, 1);
+        }
+        // 필터된 개수 업데이트
+        filteredCount.textContent = filteredWatches.length.toLocaleString();
       }
-      // 버튼 활성화 상태 업데이트
-      card.querySelectorAll('.status-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.status === newStatus);
-      });
+    } else {
+      // 필터에 포함되면 카드 업데이트
+      if (card) {
+        const badge = card.querySelector('.product-badge');
+        if (badge) {
+          badge.className = `product-badge ${newStatus}`;
+          badge.textContent = statusText[newStatus];
+        }
+        card.querySelectorAll('.status-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.status === newStatus);
+        });
+      }
     }
 
     console.log(`상태 변경: ${modelNumber} -> ${newStatus}`);
