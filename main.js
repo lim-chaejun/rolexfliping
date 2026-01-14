@@ -354,8 +354,12 @@ function renderProducts() {
       </div>
     ` : '';
 
+    // 타이틀에서 사이즈 추출 (예: "오이스터 퍼페츄얼 28" -> "28")
+    const sizeMatch = watch.title.match(/(\d+)$/);
+    const sizeClass = sizeMatch ? `size-${sizeMatch[1]}` : '';
+
     return `
-      <div class="product-card line-${watch.line}">
+      <div class="product-card line-${watch.line} ${sizeClass}">
         <div class="product-image-wrapper">
           <span class="product-badge ${watch.buy_status}">${statusText[watch.buy_status]}</span>
           <img
