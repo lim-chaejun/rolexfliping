@@ -1228,31 +1228,59 @@ function showTestStart() {
   testProgress.style.display = 'none';
   testResult.style.display = 'none';
 
-  // 라인 옵션 생성
+  // 라인 옵션 생성 (체크박스로 다중 선택 가능)
   const lines = [...new Set(watches.map(w => w.line))].sort();
 
   testOptions.innerHTML = `
     <label class="test-option">
-      <input type="radio" name="test-line" value="" checked>
+      <input type="checkbox" name="test-line" value="" id="test-line-all" checked>
       <span>전체 라인</span>
     </label>
     ${lines.map(line => `
       <label class="test-option">
-        <input type="radio" name="test-line" value="${line}">
+        <input type="checkbox" name="test-line" value="${line}">
         <span>${lineNames[line] || line}</span>
       </label>
     `).join('')}
   `;
+
+  // 전체 선택 시 다른 체크 해제, 개별 선택 시 전체 해제
+  const allCheckbox = document.getElementById('test-line-all');
+  const lineCheckboxes = document.querySelectorAll('input[name="test-line"]:not(#test-line-all)');
+
+  allCheckbox.addEventListener('change', () => {
+    if (allCheckbox.checked) {
+      lineCheckboxes.forEach(cb => cb.checked = false);
+    }
+  });
+
+  lineCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        allCheckbox.checked = false;
+      }
+      // 아무것도 선택 안 되면 전체 체크
+      const anyChecked = [...lineCheckboxes].some(c => c.checked);
+      if (!anyChecked) {
+        allCheckbox.checked = true;
+      }
+    });
+  });
 }
 
 // 테스트 시작
 function startTest() {
-  const selectedTestLine = document.querySelector('input[name="test-line"]:checked').value;
-  testLine = selectedTestLine;
+  // 선택된 라인들 가져오기
+  const allCheckbox = document.getElementById('test-line-all');
+  const selectedLines = allCheckbox.checked
+    ? []
+    : [...document.querySelectorAll('input[name="test-line"]:checked:not(#test-line-all)')].map(cb => cb.value);
+
+  testLine = selectedLines.length > 0 ? selectedLines.join(',') : 'all';
 
   // 문제 생성 (무작위 10개)
-  let pool = selectedTestLine
-    ? watches.filter(w => w.line === selectedTestLine)
+  let pool = selectedLines.length > 0
+    ? watches.filter(w => selectedLines.includes(w.line))
     : watches;
 
   // 셔플 후 10개 선택
