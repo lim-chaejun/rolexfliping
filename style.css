@@ -925,7 +925,7 @@ body {
 
   /* 모바일 검색바 표시 */
   .mobile-search-bar {
-    display: flex;
+    display: flex !important;
     margin: 12px 16px;
     position: sticky;
     top: 104px;
