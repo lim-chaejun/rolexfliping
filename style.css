@@ -660,6 +660,117 @@ body {
   font-size: 11px;
 }
 
+/* 스택 바 차트 */
+.stacked-track {
+  display: flex;
+  gap: 1px;
+}
+
+.stacked-track .bar-fill {
+  border-radius: 0;
+}
+
+.stacked-track .bar-fill:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.stacked-track .bar-fill:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.stacked-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* 속성별 매입률 차트 */
+.attribute-rates {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.rate-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rate-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.rate-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.rate-label {
+  width: 70px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rate-bar-track {
+  flex: 1;
+  height: 14px;
+  background: #e5e5e5;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rate-bar-fill {
+  height: 100%;
+  background: var(--status-buy);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.rate-value {
+  width: 70px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-align: right;
+}
+
+.rate-value em {
+  font-style: normal;
+  color: var(--status-buy);
+  font-weight: 600;
+}
+
+.viz-card.wide {
+  grid-column: span 1;
+}
+
+.no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .attribute-rates {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 도넛 차트 */
 .donut-chart {
   display: flex;

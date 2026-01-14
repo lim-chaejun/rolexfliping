@@ -625,37 +625,65 @@ function toggleVisualization() {
 
 // 차트 렌더링
 function renderCharts() {
-  renderLineChart();
+  renderAttributeRatesChart();
   renderStatusChart();
   renderPriceChart();
 }
 
-// 라인별 차트
-function renderLineChart() {
-  const lineChart = document.getElementById('line-chart');
-  const lineCounts = {};
-
-  watches.forEach(w => {
-    lineCounts[w.line] = (lineCounts[w.line] || 0) + 1;
+// 속성별 매입률 계산
+function calculateBuyRates(watchList, field) {
+  const groups = {};
+  watchList.forEach(w => {
+    const key = w[field] || '미지정';
+    if (!groups[key]) groups[key] = { total: 0, buy: 0 };
+    groups[key].total++;
+    if (w.buy_status === 'buy') groups[key].buy++;
   });
+  return Object.entries(groups)
+    .map(([name, data]) => ({
+      name: field === 'material' ? (materialNames[name] || name) : name,
+      total: data.total,
+      buy: data.buy,
+      rate: data.total > 0 ? Math.round((data.buy / data.total) * 100) : 0
+    }))
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, 5);
+}
 
-  const sortedLines = Object.entries(lineCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
+// 속성별 매입률 차트
+function renderAttributeRatesChart() {
+  const lineChart = document.getElementById('line-chart');
+  const baseWatches = getBaseFilteredWatches();
 
-  const maxCount = Math.max(...sortedLines.map(l => l[1]));
+  if (baseWatches.length === 0) {
+    lineChart.innerHTML = '<div class="no-data">데이터 없음</div>';
+    return;
+  }
 
-  lineChart.innerHTML = `
-    <div class="bar-chart">
-      ${sortedLines.map(([line, count]) => `
-        <div class="bar-item">
-          <span class="bar-label">${lineNames[line] || line}</span>
-          <div class="bar-track">
-            <div class="bar-fill default" style="width: ${(count / maxCount) * 100}%"></div>
+  const materialRates = calculateBuyRates(baseWatches, 'material');
+  const bezelRates = calculateBuyRates(baseWatches, 'bezel');
+  const braceletRates = calculateBuyRates(baseWatches, 'bracelet');
+
+  const renderRateSection = (title, rates) => `
+    <div class="rate-section">
+      <div class="rate-title">${title}</div>
+      ${rates.map(r => `
+        <div class="rate-item">
+          <span class="rate-label">${r.name}</span>
+          <div class="rate-bar-track">
+            <div class="rate-bar-fill" style="width: ${r.rate}%"></div>
           </div>
-          <span class="bar-value">${count}</span>
+          <span class="rate-value">${r.buy}/${r.total} <em>(${r.rate}%)</em></span>
         </div>
       `).join('')}
+    </div>
+  `;
+
+  lineChart.innerHTML = `
+    <div class="attribute-rates">
+      ${renderRateSection('소재별', materialRates)}
+      ${renderRateSection('베젤별', bezelRates)}
+      ${renderRateSection('브레이슬릿별', braceletRates)}
     </div>
   `;
 }
@@ -734,34 +762,56 @@ function renderStatusChart() {
   `;
 }
 
-// 가격대별 차트
+// 가격대별 차트 (스택 바)
 function renderPriceChart() {
   const priceChart = document.getElementById('price-chart');
+  const baseWatches = getBaseFilteredWatches();
+
   const priceRanges = [
     { label: '2천 이하', min: 0, max: 20000000 },
-    { label: '2천~5천', min: 20000000, max: 50000000 },
-    { label: '5천~1억', min: 50000000, max: 100000000 },
+    { label: '2~3천', min: 20000000, max: 30000000 },
+    { label: '3~5천', min: 30000000, max: 50000000 },
+    { label: '5~7천', min: 50000000, max: 70000000 },
+    { label: '7천~1억', min: 70000000, max: 100000000 },
     { label: '1억 이상', min: 100000000, max: Infinity }
   ];
 
-  const counts = priceRanges.map(range => ({
-    label: range.label,
-    count: watches.filter(w => w.price >= range.min && w.price < range.max).length
-  }));
+  const counts = priceRanges.map(range => {
+    const rangeWatches = baseWatches.filter(w => w.price >= range.min && w.price < range.max);
+    return {
+      label: range.label,
+      total: rangeWatches.length,
+      buy: rangeWatches.filter(w => w.buy_status === 'buy').length,
+      pending: rangeWatches.filter(w => w.buy_status === 'pending').length,
+      no: rangeWatches.filter(w => w.buy_status === 'no').length
+    };
+  });
 
-  const maxCount = Math.max(...counts.map(c => c.count));
+  const maxCount = Math.max(...counts.map(c => c.total), 1);
 
   priceChart.innerHTML = `
-    <div class="bar-chart">
-      ${counts.map(({ label, count }) => `
-        <div class="bar-item">
-          <span class="bar-label">${label}</span>
-          <div class="bar-track">
-            <div class="bar-fill default" style="width: ${(count / maxCount) * 100}%"></div>
+    <div class="bar-chart stacked">
+      ${counts.map(({ label, total, buy, pending, no }) => {
+        const buyWidth = (buy / maxCount) * 100;
+        const pendingWidth = (pending / maxCount) * 100;
+        const noWidth = (no / maxCount) * 100;
+        return `
+          <div class="bar-item">
+            <span class="bar-label">${label}</span>
+            <div class="bar-track stacked-track">
+              <div class="bar-fill buy" style="width: ${buyWidth}%"></div>
+              <div class="bar-fill pending" style="width: ${pendingWidth}%"></div>
+              <div class="bar-fill no" style="width: ${noWidth}%"></div>
+            </div>
+            <span class="bar-value">${total}</span>
           </div>
-          <span class="bar-value">${count}</span>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
+    </div>
+    <div class="stacked-legend">
+      <span class="legend-item"><span class="legend-dot buy"></span>매입 </span>
+      <span class="legend-item"><span class="legend-dot pending"></span>컨펌 </span>
+      <span class="legend-item"><span class="legend-dot no"></span>불가</span>
     </div>
   `;
 }
