@@ -1,5 +1,29 @@
-// 관리자 이메일 설정
-const ADMIN_EMAILS = ['lcjun37@gmail.com'];
+// 소유자(최고관리자) 이메일 설정
+const OWNER_EMAILS = ['lcjun37@gmail.com'];
+
+// 등급 정의
+const ROLES = {
+  OWNER: 'owner',
+  MANAGER: 'manager',
+  DEALER: 'dealer',
+  MEMBER: 'member'
+};
+
+// 등급 계층 (숫자가 클수록 높은 권한)
+const ROLE_LEVELS = {
+  owner: 4,
+  manager: 3,
+  dealer: 2,
+  member: 1
+};
+
+// 등급별 한국어 표시
+const ROLE_LABELS = {
+  owner: '소유자',
+  manager: '매니저',
+  dealer: '딜러',
+  member: '일반회원'
+};
 
 // Firebase 설정
 const firebaseConfig = {

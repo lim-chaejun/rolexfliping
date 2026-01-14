@@ -16,9 +16,53 @@ let testLine = '';
 
 // 인증 관련 변수
 let currentUser = null;
-let isAdmin = false;
+let userRole = 'member';  // 사용자 등급: owner, manager, dealer, member
 let userProfile = null;
 let isApproved = false;
+
+// ==========================================
+// 권한 체크 유틸리티 함수
+// ==========================================
+
+// 등급 레벨 반환
+function getRoleLevel(role) {
+  return ROLE_LEVELS[role] || 1;
+}
+
+// 현재 사용자가 특정 등급 이상인지 확인
+function hasRole(requiredRole) {
+  if (!currentUser || !isApproved) return false;
+  return getRoleLevel(userRole) >= getRoleLevel(requiredRole);
+}
+
+// 특정 기능에 대한 접근 권한 확인
+function canAccess(feature) {
+  if (!currentUser || !isApproved) return false;
+
+  const permissions = {
+    // 탭 접근 권한
+    'tab:main': ['member', 'dealer', 'manager', 'owner'],
+    'tab:test': ['member', 'dealer', 'manager', 'owner'],
+    'tab:stats': ['member', 'dealer', 'manager', 'owner'],
+    'tab:calc': ['dealer', 'manager', 'owner'],
+    'tab:admin': ['owner'],
+
+    // 기능 권한
+    'watch:edit_status': ['manager', 'owner'],
+    'user:approve': ['owner'],
+    'user:reject': ['owner'],
+    'user:change_role': ['owner']
+  };
+
+  const allowedRoles = permissions[feature];
+  if (!allowedRoles) return false;
+  return allowedRoles.includes(userRole);
+}
+
+// 하위 호환성을 위한 isAdmin getter (기존 코드 호환)
+function isAdmin() {
+  return userRole === 'owner';
+}
 
 // DOM 요소
 const productGrid = document.getElementById('product-grid');
@@ -339,8 +383,8 @@ function renderProducts() {
   productGrid.innerHTML = displayWatches.map(watch => {
     const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
 
-    // 관리자용 상태 변경 버튼 (○, △, ✕)
-    const adminControls = isAdmin ? `
+    // 매니저 이상용 상태 변경 버튼 (○, △, ✕)
+    const adminControls = canAccess('watch:edit_status') ? `
       <div class="admin-status-control">
         <button class="status-btn buy ${watch.buy_status === 'buy' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="buy"
@@ -761,6 +805,12 @@ function showMyInfoModal() {
   };
   statusEl.textContent = statusMap[userProfile.status] || '-';
   statusEl.className = 'my-info-value my-info-status ' + (userProfile.status || '');
+
+  // 등급 표시
+  const roleEl = document.getElementById('my-info-role');
+  if (roleEl) {
+    roleEl.textContent = ROLE_LABELS[userRole] || '일반회원';
+  }
 
   myInfoModal.classList.add('active');
 }
@@ -1401,12 +1451,12 @@ viewStatsBtn.addEventListener('click', () => switchTab('stats'));
 // 관리자 기능 - 상태 관리
 // ==========================================
 
-// 시계 상태 업데이트 - 버튼용 (관리자 전용)
+// 시계 상태 업데이트 - 버튼용 (매니저 이상)
 async function updateWatchStatusBtn(event, btn) {
   event.stopPropagation();
   event.preventDefault();
 
-  if (!isAdmin) return;
+  if (!canAccess('watch:edit_status')) return;
 
   const modelNumber = btn.dataset.model;
   const newStatus = btn.dataset.status;
@@ -1492,11 +1542,25 @@ async function checkUserProfile() {
     const userDoc = await db.collection('users').doc(currentUser.uid).get();
     if (userDoc.exists) {
       const data = userDoc.data();
+
+      // role 필드가 없으면 기본값 설정 및 마이그레이션
+      let role = data.role;
+      if (!role) {
+        role = OWNER_EMAILS.includes(currentUser.email) ? 'owner' : 'member';
+        // Firestore에 role 필드 마이그레이션
+        await db.collection('users').doc(currentUser.uid).update({
+          role: role,
+          roleUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          roleUpdatedBy: 'system-migration'
+        });
+      }
+
       return {
         name: data.name,
         phone: data.phone,
         referrer: data.referrer,
-        status: data.status || 'pending', // pending, approved, rejected
+        status: data.status || 'pending',
+        role: role,
         createdAt: data.createdAt
       };
     }
@@ -1619,11 +1683,21 @@ async function handleAuthStateChange(user) {
   }
 
   currentUser = user;
-  isAdmin = user ? ADMIN_EMAILS.includes(user.email) : false;
 
   if (user) {
     // 프로필 확인
     userProfile = await checkUserProfile();
+
+    // 역할 결정
+    if (OWNER_EMAILS.includes(user.email)) {
+      // 오너 이메일이면 자동으로 owner 권한
+      userRole = 'owner';
+    } else if (userProfile && userProfile.role) {
+      // 프로필에 저장된 역할 사용
+      userRole = userProfile.role;
+    } else {
+      userRole = 'member';
+    }
 
     if (!userProfile || !userProfile.name) {
       // 프로필이 없으면 프로필 입력 모달 표시
@@ -1631,18 +1705,18 @@ async function handleAuthStateChange(user) {
       hideLoginRequired();
       hidePendingApproval();
       showProfileModal();
-    } else if (isAdmin) {
-      // 관리자는 항상 승인된 상태
+    } else if (userRole === 'owner') {
+      // 소유자는 항상 승인된 상태
       isApproved = true;
       hideProfileModal();
       showMainContent();
-      showAdminNav();
+      updateUIByRole();
     } else if (userProfile.status === 'approved') {
       // 승인된 사용자
       isApproved = true;
       hideProfileModal();
       showMainContent();
-      hideAdminNav();
+      updateUIByRole();
     } else if (userProfile.status === 'rejected') {
       // 거절된 사용자
       isApproved = false;
@@ -1657,17 +1731,18 @@ async function handleAuthStateChange(user) {
   } else {
     // 로그아웃 상태
     userProfile = null;
+    userRole = 'member';
     isApproved = false;
     hideProfileModal();
     hidePendingApproval();
-    hideAdminNav();
+    updateUIByRole();
     // 로그인 필요 화면 표시
     showLoginRequired();
   }
 
   updateAuthUI();
 
-  // 관리자 로그인/로그아웃 시 UI 다시 렌더링
+  // 역할 변경 시 UI 다시 렌더링
   if (watches.length > 0) {
     applyFilters();
   }
@@ -1688,14 +1763,30 @@ function showRejectedScreen() {
   if (adminSection) adminSection.style.display = 'none';
 }
 
-// 관리자 네비게이션 표시
-function showAdminNav() {
-  if (navAdmin) navAdmin.style.display = 'flex';
+// 역할에 따른 UI 업데이트 (탭 표시/숨김)
+function updateUIByRole() {
+  const navCalc = document.getElementById('nav-calc');
+  const navAdmin = document.getElementById('nav-admin');
+
+  // 계산기 탭: dealer 이상만 표시
+  if (navCalc) {
+    navCalc.style.display = canAccess('tab:calc') ? 'flex' : 'none';
+  }
+
+  // 관리자 탭: owner만 표시
+  if (navAdmin) {
+    navAdmin.style.display = canAccess('tab:admin') ? 'flex' : 'none';
+  }
 }
 
-// 관리자 네비게이션 숨기기
+// 관리자 네비게이션 표시 (하위 호환성)
+function showAdminNav() {
+  updateUIByRole();
+}
+
+// 관리자 네비게이션 숨기기 (하위 호환성)
 function hideAdminNav() {
-  if (navAdmin) navAdmin.style.display = 'none';
+  updateUIByRole();
 }
 
 // 프로필 폼 이벤트 리스너
@@ -1728,7 +1819,7 @@ function switchAdminTab(tab) {
 
 // 관리자 페이지 로드
 async function loadAdminPage() {
-  if (!isAdmin) return;
+  if (!canAccess('tab:admin')) return;
 
   try {
     const snapshot = await db.collection('users')
@@ -1780,6 +1871,23 @@ function renderAdminUserList() {
       ? `${createdAt.getFullYear()}.${createdAt.getMonth()+1}.${createdAt.getDate()}`
       : '-';
 
+    // 등급 선택 드롭다운 (승인 완료 탭에서만 표시)
+    const roleSelector = (currentAdminTab === 'approved') ? `
+      <div class="role-selector">
+        <select class="role-select" data-user-id="${user.id}" onchange="changeUserRole(this)">
+          <option value="member" ${user.role === 'member' || !user.role ? 'selected' : ''}>일반회원</option>
+          <option value="dealer" ${user.role === 'dealer' ? 'selected' : ''}>딜러</option>
+          <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
+          <option value="owner" ${user.role === 'owner' ? 'selected' : ''}>소유자</option>
+        </select>
+      </div>
+    ` : '';
+
+    // 현재 등급 표시 (승인 완료 탭에서만)
+    const roleDisplay = (currentAdminTab === 'approved') ? `
+      <div class="user-role">등급: <strong>${ROLE_LABELS[user.role] || '일반회원'}</strong></div>
+    ` : '';
+
     return `
       <div class="admin-user-card" data-user-id="${user.id}">
         <div class="user-avatar">
@@ -1791,8 +1899,10 @@ function renderAdminUserList() {
           <div class="user-phone">${user.phone || '-'}</div>
           <div class="user-referrer">${user.referrer ? '추천인: ' + user.referrer : ''}</div>
           <div class="user-date">가입신청: ${dateStr}</div>
+          ${roleDisplay}
         </div>
         <div class="user-actions">
+          ${roleSelector}
           ${user.status === 'pending' ? `
             <button class="approve-btn" onclick="approveUser('${user.id}')">승인</button>
             <button class="reject-btn" onclick="rejectUser('${user.id}')">거절</button>
@@ -1811,7 +1921,7 @@ function renderAdminUserList() {
 
 // 사용자 승인
 async function approveUser(userId) {
-  if (!isAdmin) return;
+  if (!canAccess('user:approve')) return;
 
   try {
     await db.collection('users').doc(userId).update({
@@ -1841,7 +1951,7 @@ async function approveUser(userId) {
 
 // 사용자 거절
 async function rejectUser(userId) {
-  if (!isAdmin) return;
+  if (!canAccess('user:reject')) return;
 
   try {
     await db.collection('users').doc(userId).update({
@@ -1869,6 +1979,50 @@ async function rejectUser(userId) {
   }
 }
 
+// 사용자 등급 변경
+async function changeUserRole(selectEl) {
+  if (!canAccess('user:change_role')) {
+    alert('등급을 변경할 권한이 없습니다.');
+    const user = allUsers.find(u => u.id === selectEl.dataset.userId);
+    selectEl.value = user?.role || 'member';
+    return;
+  }
+
+  const userId = selectEl.dataset.userId;
+  const newRole = selectEl.value;
+
+  // 자기 자신의 등급은 변경 불가
+  if (userId === currentUser.uid) {
+    alert('자신의 등급은 변경할 수 없습니다.');
+    selectEl.value = userRole;
+    return;
+  }
+
+  try {
+    await db.collection('users').doc(userId).update({
+      role: newRole,
+      roleUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      roleUpdatedBy: currentUser.email
+    });
+
+    // 로컬 데이터 업데이트
+    const user = allUsers.find(u => u.id === userId);
+    if (user) user.role = newRole;
+
+    // UI 업데이트 (등급 표시)
+    renderAdminUserList();
+
+    alert(`등급이 ${ROLE_LABELS[newRole]}(으)로 변경되었습니다.`);
+
+  } catch (error) {
+    console.error('등급 변경 실패:', error);
+    alert('등급 변경에 실패했습니다.');
+    // 원래 값으로 복원
+    const user = allUsers.find(u => u.id === userId);
+    selectEl.value = user?.role || 'member';
+  }
+}
+
 // 관리자 탭 네비게이션 이벤트 리스너
 document.querySelectorAll('.admin-tab').forEach(tab => {
   tab.addEventListener('click', () => switchAdminTab(tab.dataset.adminTab));
@@ -1877,14 +2031,24 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
 // 네비게이션에 관리자 탭 추가
 if (navAdmin) {
   navAdmin.addEventListener('click', () => {
-    if (!isAdmin) return;
+    if (!canAccess('tab:admin')) return;
     switchTab('admin');
   });
 }
 
-// switchTab 함수 업데이트 - 관리자 탭 추가
+// switchTab 함수 업데이트 - 권한 체크 및 관리자 탭 추가
 const originalSwitchTab = switchTab;
 switchTab = function(tab) {
+  // 권한 체크
+  if (tab === 'calc' && !canAccess('tab:calc')) {
+    alert('계산기 탭에 접근할 권한이 없습니다. (딜러 등급 이상 필요)');
+    return;
+  }
+  if (tab === 'admin' && !canAccess('tab:admin')) {
+    alert('관리자 페이지에 접근할 권한이 없습니다.');
+    return;
+  }
+
   currentTab = tab;
 
   // 네비게이션 탭 활성화
