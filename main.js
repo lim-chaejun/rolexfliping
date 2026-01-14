@@ -583,15 +583,31 @@ function showWatchDetail(modelNumber) {
   document.getElementById('watch-detail-title').textContent = watch.title;
   document.getElementById('watch-detail-model').textContent = watch.model_number;
   document.getElementById('watch-detail-price').textContent = watch.formatted_price;
-  document.getElementById('watch-detail-material').textContent = materialNames[watch.material] || watch.material;
-  document.getElementById('watch-detail-case').textContent = watch.case_description || '-';
-  document.getElementById('watch-detail-diameter').textContent = watch.diameter || '-';
-  document.getElementById('watch-detail-dial').textContent = watch.dial || '-';
-  document.getElementById('watch-detail-bezel').textContent = watch.bezel || '-';
-  document.getElementById('watch-detail-bracelet').textContent = watch.bracelet || '-';
-  document.getElementById('watch-detail-material-detail').textContent = watch.material_detail || '-';
-  document.getElementById('watch-detail-movement').textContent = watch.movement || '-';
-  document.getElementById('watch-detail-cyclops').textContent = watch.cyclops || '-';
+
+  // 스펙 항목 설정 (데이터 없으면 숨김)
+  const setSpecValue = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const row = el.closest('.watch-detail-spec');
+      if (value && value !== '-') {
+        el.textContent = value;
+        if (row) row.style.display = '';
+      } else {
+        el.textContent = '';
+        if (row) row.style.display = 'none';
+      }
+    }
+  };
+
+  setSpecValue('watch-detail-material', materialNames[watch.material] || watch.material);
+  setSpecValue('watch-detail-case', watch.case_description);
+  setSpecValue('watch-detail-diameter', watch.diameter);
+  setSpecValue('watch-detail-dial', watch.dial);
+  setSpecValue('watch-detail-bezel', watch.bezel);
+  setSpecValue('watch-detail-bracelet', watch.bracelet);
+  setSpecValue('watch-detail-material-detail', watch.material_detail);
+  setSpecValue('watch-detail-movement', watch.movement);
+  setSpecValue('watch-detail-cyclops', watch.cyclops);
 
   watchDetailModal.classList.add('active');
   document.body.style.overflow = 'hidden';
