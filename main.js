@@ -1005,30 +1005,70 @@ const myInfoModal = document.getElementById('my-info-modal');
 const myInfoModalClose = document.getElementById('my-info-modal-close');
 
 // 내 정보 모달 표시
-function showMyInfoModal() {
+async function showMyInfoModal() {
   if (!currentUser || !userProfile) return;
 
-  // 모달에 정보 채우기
+  // 기본 정보 채우기
   document.getElementById('my-info-avatar').src = currentUser.photoURL || 'https://via.placeholder.com/80';
   document.getElementById('my-info-name').textContent = currentUser.displayName || currentUser.email?.split('@')[0] || '사용자';
   document.getElementById('my-info-email').textContent = currentUser.email || '';
   document.getElementById('my-info-realname').textContent = userProfile.name || '-';
   document.getElementById('my-info-phone').textContent = userProfile.phone || '-';
-  document.getElementById('my-info-referrer').textContent = userProfile.referrer || '-';
 
-  const statusEl = document.getElementById('my-info-status');
-  const statusMap = {
-    'approved': '승인됨',
-    'pending': '승인 대기',
-    'rejected': '거절됨'
-  };
-  statusEl.textContent = statusMap[userProfile.status] || '-';
-  statusEl.className = 'my-info-value my-info-status ' + (userProfile.status || '');
+  // 가입일 표시
+  const joinDateEl = document.getElementById('my-info-joindate');
+  if (joinDateEl) {
+    if (userProfile.createdAt) {
+      const joinDate = userProfile.createdAt.toDate ? userProfile.createdAt.toDate() : new Date(userProfile.createdAt);
+      joinDateEl.textContent = joinDate.toLocaleDateString('ko-KR');
 
-  // 등급 표시
-  const roleEl = document.getElementById('my-info-role');
-  if (roleEl) {
-    roleEl.textContent = ROLE_LABELS[userRole] || '일반회원';
+      // 활동 기간 계산
+      const activeDaysEl = document.getElementById('my-info-activedays');
+      if (activeDaysEl) {
+        const today = new Date();
+        const diffTime = today - joinDate;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        activeDaysEl.textContent = `${diffDays}일째`;
+      }
+    } else {
+      joinDateEl.textContent = '-';
+      const activeDaysEl = document.getElementById('my-info-activedays');
+      if (activeDaysEl) activeDaysEl.textContent = '-';
+    }
+  }
+
+  // 최근 테스트 3개 불러오기
+  const testsListEl = document.getElementById('my-info-tests-list');
+  if (testsListEl) {
+    try {
+      const scoresSnapshot = await db.collection('users').doc(currentUser.uid)
+        .collection('scores')
+        .orderBy('timestamp', 'desc')
+        .limit(3)
+        .get();
+
+      if (scoresSnapshot.empty) {
+        testsListEl.innerHTML = '<div class="my-info-no-tests">기록 없음</div>';
+      } else {
+        testsListEl.innerHTML = scoresSnapshot.docs.map(doc => {
+          const data = doc.data();
+          const lineName = data.line === 'all' ? '전체' : (lineNames[data.line] || data.line || '전체');
+          const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+          const daysAgo = Math.floor((new Date() - timestamp) / (1000 * 60 * 60 * 24));
+          const timeText = daysAgo === 0 ? '오늘' : `${daysAgo}일 전`;
+          return `
+            <div class="my-info-test-item">
+              <span class="test-line-name">${lineName}</span>
+              <span class="test-score">${data.score}/10</span>
+              <span class="test-date">${timeText}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    } catch (error) {
+      console.error('테스트 기록 로드 실패:', error);
+      testsListEl.innerHTML = '<div class="my-info-no-tests">기록 없음</div>';
+    }
   }
 
   myInfoModal.classList.add('active');
@@ -1055,6 +1095,15 @@ if (dropdownMyInfo) {
   dropdownMyInfo.addEventListener('click', () => {
     closeUserDropdown();
     showMyInfoModal();
+  });
+}
+
+// 테스트 통계 상세보기 버튼 (내 정보 모달 내)
+const myInfoStatsBtn = document.getElementById('my-info-stats-btn');
+if (myInfoStatsBtn) {
+  myInfoStatsBtn.addEventListener('click', () => {
+    hideMyInfoModal();
+    switchTab('stats');
   });
 }
 
