@@ -906,7 +906,9 @@ function switchTab(tab) {
     lineTabsWrapper.style.display = 'none';
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'none';
-    if (calcSection) calcSection.style.display = 'block';
+    // calcSection을 직접 찾아서 표시
+    const calcEl = document.getElementById('calc-section');
+    if (calcEl) calcEl.style.display = 'block';
   }
 }
 
