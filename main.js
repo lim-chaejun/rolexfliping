@@ -316,13 +316,14 @@ function applyFilters() {
     // 상태 필터
     if (!selectedStatuses.includes(watch.buy_status)) return false;
 
-    // 검색 필터
+    // 검색 필터 (모델명, 모델번호, 가격)
     if (searchTerm) {
       const searchFields = [
         watch.title,
         watch.model_number,
         watch.family,
-        watch.case_description
+        watch.case_description,
+        String(watch.price)
       ].join(' ').toLowerCase();
 
       if (!searchFields.includes(searchTerm)) return false;
