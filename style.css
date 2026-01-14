@@ -36,7 +36,6 @@ body {
   left: 0;
   right: 0;
   z-index: 101;
-  min-height: 73px;
 }
 
 .header-inner {
@@ -794,8 +793,6 @@ body {
   left: 0;
   right: 0;
   z-index: 100;
-  min-height: 52px;
-  overflow: visible;
 }
 
 .main-nav-inner {
