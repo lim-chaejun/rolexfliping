@@ -3,6 +3,8 @@ let watches = [];
 let filteredWatches = [];
 let displayedCount = 50;
 let selectedLine = '';
+let dataLoaded = false; // 데이터 로딩 완료 플래그
+let pendingAuthUser = null; // 데이터 로딩 전 로그인한 사용자 저장
 
 // 테스트 관련 변수
 let testMode = false;
@@ -112,6 +114,14 @@ async function init() {
     renderCharts();
 
     loading.style.display = 'none';
+    dataLoaded = true;
+
+    // 데이터 로딩 전에 인증 상태가 변경되었다면 다시 처리
+    if (pendingAuthUser !== null) {
+      console.log('데이터 로딩 완료 - 대기 중인 인증 처리');
+      handleAuthStateChange(pendingAuthUser);
+      pendingAuthUser = null;
+    }
   } catch (error) {
     console.error('데이터 로딩 실패:', error);
     loading.innerHTML = '<span>데이터를 불러오는데 실패했습니다.</span>';
@@ -1435,6 +1445,13 @@ async function submitProfile(e) {
 
 // 인증 상태 변경 시 프로필/승인 상태 확인
 async function handleAuthStateChange(user) {
+  // 데이터가 아직 로딩 중이면 나중에 처리하도록 저장
+  if (!dataLoaded && user) {
+    console.log('데이터 로딩 중 - 인증 처리 대기');
+    pendingAuthUser = user;
+    return;
+  }
+
   currentUser = user;
   isAdmin = user ? ADMIN_EMAILS.includes(user.email) : false;
 
