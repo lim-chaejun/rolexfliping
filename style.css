@@ -93,18 +93,35 @@ body {
   z-index: 99;
 }
 
-.line-tabs {
+.line-tabs-grid {
   max-width: 1440px;
   margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0;
+}
+
+.line-tab-all {
+  grid-row: span 2;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+}
+
+.line-tabs-row {
   display: flex;
   gap: 0;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: 0 24px;
 }
 
-.line-tabs::-webkit-scrollbar {
+.line-tabs-row::-webkit-scrollbar {
   display: none;
 }
 
@@ -113,12 +130,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 20px;
+  padding: 10px 16px;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   transition: all 0.2s;
   position: relative;
@@ -142,6 +159,14 @@ body {
   right: 0;
   height: 2px;
   background: var(--text-primary);
+}
+
+.line-tab-all.active::after {
+  display: none;
+}
+
+.line-tab-all.active {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .tab-name {

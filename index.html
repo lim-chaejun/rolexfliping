@@ -116,12 +116,16 @@
 
   <!-- 라인 탭 필터 (메인 탭에서만 표시) -->
   <nav class="line-tabs-wrapper" id="line-tabs-wrapper">
-    <div class="line-tabs" id="line-tabs">
-      <button class="line-tab active" data-line="">
+    <div class="line-tabs-grid">
+      <!-- 전체 버튼: 두 줄에 걸쳐서 표시 -->
+      <button class="line-tab line-tab-all active" data-line="" id="line-tab-all">
         <span class="tab-name">전체</span>
         <span class="tab-count" id="tab-count-all">0</span>
       </button>
-      <!-- JS에서 동적 생성 -->
+      <!-- 프로페셔널 라인 -->
+      <div class="line-tabs-row" id="line-tabs-professional"></div>
+      <!-- 클래식 라인 -->
+      <div class="line-tabs-row" id="line-tabs-classic"></div>
     </div>
   </nav>
 

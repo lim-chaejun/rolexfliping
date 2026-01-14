@@ -28,7 +28,7 @@ const materialFilter = document.getElementById('material-filter');
 const priceFilter = document.getElementById('price-filter');
 const sortSelect = document.getElementById('sort-select');
 const resetBtn = document.getElementById('reset-filters');
-const lineTabs = document.getElementById('line-tabs');
+// lineTabs는 더 이상 사용되지 않음 (두 줄 레이아웃으로 변경)
 const currentLineName = document.getElementById('current-line-name');
 const loadMoreContainer = document.getElementById('load-more-container');
 const loadMoreBtn = document.getElementById('load-more-btn');
@@ -65,6 +65,18 @@ const lineNames = {
   'submariner': '서브마리너',
   'yacht-master': '요트-마스터'
 };
+
+// 프로페셔널 라인
+const professionalLines = [
+  'cosmograph-daytona', 'submariner', 'gmt-master-ii', 'explorer',
+  'sea-dweller', 'deepsea', 'air-king', 'yacht-master'
+];
+
+// 클래식 라인
+const classicLines = [
+  'datejust', 'day-date', 'oyster-perpetual', 'lady-datejust',
+  'sky-dweller', '1908', 'land-dweller'
+];
 
 // 소재 이름 매핑
 const materialNames = {
@@ -106,6 +118,19 @@ async function init() {
   }
 }
 
+// 탭 버튼 생성 헬퍼 함수
+function createTabButton(line, count) {
+  const tab = document.createElement('button');
+  tab.className = 'line-tab';
+  tab.dataset.line = line;
+  tab.innerHTML = `
+    <span class="tab-name">${lineNames[line] || line}</span>
+    <span class="tab-count">${count.toLocaleString()}</span>
+  `;
+  tab.addEventListener('click', () => selectLine(line));
+  return tab;
+}
+
 // 라인 탭 생성
 function createLineTabs() {
   const lineCounts = {};
@@ -116,18 +141,27 @@ function createLineTabs() {
   // 전체 탭 카운트 업데이트
   document.getElementById('tab-count-all').textContent = watches.length.toLocaleString();
 
-  // 라인별 탭 생성
-  const lines = Object.keys(lineCounts).sort();
-  lines.forEach(line => {
-    const tab = document.createElement('button');
-    tab.className = 'line-tab';
-    tab.dataset.line = line;
-    tab.innerHTML = `
-      <span class="tab-name">${lineNames[line] || line}</span>
-      <span class="tab-count">${lineCounts[line].toLocaleString()}</span>
-    `;
-    tab.addEventListener('click', () => selectLine(line));
-    lineTabs.appendChild(tab);
+  // 전체 탭 클릭 이벤트 추가
+  const allTab = document.getElementById('line-tab-all');
+  allTab.addEventListener('click', () => selectLine(''));
+
+  const professionalContainer = document.getElementById('line-tabs-professional');
+  const classicContainer = document.getElementById('line-tabs-classic');
+
+  // 프로페셔널 라인 탭 생성
+  professionalLines.forEach(line => {
+    if (lineCounts[line]) {
+      const tab = createTabButton(line, lineCounts[line]);
+      professionalContainer.appendChild(tab);
+    }
+  });
+
+  // 클래식 라인 탭 생성
+  classicLines.forEach(line => {
+    if (lineCounts[line]) {
+      const tab = createTabButton(line, lineCounts[line]);
+      classicContainer.appendChild(tab);
+    }
   });
 }
 
