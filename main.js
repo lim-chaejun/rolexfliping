@@ -270,33 +270,100 @@ function selectLine(line) {
   applyFilters();
 }
 
-// 필터 옵션 채우기
+// 필터 옵션 채우기 (초기화용)
 function populateFilters() {
-  // 소재 필터
-  const materials = [...new Set(watches.map(w => w.material))].sort();
+  updateFilterOptions();
+}
+
+// 필터 옵션 동적 업데이트 (현재 필터링된 제품 기준)
+function updateFilterOptions() {
+  // 현재 선택된 값 저장
+  const currentMaterial = materialFilter.value;
+  const currentBezel = bezelFilter.value;
+  const currentBracelet = braceletFilter.value;
+
+  // 기본 필터 조건으로 필터링된 제품 가져오기 (소재/베젤/브레이슬릿 제외)
+  const baseFiltered = getBaseFilteredWatches();
+
+  // 소재 필터 옵션 업데이트
+  const materials = [...new Set(baseFiltered.map(w => w.material).filter(m => m))].sort();
+  materialFilter.innerHTML = '<option value="">전체 소재</option>';
   materials.forEach(material => {
     const option = document.createElement('option');
     option.value = material;
     option.textContent = materialNames[material] || material;
     materialFilter.appendChild(option);
   });
+  materialFilter.value = materials.includes(currentMaterial) ? currentMaterial : '';
 
-  // 베젤 필터
-  const bezels = [...new Set(watches.map(w => w.bezel).filter(b => b))].sort();
+  // 베젤 필터 옵션 업데이트 (소재 필터 적용 후)
+  const bezelFiltered = currentMaterial
+    ? baseFiltered.filter(w => w.material === currentMaterial)
+    : baseFiltered;
+  const bezels = [...new Set(bezelFiltered.map(w => w.bezel).filter(b => b))].sort();
+  bezelFilter.innerHTML = '<option value="">전체 베젤</option>';
   bezels.forEach(bezel => {
     const option = document.createElement('option');
     option.value = bezel;
     option.textContent = bezel;
     bezelFilter.appendChild(option);
   });
+  bezelFilter.value = bezels.includes(currentBezel) ? currentBezel : '';
 
-  // 브레이슬릿 필터
-  const bracelets = [...new Set(watches.map(w => w.bracelet).filter(b => b))].sort();
+  // 브레이슬릿 필터 옵션 업데이트 (소재 + 베젤 필터 적용 후)
+  let braceletFiltered = bezelFiltered;
+  if (currentBezel) {
+    braceletFiltered = braceletFiltered.filter(w => w.bezel === currentBezel);
+  }
+  const bracelets = [...new Set(braceletFiltered.map(w => w.bracelet).filter(b => b))].sort();
+  braceletFilter.innerHTML = '<option value="">전체 브레이슬릿</option>';
   bracelets.forEach(bracelet => {
     const option = document.createElement('option');
     option.value = bracelet;
     option.textContent = bracelet;
     braceletFilter.appendChild(option);
+  });
+  braceletFilter.value = bracelets.includes(currentBracelet) ? currentBracelet : '';
+}
+
+// 기본 필터 조건 (라인, 카테고리, 상태, 검색, 가격)으로 필터링
+function getBaseFilteredWatches() {
+  const searchTerm = searchInput.value.toLowerCase().trim();
+  const selectedPrice = priceFilter.value;
+  const selectedStatuses = Array.from(statusCheckboxes)
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
+
+  return watches.filter(watch => {
+    // 카테고리 필터
+    if (selectedCategory === 'professional' && !professionalLines.includes(watch.line)) return false;
+    if (selectedCategory === 'classic' && !classicLines.includes(watch.line)) return false;
+
+    // 라인 필터
+    if (selectedLine && watch.line !== selectedLine) return false;
+
+    // 상태 필터
+    if (!selectedStatuses.includes(watch.buy_status)) return false;
+
+    // 검색 필터
+    if (searchTerm) {
+      const searchFields = [
+        watch.title,
+        watch.model_number,
+        watch.family,
+        watch.case_description,
+        String(watch.price)
+      ].join(' ').toLowerCase();
+      if (!searchFields.includes(searchTerm)) return false;
+    }
+
+    // 가격 필터
+    if (selectedPrice) {
+      const [min, max] = selectedPrice.split('-').map(Number);
+      if (watch.price < min || watch.price > max) return false;
+    }
+
+    return true;
   });
 }
 
@@ -316,6 +383,9 @@ function updateStatusCounts() {
 
 // 필터 적용
 function applyFilters() {
+  // 필터 옵션 동적 업데이트
+  updateFilterOptions();
+
   const searchTerm = searchInput.value.toLowerCase().trim();
   const selectedMaterial = materialFilter.value;
   const selectedBezel = bezelFilter.value;
