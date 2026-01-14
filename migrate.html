@@ -113,7 +113,11 @@
     </div>
     <div class="status" id="status">대기 중...</div>
 
-    <button class="btn btn-primary" id="migrate-btn" onclick="startMigration()">
+    <button class="btn btn-primary" id="login-btn" onclick="login()" style="display:block;">
+      Google 로그인 (소유자 계정)
+    </button>
+
+    <button class="btn btn-primary" id="migrate-btn" onclick="startMigration()" style="display:none;">
       마이그레이션 시작
     </button>
 
@@ -121,6 +125,7 @@
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script>
     // Firebase 설정
@@ -135,8 +140,34 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
 
+    const OWNER_EMAIL = 'lcjun37@gmail.com';
     let existingStatuses = {};
+
+    // 로그인 상태 감지
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        if (user.email === OWNER_EMAIL) {
+          log(`로그인 성공: ${user.email}`, 'success');
+          document.getElementById('login-btn').style.display = 'none';
+          document.getElementById('migrate-btn').style.display = 'block';
+          document.getElementById('status').textContent = '마이그레이션 준비 완료';
+        } else {
+          log(`권한 없음: ${user.email} (소유자: ${OWNER_EMAIL})`, 'error');
+          auth.signOut();
+        }
+      }
+    });
+
+    async function login() {
+      try {
+        await auth.signInWithPopup(googleProvider);
+      } catch (error) {
+        log(`로그인 오류: ${error.message}`, 'error');
+      }
+    }
 
     function log(message, type = '') {
       const logEl = document.getElementById('log');
