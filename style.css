@@ -550,33 +550,33 @@ body {
 }
 
 /* 사이즈별 이미지 위치 조정 */
-/* 31mm 이상 사이즈는 이미지가 다르게 촬영되어 위치 조정 필요 */
+/* 31mm 이상 사이즈는 이미지가 다르게 촬영되어 아래로 이동 필요 */
 .line-oyster-perpetual.size-31 .product-image,
 .line-oyster-perpetual.size-34 .product-image,
 .line-oyster-perpetual.size-36 .product-image,
 .line-oyster-perpetual.size-41 .product-image {
-  transform: translate(-50%, -46%);
+  transform: translate(-50%, -54%);
 }
 
 .line-datejust.size-36 .product-image,
 .line-datejust.size-41 .product-image {
-  transform: translate(-50%, -46%);
+  transform: translate(-50%, -54%);
 }
 
 .line-day-date .product-image {
-  transform: translate(-50%, -46%);
+  transform: translate(-50%, -54%);
 }
 
 .line-explorer.size-40 .product-image {
-  transform: translate(-50%, -46%);
+  transform: translate(-50%, -54%);
 }
 
 .line-land-dweller.size-40 .product-image {
-  transform: translate(-50%, -46%);
+  transform: translate(-50%, -54%);
 }
 
 .line-yacht-master.size-42 .product-image {
-  transform: translate(-50%, -46%);
+  transform: translate(-50%, -54%);
 }
 
 .product-badge {
