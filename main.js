@@ -515,10 +515,10 @@ function renderProducts() {
         </div>
         <div class="product-info">
           <div class="product-line">${lineNames[watch.line] || watch.line}</div>
-          <div class="product-title">${watch.title}</div>
+          <div class="product-title">${watch.case_description || watch.title}</div>
           <div class="product-model">${watch.model_number}</div>
           <div class="product-price">${watch.formatted_price}</div>
-          <div class="product-material">${materialNames[watch.material] || watch.material}</div>
+          <div class="product-dial">${watch.dial || '-'}</div>
           ${adminControls}
         </div>
       </div>
