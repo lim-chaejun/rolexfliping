@@ -1255,12 +1255,12 @@ async function checkUserProfile() {
 
 // 프로필 모달 표시
 function showProfileModal() {
-  profileModal.style.display = 'flex';
+  profileModal.classList.add('active');
 }
 
 // 프로필 모달 숨기기
 function hideProfileModal() {
-  profileModal.style.display = 'none';
+  profileModal.classList.remove('active');
 }
 
 // 승인 대기 화면 표시
@@ -1304,6 +1304,11 @@ function showMainContent() {
   mainContainer.style.display = 'block';
   vizSection.style.display = 'block';
   lineTabsWrapper.style.display = 'block';
+
+  // 메인 컨텐츠 표시 시 필터 다시 적용
+  if (watches.length > 0) {
+    applyFilters();
+  }
 }
 
 // 프로필 폼 제출 처리
