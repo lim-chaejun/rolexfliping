@@ -5,7 +5,6 @@ let displayedCount = 50;
 let selectedLine = '';
 let selectedCategory = ''; // 선택된 카테고리 (professional/classic)
 let dataLoaded = false; // 데이터 로딩 완료 플래그
-let pendingAuthUser = null; // 데이터 로딩 전 로그인한 사용자 저장
 
 // 테스트 관련 변수
 let testMode = false;
@@ -169,19 +168,16 @@ async function init() {
     createLineTabs();
     populateFilters();
 
+    // 모바일 필터 초기화
+    createMobileLineGrid();
+    syncMobileFilterOptions();
+
     updateStatusCounts();
     applyFilters();
     renderCharts();
 
     loading.style.display = 'none';
     dataLoaded = true;
-
-    // 데이터 로딩 전에 인증 상태가 변경되었다면 다시 처리
-    if (pendingAuthUser !== null) {
-      console.log('데이터 로딩 완료 - 대기 중인 인증 처리');
-      handleAuthStateChange(pendingAuthUser);
-      pendingAuthUser = null;
-    }
   } catch (error) {
     console.error('데이터 로딩 실패:', error);
     loading.innerHTML = '<span>데이터를 불러오는데 실패했습니다.</span>';
@@ -337,6 +333,11 @@ function updateFilterOptions() {
     braceletFilter.appendChild(option);
   });
   braceletFilter.value = bracelets.includes(currentBracelet) ? currentBracelet : '';
+
+  // 모바일 필터 옵션도 동기화
+  if (typeof syncMobileFilterOptions === 'function') {
+    syncMobileFilterOptions();
+  }
 }
 
 // 기본 필터 조건 (라인, 카테고리, 상태, 검색, 가격)으로 필터링
@@ -396,6 +397,12 @@ function updateStatusCounts() {
 
 // 필터 적용
 function applyFilters() {
+  // 보안: 비로그인/미승인 시 필터 차단
+  if (!currentUser || !isApproved) {
+    filteredWatches = [];
+    return;
+  }
+
   // 필터 옵션 동적 업데이트
   updateFilterOptions();
 
@@ -482,6 +489,12 @@ function sortWatches() {
 
 // 제품 렌더링
 function renderProducts() {
+  // 보안: 비로그인/미승인 시 렌더링 차단
+  if (!currentUser || !isApproved) {
+    productGrid.innerHTML = '';
+    return;
+  }
+
   filteredCount.textContent = filteredWatches.length.toLocaleString();
 
   if (filteredWatches.length === 0) {
@@ -657,6 +670,9 @@ function toggleVisualization() {
 
 // 차트 렌더링
 function renderCharts() {
+  // 보안: 비로그인/미승인 시 차트 렌더링 차단
+  if (!currentUser || !isApproved) return;
+
   renderAttributeRatesChart();
   renderStatusChart();
   renderPriceChart();
@@ -907,6 +923,191 @@ statusCheckboxes.forEach(cb => {
   });
 });
 
+// ==========================================
+// 모바일 필터 모달
+// ==========================================
+const filterModal = document.getElementById('filter-modal');
+const mobileFilterBtn = document.getElementById('mobile-filter-btn');
+const filterModalClose = document.getElementById('filter-modal-close');
+const mobileApplyBtn = document.getElementById('mobile-apply-btn');
+const mobileResetBtn = document.getElementById('mobile-reset-btn');
+const mobileLineGrid = document.getElementById('mobile-line-grid');
+const mobileSearchInput = document.getElementById('mobile-search-input');
+const mobileMaterialFilter = document.getElementById('mobile-material-filter');
+const mobileBezelFilter = document.getElementById('mobile-bezel-filter');
+const mobileBraceletFilter = document.getElementById('mobile-bracelet-filter');
+const mobilePriceFilter = document.getElementById('mobile-price-filter');
+const mobileSortSelect = document.getElementById('mobile-sort-select');
+const mobileStatusChips = document.querySelectorAll('.filter-status-chip');
+
+// 모달 열기
+function openFilterModal() {
+  // 현재 필터 상태를 모바일 필터에 동기화
+  syncDesktopToMobile();
+  filterModal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// 모달 닫기
+function closeFilterModal() {
+  filterModal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// 데스크톱 필터 → 모바일 동기화
+function syncDesktopToMobile() {
+  mobileSearchInput.value = searchInput.value;
+  mobileMaterialFilter.value = materialFilter.value;
+  mobileBezelFilter.value = bezelFilter.value;
+  mobileBraceletFilter.value = braceletFilter.value;
+  mobilePriceFilter.value = priceFilter.value;
+  mobileSortSelect.value = sortSelect.value;
+
+  // 상태 칩 동기화
+  statusCheckboxes.forEach(cb => {
+    const mobileChip = document.querySelector(`.filter-status-chip[data-status="${cb.value}"]`);
+    if (mobileChip) {
+      const mobileInput = mobileChip.querySelector('input');
+      mobileInput.checked = cb.checked;
+      mobileChip.classList.toggle('active', cb.checked);
+    }
+  });
+
+  // 라인 버튼 활성화 상태 동기화
+  const lineButtons = mobileLineGrid.querySelectorAll('.filter-line-btn');
+  lineButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.line === selectedLine);
+  });
+}
+
+// 모바일 필터 → 데스크톱 동기화 및 적용
+function applyMobileFilters() {
+  searchInput.value = mobileSearchInput.value;
+  materialFilter.value = mobileMaterialFilter.value;
+  bezelFilter.value = mobileBezelFilter.value;
+  braceletFilter.value = mobileBraceletFilter.value;
+  priceFilter.value = mobilePriceFilter.value;
+  sortSelect.value = mobileSortSelect.value;
+
+  // 상태 칩 동기화
+  mobileStatusChips.forEach(chip => {
+    const mobileInput = chip.querySelector('input');
+    const desktopCb = document.querySelector(`.status-chip input[value="${mobileInput.value}"]`);
+    if (desktopCb) {
+      desktopCb.checked = mobileInput.checked;
+    }
+  });
+
+  // 라인 선택 동기화
+  const activeLineBtn = mobileLineGrid.querySelector('.filter-line-btn.active');
+  if (activeLineBtn) {
+    const lineName = activeLineBtn.dataset.line;
+    selectLine(lineName);
+  }
+
+  displayedCount = 50;
+  applyFilters();
+  closeFilterModal();
+}
+
+// 모바일 필터 초기화
+function resetMobileFilters() {
+  mobileSearchInput.value = '';
+  mobileMaterialFilter.value = '';
+  mobileBezelFilter.value = '';
+  mobileBraceletFilter.value = '';
+  mobilePriceFilter.value = '';
+  mobileSortSelect.value = 'price-asc';
+
+  // 상태 칩 모두 활성화
+  mobileStatusChips.forEach(chip => {
+    const input = chip.querySelector('input');
+    input.checked = true;
+    chip.classList.add('active');
+  });
+
+  // 라인 전체 선택
+  const lineButtons = mobileLineGrid.querySelectorAll('.filter-line-btn');
+  lineButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.line === '');
+  });
+}
+
+// 모바일 라인 그리드 생성
+function createMobileLineGrid() {
+  const lines = [...new Set(watches.map(w => w.line))].sort();
+
+  // 전체 버튼
+  let html = `<button class="filter-line-btn active" data-line="">
+    전체
+    <span class="line-count">${watches.length}</span>
+  </button>`;
+
+  // 각 라인 버튼
+  lines.forEach(line => {
+    const count = watches.filter(w => w.line === line).length;
+    html += `<button class="filter-line-btn" data-line="${line}">
+      ${line}
+      <span class="line-count">${count}</span>
+    </button>`;
+  });
+
+  mobileLineGrid.innerHTML = html;
+
+  // 클릭 이벤트 추가
+  mobileLineGrid.querySelectorAll('.filter-line-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mobileLineGrid.querySelectorAll('.filter-line-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+
+// 모바일 필터 드롭다운 옵션 동기화
+function syncMobileFilterOptions() {
+  // 소재 옵션 복사
+  mobileMaterialFilter.innerHTML = materialFilter.innerHTML;
+  // 베젤 옵션 복사
+  mobileBezelFilter.innerHTML = bezelFilter.innerHTML;
+  // 브레이슬릿 옵션 복사
+  mobileBraceletFilter.innerHTML = braceletFilter.innerHTML;
+}
+
+// 이벤트 리스너
+if (mobileFilterBtn) {
+  mobileFilterBtn.addEventListener('click', openFilterModal);
+}
+
+if (filterModalClose) {
+  filterModalClose.addEventListener('click', closeFilterModal);
+}
+
+if (mobileApplyBtn) {
+  mobileApplyBtn.addEventListener('click', applyMobileFilters);
+}
+
+if (mobileResetBtn) {
+  mobileResetBtn.addEventListener('click', resetMobileFilters);
+}
+
+// 상태 칩 토글
+mobileStatusChips.forEach(chip => {
+  chip.addEventListener('click', () => {
+    const input = chip.querySelector('input');
+    input.checked = !input.checked;
+    chip.classList.toggle('active', input.checked);
+  });
+});
+
+// 모달 배경 클릭 시 닫기
+if (filterModal) {
+  filterModal.addEventListener('click', (e) => {
+    if (e.target === filterModal) {
+      closeFilterModal();
+    }
+  });
+}
+
 // 첫 번째 탭 (전체) 클릭 이벤트
 document.querySelector('.line-tab[data-line=""]').addEventListener('click', () => selectLine(''));
 
@@ -919,8 +1120,8 @@ function debounce(func, wait) {
   };
 }
 
-// 시작
-init();
+// 시작 - init()은 인증 확인 후 호출됨 (handleAuthStateChange에서)
+// init();
 
 // ==========================================
 // 인증 관련 기능
@@ -1960,13 +2161,6 @@ async function submitProfile(e) {
 
 // 인증 상태 변경 시 프로필/승인 상태 확인
 async function handleAuthStateChange(user) {
-  // 데이터가 아직 로딩 중이면 나중에 처리하도록 저장
-  if (!dataLoaded && user) {
-    console.log('데이터 로딩 중 - 인증 처리 대기');
-    pendingAuthUser = user;
-    return;
-  }
-
   currentUser = user;
 
   if (user) {
@@ -1994,12 +2188,20 @@ async function handleAuthStateChange(user) {
       // 소유자는 항상 승인된 상태
       isApproved = true;
       hideProfileModal();
+      // 승인된 사용자만 데이터 로드
+      if (!dataLoaded) {
+        await init();
+      }
       showMainContent();
       updateUIByRole();
     } else if (userProfile.status === 'approved') {
       // 승인된 사용자
       isApproved = true;
       hideProfileModal();
+      // 승인된 사용자만 데이터 로드
+      if (!dataLoaded) {
+        await init();
+      }
       showMainContent();
       updateUIByRole();
     } else if (userProfile.status === 'rejected') {
@@ -2018,6 +2220,10 @@ async function handleAuthStateChange(user) {
     userProfile = null;
     userRole = 'member';
     isApproved = false;
+    // 데이터 초기화 (보안)
+    watches = [];
+    filteredWatches = [];
+    dataLoaded = false;
     hideProfileModal();
     hidePendingApproval();
     updateUIByRole();

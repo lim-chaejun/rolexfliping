@@ -834,71 +834,67 @@ body {
 }
 
 @media (max-width: 768px) {
+  /* body padding 조정 (헤더 작아짐) */
+  body {
+    padding-top: 100px; /* 헤더(46px) + 메인탭(54px) */
+  }
+
+  /* 헤더 모바일 최적화 */
   .header-inner {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
   }
 
+  .header-stats {
+    display: none !important;
+  }
+
+  .tagline {
+    display: none;
+  }
+
+  .logo h1 {
+    font-size: 18px;
+  }
+
+  .header {
+    height: auto;
+  }
+
+  .main-nav {
+    top: 46px;
+  }
+
+  /* 차트 섹션 숨김 */
+  .visualization-section {
+    display: none !important;
+  }
+
+  /* 데스크톱 필터/라인탭 숨김 */
   .filter-bar {
-    flex-direction: column;
-    align-items: stretch;
+    display: none;
   }
 
-  .filter-left, .filter-right {
-    width: 100%;
-    justify-content: center;
+  .line-tabs-wrapper {
+    display: none;
   }
 
-  .status-chips {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .search-box {
-    width: 100%;
-  }
-
-  #search-input {
-    width: 100%;
-  }
-
-  .filter-right {
-    justify-content: stretch;
-  }
-
-  .filter-select {
-    flex: 1;
-    min-width: 0;
+  /* 모바일 필터 버튼 표시 */
+  .mobile-filter-btn {
+    display: flex;
   }
 
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-  }
-
-  .line-tabs-wrapper {
-    top: auto;
-    position: relative;
   }
 }
 
 @media (max-width: 480px) {
   .product-grid {
     grid-template-columns: 1fr;
-  }
-
-  .header-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    width: 100%;
-  }
-
-  .stat-item {
-    padding: 8px;
-    background: var(--bg-tertiary);
-    border-radius: 8px;
   }
 }
 
@@ -3032,4 +3028,267 @@ body {
   .total-value {
     font-size: 20px;
   }
+}
+
+/* ==========================================
+   모바일 필터 버튼 & 모달
+   ========================================== */
+
+.mobile-filter-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 0 16px 16px;
+}
+
+.mobile-filter-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mobile-filter-btn .filter-count {
+  background: var(--accent-gold);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+
+/* 필터 모달 */
+.filter-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.filter-modal.active {
+  display: flex;
+}
+
+.filter-modal-content {
+  width: 100%;
+  max-height: 85vh;
+  background: var(--bg-primary);
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.filter-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.filter-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.filter-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.filter-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.filter-modal-section {
+  margin-bottom: 24px;
+}
+
+.filter-modal-section:last-child {
+  margin-bottom: 0;
+}
+
+.filter-modal-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 라인 선택 그리드 */
+.filter-line-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.filter-line-btn {
+  padding: 10px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.filter-line-btn.active {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #fff;
+}
+
+.filter-line-btn .line-count {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.filter-line-btn.active .line-count {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 상태 칩 */
+.filter-status-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-status-chip.active {
+  border-color: var(--accent-gold);
+  background: rgba(168, 124, 81, 0.1);
+}
+
+.filter-status-chip .chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.filter-status-chip .chip-dot.buy { background: #22c55e; }
+.filter-status-chip .chip-dot.pending { background: #eab308; }
+.filter-status-chip .chip-dot.no { background: #ef4444; }
+
+/* 드롭다운 필터 */
+.filter-modal-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.filter-modal-select:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+/* 검색 입력 */
+.filter-modal-search {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.filter-modal-search::placeholder {
+  color: var(--text-muted);
+}
+
+.filter-modal-search:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+/* 푸터 버튼 */
+.filter-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.filter-reset-btn {
+  flex: 1;
+  padding: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.filter-apply-btn {
+  flex: 2;
+  padding: 14px;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
