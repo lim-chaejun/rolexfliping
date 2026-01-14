@@ -867,6 +867,21 @@ body {
     top: 46px;
   }
 
+  /* 상단 탭 아이콘만 표시 */
+  .main-nav-tab {
+    padding: 14px 16px;
+    gap: 0;
+  }
+
+  .main-nav-tab span {
+    display: none;
+  }
+
+  .main-nav-tab svg {
+    width: 20px;
+    height: 20px;
+  }
+
   /* 차트 섹션 숨김 */
   .visualization-section {
     display: none !important;
@@ -881,8 +896,8 @@ body {
     display: none;
   }
 
-  /* 모바일 필터 버튼 표시 */
-  .mobile-filter-btn {
+  /* 모바일 검색바 표시 (필터 버튼 포함) */
+  .mobile-search-bar {
     display: flex;
   }
 
@@ -3031,8 +3046,55 @@ body {
 }
 
 /* ==========================================
-   모바일 필터 버튼 & 모달
+   모바일 검색바 & 필터 버튼
    ========================================== */
+
+.mobile-search-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px 12px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.mobile-search-bar .search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.mobile-search-bar input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.mobile-search-bar input::placeholder {
+  color: var(--text-muted);
+}
+
+.mobile-filter-btn-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mobile-filter-btn-inline svg {
+  width: 18px;
+  height: 18px;
+}
 
 .mobile-filter-btn {
   display: none;

@@ -933,6 +933,7 @@ const mobileApplyBtn = document.getElementById('mobile-apply-btn');
 const mobileResetBtn = document.getElementById('mobile-reset-btn');
 const mobileLineGrid = document.getElementById('mobile-line-grid');
 const mobileSearchInput = document.getElementById('mobile-search-input');
+const mobileMainSearch = document.getElementById('mobile-main-search');
 const mobileMaterialFilter = document.getElementById('mobile-material-filter');
 const mobileBezelFilter = document.getElementById('mobile-bezel-filter');
 const mobileBraceletFilter = document.getElementById('mobile-bracelet-filter');
@@ -957,6 +958,7 @@ function closeFilterModal() {
 // 데스크톱 필터 → 모바일 동기화
 function syncDesktopToMobile() {
   mobileSearchInput.value = searchInput.value;
+  if (mobileMainSearch) mobileMainSearch.value = searchInput.value;
   mobileMaterialFilter.value = materialFilter.value;
   mobileBezelFilter.value = bezelFilter.value;
   mobileBraceletFilter.value = braceletFilter.value;
@@ -1106,6 +1108,15 @@ if (filterModal) {
       closeFilterModal();
     }
   });
+}
+
+// 모바일 메인 검색창 이벤트 (데스크톱 검색과 동기화)
+if (mobileMainSearch) {
+  mobileMainSearch.addEventListener('input', debounce(() => {
+    searchInput.value = mobileMainSearch.value;
+    displayedCount = 50;
+    applyFilters();
+  }, 300));
 }
 
 // 첫 번째 탭 (전체) 클릭 이벤트
