@@ -547,6 +547,7 @@ body {
 .line-land-dweller .product-image {
   width: 210%;
   height: 210%;
+  transform: translate(-50%, -44%);
 }
 
 /* 사이즈별 이미지 위치 조정 */
@@ -568,10 +569,6 @@ body {
 }
 
 .line-explorer.size-40 .product-image {
-  transform: translate(-50%, -44%);
-}
-
-.line-land-dweller.size-40 .product-image {
   transform: translate(-50%, -44%);
 }
 
