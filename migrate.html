@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Migration</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 40px;
+    }
+    h1 { margin-bottom: 20px; font-size: 24px; }
+    .info { color: #888; margin-bottom: 30px; line-height: 1.6; }
+    .progress-container {
+      background: #333;
+      border-radius: 8px;
+      height: 24px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .status {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #aaa;
+    }
+    .btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #22c55e;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #16a34a; }
+    .btn-primary:disabled {
+      background: #444;
+      cursor: not-allowed;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: #fff;
+      margin-top: 10px;
+    }
+    .btn-danger:hover { background: #dc2626; }
+    .log {
+      margin-top: 20px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      color: #888;
+    }
+    .log-item { margin-bottom: 4px; }
+    .log-success { color: #22c55e; }
+    .log-error { color: #ef4444; }
+    .warning {
+      background: #78350f;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      color: #fbbf24;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Firebase Data Migration</h1>
+    <div class="info">
+      rolex_watches.json 파일의 데이터를 Firebase Firestore에 업로드합니다.<br>
+      기존 watches 컬렉션의 데이터를 새 데이터로 교체합니다.
+    </div>
+
+    <div class="warning">
+      <strong>주의:</strong> 이 작업은 기존 데이터를 모두 삭제하고 새 데이터로 교체합니다.
+      buy_status 필드는 기존 값을 유지합니다.
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="status" id="status">대기 중...</div>
+
+    <button class="btn btn-primary" id="migrate-btn" onclick="startMigration()">
+      마이그레이션 시작
+    </button>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script>
+    // Firebase 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyBunJyCChJ4GdpJwjVDrfeS9UTdyTqwssk",
+      authDomain: "rolex-reserve.firebaseapp.com",
+      projectId: "rolex-reserve",
+      storageBucket: "rolex-reserve.firebasestorage.app",
+      messagingSenderId: "176619354732",
+      appId: "1:176619354732:web:115c50a63584d36353b649"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let existingStatuses = {};
+
+    function log(message, type = '') {
+      const logEl = document.getElementById('log');
+      const item = document.createElement('div');
+      item.className = 'log-item ' + (type ? 'log-' + type : '');
+      item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(item);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateProgress(current, total) {
+      const percent = Math.round((current / total) * 100);
+      document.getElementById('progress-bar').style.width = percent + '%';
+      document.getElementById('status').textContent = `${current} / ${total} (${percent}%)`;
+    }
+
+    async function loadExistingStatuses() {
+      log('기존 buy_status 값 로딩 중...');
+      const snapshot = await db.collection('watches').get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.buy_status) {
+          existingStatuses[doc.id] = data.buy_status;
+        }
+      });
+      log(`기존 상태 ${Object.keys(existingStatuses).length}개 로드 완료`, 'success');
+    }
+
+    async function deleteAllWatches() {
+      log('기존 데이터 삭제 중...');
+      const snapshot = await db.collection('watches').get();
+      const batchSize = 500;
+      let deleted = 0;
+
+      const batches = [];
+      let batch = db.batch();
+      let count = 0;
+
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+        count++;
+        if (count >= batchSize) {
+          batches.push(batch);
+          batch = db.batch();
+          count = 0;
+        }
+      });
+
+      if (count > 0) {
+        batches.push(batch);
+      }
+
+      for (const b of batches) {
+        await b.commit();
+        deleted += batchSize;
+        log(`${Math.min(deleted, snapshot.size)}개 삭제됨...`);
+      }
+
+      log(`총 ${snapshot.size}개 문서 삭제 완료`, 'success');
+    }
+
+    async function uploadWatches(watches) {
+      log(`${watches.length}개 문서 업로드 시작...`);
+      const batchSize = 500;
+      let uploaded = 0;
+
+      for (let i = 0; i < watches.length; i += batchSize) {
+        const batch = db.batch();
+        const chunk = watches.slice(i, i + batchSize);
+
+        chunk.forEach(watch => {
+          const docRef = db.collection('watches').doc(watch.model_number);
+          // 기존 buy_status 유지, 없으면 'pending'
+          const buyStatus = existingStatuses[watch.model_number] || 'pending';
+          batch.set(docRef, {
+            ...watch,
+            buy_status: buyStatus
+          });
+        });
+
+        await batch.commit();
+        uploaded += chunk.length;
+        updateProgress(uploaded, watches.length);
+        log(`${uploaded}개 업로드 완료...`);
+      }
+
+      log(`총 ${watches.length}개 문서 업로드 완료!`, 'success');
+    }
+
+    async function startMigration() {
+      const btn = document.getElementById('migrate-btn');
+      btn.disabled = true;
+      btn.textContent = '마이그레이션 진행 중...';
+
+      try {
+        // 1. JSON 파일 로드
+        log('JSON 파일 로딩 중...');
+        const response = await fetch('rolex_watches.json');
+        const watches = await response.json();
+        log(`${watches.length}개 시계 데이터 로드 완료`, 'success');
+
+        // 2. 기존 buy_status 백업
+        await loadExistingStatuses();
+
+        // 3. 기존 데이터 삭제
+        await deleteAllWatches();
+
+        // 4. 새 데이터 업로드
+        await uploadWatches(watches);
+
+        log('=============================');
+        log('마이그레이션 완료!', 'success');
+        document.getElementById('status').textContent = '완료!';
+        btn.textContent = '완료';
+
+      } catch (error) {
+        log(`오류 발생: ${error.message}`, 'error');
+        btn.disabled = false;
+        btn.textContent = '다시 시도';
+      }
+    }
+  </script>
+</body>
+</html>
