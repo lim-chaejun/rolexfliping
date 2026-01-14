@@ -1971,6 +1971,27 @@ if (profileForm) {
   profileForm.addEventListener('submit', submitProfile);
 }
 
+// 전화번호 자동 포맷팅 (01026291808 → 010-2629-1808)
+const phoneInput = document.getElementById('profile-phone');
+if (phoneInput) {
+  phoneInput.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/[^0-9]/g, ''); // 숫자만 추출
+
+    if (value.length > 11) {
+      value = value.slice(0, 11);
+    }
+
+    // 포맷팅 적용
+    if (value.length > 7) {
+      value = value.replace(/(\d{3})(\d{4})(\d{0,4})/, '$1-$2-$3');
+    } else if (value.length > 3) {
+      value = value.replace(/(\d{3})(\d{0,4})/, '$1-$2');
+    }
+
+    e.target.value = value;
+  });
+}
+
 // 인증 상태 감시 업데이트 (기존 함수 교체)
 auth.onAuthStateChanged(handleAuthStateChange);
 
