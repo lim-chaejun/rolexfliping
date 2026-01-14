@@ -759,6 +759,8 @@ async function loginWithGoogle() {
   try {
     await auth.signInWithPopup(googleProvider);
     hideLoginModal();
+    // 로그인 성공 후 페이지 새로고침
+    window.location.reload();
   } catch (error) {
     console.error('로그인 실패:', error);
     if (error.code !== 'auth/popup-closed-by-user') {
