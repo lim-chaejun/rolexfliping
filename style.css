@@ -24,7 +24,7 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
-  padding-top: 125px; /* 헤더(73px) + 메인탭(52px) */
+  padding-top: 140px; /* 헤더(86px) + 메인탭(54px) */
 }
 
 /* 헤더 */
@@ -92,7 +92,7 @@ body {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
-  top: 125px; /* 헤더(73px) + 메인탭(52px) */
+  top: 140px; /* 헤더(86px) + 메인탭(54px) */
   z-index: 99;
 }
 
@@ -789,7 +789,7 @@ body {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   position: fixed;
-  top: 73px;
+  top: 86px;
   left: 0;
   right: 0;
   z-index: 100;
