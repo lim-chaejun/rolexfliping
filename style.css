@@ -115,14 +115,57 @@ body {
 
 .line-tabs-row {
   display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 16px;
+}
+
+.line-row-label {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-right: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.line-row-label.professional {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.line-row-label.classic {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.line-tabs-items {
+  display: flex;
+  justify-content: center;
+  flex: 1;
   gap: 0;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.line-tabs-row::-webkit-scrollbar {
+.line-tabs-items::-webkit-scrollbar {
   display: none;
+}
+
+/* 프로페셔널 라인 배경 */
+.line-tabs-professional {
+  background: rgba(239, 68, 68, 0.03);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+/* 클래식 라인 배경 */
+.line-tabs-classic {
+  background: rgba(59, 130, 246, 0.03);
 }
 
 .line-tab {
@@ -159,6 +202,16 @@ body {
   right: 0;
   height: 2px;
   background: var(--text-primary);
+}
+
+/* 프로페셔널 라인 활성화 색상 */
+.line-tabs-professional .line-tab.active::after {
+  background: #ef4444;
+}
+
+/* 클래식 라인 활성화 색상 */
+.line-tabs-classic .line-tab.active::after {
+  background: #3b82f6;
 }
 
 .line-tab-all.active::after {
