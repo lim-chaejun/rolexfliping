@@ -555,28 +555,28 @@ body {
 .line-oyster-perpetual.size-34 .product-image,
 .line-oyster-perpetual.size-36 .product-image,
 .line-oyster-perpetual.size-41 .product-image {
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -44%);
 }
 
 .line-datejust.size-36 .product-image,
 .line-datejust.size-41 .product-image {
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -44%);
 }
 
 .line-day-date .product-image {
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -44%);
 }
 
 .line-explorer.size-40 .product-image {
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -44%);
 }
 
 .line-land-dweller.size-40 .product-image {
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -44%);
 }
 
 .line-yacht-master.size-42 .product-image {
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -44%);
 }
 
 .product-badge {
