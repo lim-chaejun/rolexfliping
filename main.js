@@ -1892,6 +1892,9 @@ switchTab = function(tab) {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
 
+  // calc-section 직접 DOM 조회
+  const calcEl = document.getElementById('calc-section');
+
   // 컨텐츠 전환
   if (tab === 'main') {
     mainContainer.style.display = 'block';
@@ -1900,6 +1903,7 @@ switchTab = function(tab) {
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
   } else if (tab === 'test') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -1907,6 +1911,7 @@ switchTab = function(tab) {
     testSection.style.display = 'block';
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
     showTestStart();
   } else if (tab === 'stats') {
     mainContainer.style.display = 'none';
@@ -1915,7 +1920,16 @@ switchTab = function(tab) {
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'block';
     if (adminSection) adminSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
     loadStatsPage();
+  } else if (tab === 'calc') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'block';
   } else if (tab === 'admin') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -1923,6 +1937,7 @@ switchTab = function(tab) {
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'block';
+    if (calcEl) calcEl.style.display = 'none';
     loadAdminPage();
   }
 }
