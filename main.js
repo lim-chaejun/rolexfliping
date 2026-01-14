@@ -673,7 +673,7 @@ function calculateBuyRates(watchList, field) {
   });
   return Object.entries(groups)
     .map(([name, data]) => ({
-      name: field === 'material' ? (materialNames[name] || name) : name,
+      name: name,
       total: data.total,
       buy: data.buy,
       rate: data.total > 0 ? Math.round((data.buy / data.total) * 100) : 0
@@ -683,7 +683,7 @@ function calculateBuyRates(watchList, field) {
 }
 
 // 현재 선택된 속성 탭
-let selectedRateTab = 'material';
+let selectedRateTab = 'material_detail';
 
 // 속성별 매입률 차트 - 필터링된 데이터 기준 (탭 방식)
 function renderAttributeRatesChart() {
@@ -696,7 +696,7 @@ function renderAttributeRatesChart() {
   }
 
   const tabData = {
-    material: { label: '소재별', rates: calculateBuyRates(targetWatches, 'material') },
+    material_detail: { label: '소재별', rates: calculateBuyRates(targetWatches, 'material_detail') },
     bezel: { label: '베젤별', rates: calculateBuyRates(targetWatches, 'bezel') },
     bracelet: { label: '브레이슬릿별', rates: calculateBuyRates(targetWatches, 'bracelet') }
   };
