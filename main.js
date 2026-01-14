@@ -876,21 +876,23 @@ function switchTab(tab) {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
 
-  // 컨텐츠 전환
+  // 컨텐츠 전환 - 직접 DOM 조회로 통일
+  const calcEl = document.getElementById('calc-section');
+
   if (tab === 'main') {
     mainContainer.style.display = 'block';
     vizSection.style.display = 'block';
     lineTabsWrapper.style.display = 'block';
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'none';
-    if (calcSection) calcSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
   } else if (tab === 'test') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
     lineTabsWrapper.style.display = 'none';
     testSection.style.display = 'block';
     if (statsSection) statsSection.style.display = 'none';
-    if (calcSection) calcSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
     showTestStart();
   } else if (tab === 'stats') {
     mainContainer.style.display = 'none';
@@ -898,7 +900,7 @@ function switchTab(tab) {
     lineTabsWrapper.style.display = 'none';
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'block';
-    if (calcSection) calcSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
     loadStatsPage();
   } else if (tab === 'calc') {
     mainContainer.style.display = 'none';
@@ -906,8 +908,6 @@ function switchTab(tab) {
     lineTabsWrapper.style.display = 'none';
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'none';
-    // calcSection을 직접 찾아서 표시
-    const calcEl = document.getElementById('calc-section');
     if (calcEl) calcEl.style.display = 'block';
   }
 }
