@@ -1107,15 +1107,6 @@ if (myInfoStatsBtn) {
   });
 }
 
-// 테스트 통계 버튼
-const dropdownMyStats = document.getElementById('dropdown-my-stats');
-if (dropdownMyStats) {
-  dropdownMyStats.addEventListener('click', () => {
-    closeUserDropdown();
-    switchTab('stats');
-  });
-}
-
 // 로그인 모달 표시/숨기기
 function showLoginModal() {
   loginModal.classList.add('active');

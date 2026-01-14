@@ -1210,9 +1210,9 @@ body {
 
 /* 시계 상세 모달 */
 .watch-detail-content {
-  max-width: 1000px;
+  max-width: 1100px;
   width: 95%;
-  max-height: 90vh;
+  max-height: 95vh;
   overflow-y: auto;
 }
 
@@ -1231,13 +1231,14 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  min-height: 400px;
+  min-height: 520px;
 }
 
 .watch-detail-image {
-  width: 90%;
-  height: 90%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  padding: 10px;
   transition: transform 0.3s ease;
 }
 
@@ -2510,7 +2511,9 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--bg-primary);
+  background: rgba(26, 26, 26, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 500;
   align-items: center;
   justify-content: center;
@@ -2520,11 +2523,14 @@ body {
   text-align: center;
   padding: 48px;
   max-width: 400px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
 }
 
 .login-required-icon {
-  font-size: 64px;
   margin-bottom: 24px;
+  color: var(--accent-gold);
 }
 
 .login-required-title {

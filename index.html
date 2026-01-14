@@ -62,14 +62,6 @@
               </svg>
               내 정보
             </button>
-            <button class="dropdown-item" id="dropdown-my-stats">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 20V10"/>
-                <path d="M12 20V4"/>
-                <path d="M6 20v-6"/>
-              </svg>
-              테스트 통계
-            </button>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item logout" id="logout-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -624,7 +616,12 @@
   <!-- 로그인 필요 화면 -->
   <div class="login-required-overlay" id="login-required" style="display:none;">
     <div class="login-required-content">
-      <div class="login-required-icon">🔒</div>
+      <div class="login-required-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
       <h2 class="login-required-title">로그인이 필요합니다</h2>
       <p class="login-required-message">서비스를 이용하시려면 로그인해주세요.</p>
       <button class="login-required-btn" id="login-required-btn">Google로 로그인</button>
