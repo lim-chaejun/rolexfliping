@@ -266,13 +266,13 @@ function renderProducts() {
       <div class="admin-status-control">
         <button class="status-btn buy ${currentStatus === 'buy' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="buy"
-                onclick="updateWatchStatusBtn(this)">○</button>
+                onclick="updateWatchStatusBtn(event, this)">○</button>
         <button class="status-btn pending ${currentStatus === 'pending' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="pending"
-                onclick="updateWatchStatusBtn(this)">△</button>
+                onclick="updateWatchStatusBtn(event, this)">△</button>
         <button class="status-btn no ${currentStatus === 'no' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="no"
-                onclick="updateWatchStatusBtn(this)">✕</button>
+                onclick="updateWatchStatusBtn(event, this)">✕</button>
       </div>
     ` : '';
 
@@ -606,12 +606,64 @@ document.addEventListener('click', (e) => {
 });
 
 // 내 정보 버튼
+// 내 정보 모달 요소
+const myInfoModal = document.getElementById('my-info-modal');
+const myInfoModalClose = document.getElementById('my-info-modal-close');
+
+// 내 정보 모달 표시
+function showMyInfoModal() {
+  if (!currentUser || !userProfile) return;
+
+  // 모달에 정보 채우기
+  document.getElementById('my-info-avatar').src = currentUser.photoURL || 'https://via.placeholder.com/80';
+  document.getElementById('my-info-name').textContent = currentUser.displayName || currentUser.email?.split('@')[0] || '사용자';
+  document.getElementById('my-info-email').textContent = currentUser.email || '';
+  document.getElementById('my-info-realname').textContent = userProfile.name || '-';
+  document.getElementById('my-info-phone').textContent = userProfile.phone || '-';
+  document.getElementById('my-info-referrer').textContent = userProfile.referrer || '-';
+
+  const statusEl = document.getElementById('my-info-status');
+  const statusMap = {
+    'approved': '승인됨',
+    'pending': '승인 대기',
+    'rejected': '거절됨'
+  };
+  statusEl.textContent = statusMap[userProfile.status] || '-';
+  statusEl.className = 'my-info-value my-info-status ' + (userProfile.status || '');
+
+  myInfoModal.classList.add('active');
+}
+
+// 내 정보 모달 숨기기
+function hideMyInfoModal() {
+  myInfoModal.classList.remove('active');
+}
+
+// 내 정보 모달 이벤트 리스너
+if (myInfoModalClose) {
+  myInfoModalClose.addEventListener('click', hideMyInfoModal);
+}
+if (myInfoModal) {
+  myInfoModal.addEventListener('click', (e) => {
+    if (e.target === myInfoModal) hideMyInfoModal();
+  });
+}
+
+// 내 정보 버튼
 const dropdownMyInfo = document.getElementById('dropdown-my-info');
 if (dropdownMyInfo) {
   dropdownMyInfo.addEventListener('click', () => {
     closeUserDropdown();
-    // 내 정보 모달 표시 (추후 구현 가능)
-    alert('이름: ' + (userProfile?.name || '-') + '\n연락처: ' + (userProfile?.phone || '-') + '\n추천인: ' + (userProfile?.referrer || '-'));
+    showMyInfoModal();
+  });
+}
+
+// 테스트 통계 버튼
+const dropdownMyStats = document.getElementById('dropdown-my-stats');
+if (dropdownMyStats) {
+  dropdownMyStats.addEventListener('click', () => {
+    closeUserDropdown();
+    switchTab('stats');
   });
 }
 
@@ -716,7 +768,7 @@ function switchTab(tab) {
 // 네비게이션 이벤트 리스너
 navMain.addEventListener('click', () => switchTab('main'));
 navTest.addEventListener('click', () => switchTab('test'));
-navStats.addEventListener('click', () => switchTab('stats'));
+if (navStats) navStats.addEventListener('click', () => switchTab('stats'));
 
 // 테스트 시작 화면 표시
 function showTestStart() {
@@ -1157,7 +1209,10 @@ async function loadStatusOverrides() {
 }
 
 // 시계 상태 업데이트 - 버튼용 (관리자 전용)
-async function updateWatchStatusBtn(btn) {
+async function updateWatchStatusBtn(event, btn) {
+  event.stopPropagation();
+  event.preventDefault();
+
   if (!isAdmin) return;
 
   const modelNumber = btn.dataset.model;
