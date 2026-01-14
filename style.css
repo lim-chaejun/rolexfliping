@@ -1261,9 +1261,14 @@ body {
 }
 
 /* 시계 상세 모달 */
+#watch-detail-modal {
+  align-items: flex-start;
+}
+
 .watch-detail-content {
   max-width: 1100px;
   width: 95%;
+  margin: auto;
 }
 
 .watch-detail-body {
@@ -2928,26 +2933,27 @@ body {
   text-align: center;
 }
 
-.calc-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-}
-
-.calc-input-panel,
-.calc-result-panel {
+.calc-input-panel {
   background: var(--bg-primary);
   border-radius: 12px;
   padding: 24px;
   border: 1px solid var(--border-color);
+  max-width: 400px;
+  margin: 0 auto;
 }
 
-.calc-input-panel h3,
-.calc-result-panel h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: var(--text-primary);
+/* 계산기 결과 모달 */
+.calc-result-modal-content {
+  max-width: 400px;
+  width: 90%;
+}
+
+.calc-result-modal-content .calc-result-items {
+  margin-top: 16px;
+}
+
+.calc-result-modal-content .calc-result-total {
+  margin-top: 16px;
 }
 
 .calc-input-group {
@@ -3068,13 +3074,12 @@ body {
 }
 
 @media (max-width: 768px) {
-  .calc-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
   .calc-container {
     padding: 20px;
+  }
+
+  .calc-input-panel {
+    max-width: none;
   }
 
   .total-value {

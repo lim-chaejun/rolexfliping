@@ -6,7 +6,7 @@
   <title>ROLEXFLIP</title>
   <link rel="icon" type="image/png" href="favicon/favicon.png">
   <link rel="apple-touch-icon" href="favicon/favicon.png">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
   <!-- 헤더 -->
@@ -288,63 +288,25 @@
     <div class="calc-container">
       <h2 class="calc-title">마진 계산기</h2>
 
-      <div class="calc-grid">
-        <!-- 입력 영역 -->
-        <div class="calc-input-panel">
-          <h3>입력</h3>
-          <div class="calc-input-group">
-            <label for="calc-retail">리테일가 (시계 구매가)</label>
-            <input type="text" id="calc-retail" placeholder="예: 19,710,000" inputmode="numeric">
-          </div>
-          <div class="calc-input-group">
-            <label for="calc-gift-rate">상품권 요율 (%)</label>
-            <input type="text" id="calc-gift-rate" placeholder="예: 3.2" inputmode="decimal">
-          </div>
-          <div class="calc-input-group">
-            <label for="calc-point-rate">실적 판매 요율 (%)</label>
-            <input type="text" id="calc-point-rate" placeholder="예: 3" inputmode="decimal">
-          </div>
-          <div class="calc-input-group">
-            <label for="calc-sell">판매가 (시계 판매가)</label>
-            <input type="text" id="calc-sell" placeholder="예: 20,400,000" inputmode="numeric">
-          </div>
-          <button class="calc-btn" onclick="calculateMargin()">계산하기</button>
+      <!-- 입력 영역 -->
+      <div class="calc-input-panel">
+        <div class="calc-input-group">
+          <label for="calc-retail">리테일가 (시계 구매가)</label>
+          <input type="text" id="calc-retail" placeholder="예: 19,710,000" inputmode="numeric">
         </div>
-
-        <!-- 결과 영역 -->
-        <div class="calc-result-panel">
-          <h3>계산 결과</h3>
-          <div class="calc-result-items">
-            <div class="calc-result-item">
-              <span class="result-label">상품권 액면</span>
-              <span class="result-value" id="result-gift-face">-</span>
-            </div>
-            <div class="calc-result-item">
-              <span class="result-label">상품권 실구매가</span>
-              <span class="result-value" id="result-gift-real">-</span>
-            </div>
-            <div class="calc-result-item">
-              <span class="result-label">현금거스름</span>
-              <span class="result-value" id="result-change">-</span>
-            </div>
-            <div class="calc-result-item">
-              <span class="result-label">실적</span>
-              <span class="result-value" id="result-point">-</span>
-            </div>
-            <div class="calc-result-item">
-              <span class="result-label">시계 판매가</span>
-              <span class="result-value" id="result-sell">-</span>
-            </div>
-          </div>
-          <div class="calc-result-total">
-            <span class="total-label">이윤 합계</span>
-            <span class="total-value" id="result-total">-</span>
-          </div>
-          <div class="calc-formula" id="calc-formula" style="display:none;">
-            <div class="formula-title">계산식</div>
-            <div class="formula-content" id="formula-content"></div>
-          </div>
+        <div class="calc-input-group">
+          <label for="calc-gift-rate">상품권 요율 (%)</label>
+          <input type="text" id="calc-gift-rate" placeholder="예: 3.2" inputmode="decimal">
         </div>
+        <div class="calc-input-group">
+          <label for="calc-point-rate">실적 판매 요율 (%)</label>
+          <input type="text" id="calc-point-rate" placeholder="예: 3" inputmode="decimal">
+        </div>
+        <div class="calc-input-group">
+          <label for="calc-sell">판매가 (시계 판매가)</label>
+          <input type="text" id="calc-sell" placeholder="예: 20,400,000" inputmode="numeric">
+        </div>
+        <button class="calc-btn" onclick="calculateMargin()">계산하기</button>
       </div>
     </div>
   </section>
@@ -737,6 +699,40 @@
     </div>
   </div>
 
+  <!-- 계산기 결과 모달 -->
+  <div class="modal-overlay" id="calc-result-modal">
+    <div class="modal-content calc-result-modal-content">
+      <button class="modal-close" id="calc-result-close">&times;</button>
+      <h2 class="modal-title">계산 결과</h2>
+      <div class="calc-result-items">
+        <div class="calc-result-item">
+          <span class="result-label">상품권 액면</span>
+          <span class="result-value" id="result-gift-face">-</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="result-label">상품권 실구매가</span>
+          <span class="result-value" id="result-gift-real">-</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="result-label">현금거스름</span>
+          <span class="result-value" id="result-change">-</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="result-label">실적</span>
+          <span class="result-value" id="result-point">-</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="result-label">시계 판매가</span>
+          <span class="result-value" id="result-sell">-</span>
+        </div>
+      </div>
+      <div class="calc-result-total">
+        <span class="total-label">이윤 합계</span>
+        <span class="total-value" id="result-total">-</span>
+      </div>
+    </div>
+  </div>
+
   <!-- 로그인 필요 화면 -->
   <div class="login-required-overlay" id="login-required" style="display:none;">
     <div class="login-required-content">
@@ -757,6 +753,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="main.js?v=11"></script>
+  <script src="main.js?v=12"></script>
 </body>
 </html>

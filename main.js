@@ -1449,6 +1449,12 @@ function calculateMargin() {
   const performanceRate = parseFloat(document.getElementById('calc-point-rate').value) || 0;
   const sellingPrice = parseNumber(document.getElementById('calc-sell').value);
 
+  // 입력값 검증
+  if (!retailPrice || !sellingPrice) {
+    alert('리테일가와 판매가를 입력해주세요.');
+    return;
+  }
+
   // 상품권 액면가 = 리테일가를 50만원 단위로 올림
   const giftCardFaceValue = Math.ceil(retailPrice / 500000) * 500000;
 
@@ -1471,6 +1477,12 @@ function calculateMargin() {
   document.getElementById('result-point').textContent = formatNumber(pointsCashback);
   document.getElementById('result-sell').textContent = formatNumber(sellingPrice);
   document.getElementById('result-total').textContent = formatNumber(totalProfit);
+
+  // 결과 모달 열기
+  const calcResultModal = document.getElementById('calc-result-modal');
+  if (calcResultModal) {
+    calcResultModal.classList.add('active');
+  }
 }
 
 function formatNumber(num) {
@@ -1496,6 +1508,25 @@ if (calcSection) {
   if (sellInput) {
     sellInput.addEventListener('input', () => formatInputNumber(sellInput));
   }
+}
+
+// 계산기 결과 모달
+const calcResultModal = document.getElementById('calc-result-modal');
+const calcResultClose = document.getElementById('calc-result-close');
+
+function hideCalcResultModal() {
+  if (calcResultModal) {
+    calcResultModal.classList.remove('active');
+  }
+}
+
+if (calcResultClose) {
+  calcResultClose.addEventListener('click', hideCalcResultModal);
+}
+if (calcResultModal) {
+  calcResultModal.addEventListener('click', (e) => {
+    if (e.target === calcResultModal) hideCalcResultModal();
+  });
 }
 
 // 테스트 시작 화면 표시
