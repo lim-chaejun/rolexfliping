@@ -852,6 +852,8 @@ const lineTabsWrapper = document.getElementById('line-tabs-wrapper');
 const testSection = document.getElementById('test-section');
 const mainContainer = document.getElementById('main-container');
 const statsSection = document.getElementById('stats-section');
+const navCalc = document.getElementById('nav-calc');
+const calcSection = document.getElementById('calc-section');
 
 // 테스트 DOM 요소
 const testStart = document.getElementById('test-start');
@@ -881,12 +883,14 @@ function switchTab(tab) {
     lineTabsWrapper.style.display = 'block';
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'none';
+    if (calcSection) calcSection.style.display = 'none';
   } else if (tab === 'test') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
     lineTabsWrapper.style.display = 'none';
     testSection.style.display = 'block';
     if (statsSection) statsSection.style.display = 'none';
+    if (calcSection) calcSection.style.display = 'none';
     showTestStart();
   } else if (tab === 'stats') {
     mainContainer.style.display = 'none';
@@ -894,7 +898,15 @@ function switchTab(tab) {
     lineTabsWrapper.style.display = 'none';
     testSection.style.display = 'none';
     if (statsSection) statsSection.style.display = 'block';
+    if (calcSection) calcSection.style.display = 'none';
     loadStatsPage();
+  } else if (tab === 'calc') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+    if (calcSection) calcSection.style.display = 'block';
   }
 }
 
@@ -902,6 +914,69 @@ function switchTab(tab) {
 navMain.addEventListener('click', () => switchTab('main'));
 navTest.addEventListener('click', () => switchTab('test'));
 if (navStats) navStats.addEventListener('click', () => switchTab('stats'));
+if (navCalc) navCalc.addEventListener('click', () => switchTab('calc'));
+
+// 마진 계산기
+function calculateMargin() {
+  // 입력값 파싱 (콤마 제거 후 숫자 변환)
+  const parseNumber = (str) => parseFloat(str.replace(/,/g, '')) || 0;
+
+  const retailPrice = parseNumber(document.getElementById('calc-retail').value);
+  const giftCardRate = parseFloat(document.getElementById('calc-gift-rate').value) || 0;
+  const performanceRate = parseFloat(document.getElementById('calc-point-rate').value) || 0;
+  const sellingPrice = parseNumber(document.getElementById('calc-sell').value);
+
+  // 상품권 액면가 = 리테일가 (구매하는 상품권 총액)
+  const giftCardFaceValue = retailPrice;
+
+  // 상품권 실구매가 = 상품권 액면가 × (1 - 상품권 요율)
+  const giftCardActualCost = giftCardFaceValue * (1 - giftCardRate / 100);
+
+  // 상품권 할인액 = 액면가 - 실구매가
+  const giftCardDiscount = giftCardFaceValue - giftCardActualCost;
+
+  // 남는 상품권 (거스름) = 상품권 액면가 - 리테일가 (현재는 0)
+  const remainingGiftCard = 0;
+
+  // 포인트 현금화 = 리테일가 × 실적 요율
+  const pointsCashback = retailPrice * (performanceRate / 100);
+
+  // 총이득 = (판매가 + 포인트 + 남는 상품권) - 상품권 실구매가
+  const totalProfit = (sellingPrice + pointsCashback + remainingGiftCard) - giftCardActualCost;
+
+  // 결과 표시
+  document.getElementById('result-gift-face').textContent = formatNumber(giftCardFaceValue);
+  document.getElementById('result-gift-real').textContent = formatNumber(giftCardActualCost);
+  document.getElementById('result-change').textContent = formatNumber(remainingGiftCard);
+  document.getElementById('result-point').textContent = formatNumber(pointsCashback);
+  document.getElementById('result-sell').textContent = formatNumber(sellingPrice);
+  document.getElementById('result-total').textContent = formatNumber(totalProfit);
+}
+
+function formatNumber(num) {
+  return Math.round(num).toLocaleString('ko-KR') + '원';
+}
+
+// 숫자 입력 필드 자동 포맷팅
+function formatInputNumber(input) {
+  let value = input.value.replace(/[^\d]/g, '');
+  if (value) {
+    input.value = parseInt(value).toLocaleString('ko-KR');
+  }
+}
+
+// 계산기 입력 이벤트 리스너
+if (calcSection) {
+  const retailInput = document.getElementById('calc-retail');
+  const sellInput = document.getElementById('calc-sell');
+
+  if (retailInput) {
+    retailInput.addEventListener('input', () => formatInputNumber(retailInput));
+  }
+  if (sellInput) {
+    sellInput.addEventListener('input', () => formatInputNumber(sellInput));
+  }
+}
 
 // 테스트 시작 화면 표시
 function showTestStart() {

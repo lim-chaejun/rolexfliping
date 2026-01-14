@@ -102,6 +102,18 @@
         </svg>
         <span>테스트</span>
       </button>
+      <button class="main-nav-tab" data-tab="calc" id="nav-calc">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <line x1="8" y1="6" x2="16" y2="6"/>
+          <line x1="8" y1="10" x2="10" y2="10"/>
+          <line x1="14" y1="10" x2="16" y2="10"/>
+          <line x1="8" y1="14" x2="10" y2="14"/>
+          <line x1="14" y1="14" x2="16" y2="14"/>
+          <line x1="8" y1="18" x2="16" y2="18"/>
+        </svg>
+        <span>계산기</span>
+      </button>
       <button class="main-nav-tab admin-only" data-tab="admin" id="nav-admin" style="display:none;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
@@ -272,6 +284,72 @@
       <div class="stats-panel full-width">
         <h3>최근 테스트 기록</h3>
         <div class="recent-tests-list" id="page-recent-tests"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 계산기 섹션 -->
+  <section class="calc-section" id="calc-section" style="display:none;">
+    <div class="calc-container">
+      <h2 class="calc-title">마진 계산기</h2>
+
+      <div class="calc-grid">
+        <!-- 입력 영역 -->
+        <div class="calc-input-panel">
+          <h3>입력</h3>
+          <div class="calc-input-group">
+            <label for="calc-retail">리테일가 (시계 구매가)</label>
+            <input type="text" id="calc-retail" placeholder="예: 19,710,000" inputmode="numeric">
+          </div>
+          <div class="calc-input-group">
+            <label for="calc-gift-rate">상품권 요율 (%)</label>
+            <input type="text" id="calc-gift-rate" placeholder="예: 3.2" inputmode="decimal">
+          </div>
+          <div class="calc-input-group">
+            <label for="calc-point-rate">실적 판매 요율 (%)</label>
+            <input type="text" id="calc-point-rate" placeholder="예: 3" inputmode="decimal">
+          </div>
+          <div class="calc-input-group">
+            <label for="calc-sell">판매가 (시계 판매가)</label>
+            <input type="text" id="calc-sell" placeholder="예: 20,400,000" inputmode="numeric">
+          </div>
+          <button class="calc-btn" onclick="calculateMargin()">계산하기</button>
+        </div>
+
+        <!-- 결과 영역 -->
+        <div class="calc-result-panel">
+          <h3>계산 결과</h3>
+          <div class="calc-result-items">
+            <div class="calc-result-item">
+              <span class="result-label">상품권 액면</span>
+              <span class="result-value" id="result-gift-face">-</span>
+            </div>
+            <div class="calc-result-item">
+              <span class="result-label">상품권 실구매가 (현금지출)</span>
+              <span class="result-value" id="result-gift-real">-</span>
+            </div>
+            <div class="calc-result-item">
+              <span class="result-label">남는 상품권/거스름</span>
+              <span class="result-value" id="result-change">-</span>
+            </div>
+            <div class="calc-result-item">
+              <span class="result-label">포인트 현금화</span>
+              <span class="result-value" id="result-point">-</span>
+            </div>
+            <div class="calc-result-item">
+              <span class="result-label">시계 판매 (현금)</span>
+              <span class="result-value" id="result-sell">-</span>
+            </div>
+          </div>
+          <div class="calc-result-total">
+            <span class="total-label">총 이득</span>
+            <span class="total-value" id="result-total">-</span>
+          </div>
+          <div class="calc-formula" id="calc-formula" style="display:none;">
+            <div class="formula-title">계산식</div>
+            <div class="formula-content" id="formula-content"></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
