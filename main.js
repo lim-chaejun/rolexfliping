@@ -355,7 +355,7 @@ function renderProducts() {
     ` : '';
 
     return `
-      <div class="product-card">
+      <div class="product-card line-${watch.line}">
         <div class="product-image-wrapper">
           <span class="product-badge ${watch.buy_status}">${statusText[watch.buy_status]}</span>
           <img
