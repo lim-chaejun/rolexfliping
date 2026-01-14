@@ -687,69 +687,83 @@ body {
   color: var(--text-secondary);
 }
 
-/* 속성별 매입률 차트 */
-.attribute-rates {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+/* 속성별 매입률 차트 - 탭 방식 */
+.rate-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.rate-section {
+.rate-tab {
+  padding: 8px 16px;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rate-tab:hover {
+  background: var(--border-color);
+}
+
+.rate-tab.active {
+  background: var(--status-buy);
+  color: white;
+}
+
+.rate-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rate-bar-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.rate-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.rate-item {
+.rate-bar-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
 }
 
-.rate-label {
-  width: 70px;
-  flex-shrink: 0;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.rate-bar-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
-.rate-bar-track {
-  flex: 1;
-  height: 14px;
-  background: #e5e5e5;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.rate-bar-fill {
-  height: 100%;
-  background: var(--status-buy);
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
-
-.rate-value {
-  width: 70px;
-  flex-shrink: 0;
-  color: var(--text-muted);
-  font-size: 10px;
-  text-align: right;
-}
-
-.rate-value em {
-  font-style: normal;
-  color: var(--status-buy);
+.rate-bar-value {
+  font-size: 14px;
   font-weight: 600;
+  color: var(--status-buy);
+}
+
+.rate-bar-value em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.rate-bar-track-lg {
+  height: 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rate-bar-fill-lg {
+  height: 100%;
+  background: linear-gradient(90deg, var(--status-buy) 0%, #16a34a 100%);
+  border-radius: 6px;
+  transition: width 0.5s ease;
 }
 
 .viz-card.wide {
@@ -763,12 +777,7 @@ body {
   height: 100%;
   color: var(--text-muted);
   font-size: 13px;
-}
-
-@media (max-width: 900px) {
-  .attribute-rates {
-    grid-template-columns: 1fr;
-  }
+  padding: 20px;
 }
 
 /* 도넛 차트 */

@@ -682,7 +682,10 @@ function calculateBuyRates(watchList, field) {
     .slice(0, 5);
 }
 
-// 속성별 매입률 차트 - 필터링된 데이터 기준
+// 현재 선택된 속성 탭
+let selectedRateTab = 'material';
+
+// 속성별 매입률 차트 - 필터링된 데이터 기준 (탭 방식)
 function renderAttributeRatesChart() {
   const lineChart = document.getElementById('line-chart');
   const targetWatches = filteredWatches.length > 0 ? filteredWatches : watches;
@@ -692,32 +695,45 @@ function renderAttributeRatesChart() {
     return;
   }
 
-  const materialRates = calculateBuyRates(targetWatches, 'material');
-  const bezelRates = calculateBuyRates(targetWatches, 'bezel');
-  const braceletRates = calculateBuyRates(targetWatches, 'bracelet');
+  const tabData = {
+    material: { label: '소재별', rates: calculateBuyRates(targetWatches, 'material') },
+    bezel: { label: '베젤별', rates: calculateBuyRates(targetWatches, 'bezel') },
+    bracelet: { label: '브레이슬릿별', rates: calculateBuyRates(targetWatches, 'bracelet') }
+  };
 
-  const renderRateSection = (title, rates) => `
-    <div class="rate-section">
-      <div class="rate-title">${title}</div>
-      ${rates.map(r => `
-        <div class="rate-item">
-          <span class="rate-label">${r.name}</span>
-          <div class="rate-bar-track">
-            <div class="rate-bar-fill" style="width: ${r.rate}%"></div>
+  const currentRates = tabData[selectedRateTab].rates;
+  const maxRate = Math.max(...currentRates.map(r => r.rate), 1);
+
+  lineChart.innerHTML = `
+    <div class="rate-tabs">
+      ${Object.entries(tabData).map(([key, data]) => `
+        <button class="rate-tab ${selectedRateTab === key ? 'active' : ''}" data-tab="${key}">
+          ${data.label}
+        </button>
+      `).join('')}
+    </div>
+    <div class="rate-content">
+      ${currentRates.length === 0 ? '<div class="no-data">데이터 없음</div>' : currentRates.map(r => `
+        <div class="rate-bar-item">
+          <div class="rate-bar-header">
+            <span class="rate-bar-label">${r.name}</span>
+            <span class="rate-bar-value">${r.rate}% <em>(${r.buy}/${r.total})</em></span>
           </div>
-          <span class="rate-value">${r.buy}/${r.total} <em>(${r.rate}%)</em></span>
+          <div class="rate-bar-track-lg">
+            <div class="rate-bar-fill-lg" style="width: ${(r.rate / maxRate) * 100}%"></div>
+          </div>
         </div>
       `).join('')}
     </div>
   `;
 
-  lineChart.innerHTML = `
-    <div class="attribute-rates">
-      ${renderRateSection('소재별', materialRates)}
-      ${renderRateSection('베젤별', bezelRates)}
-      ${renderRateSection('브레이슬릿별', braceletRates)}
-    </div>
-  `;
+  // 탭 클릭 이벤트
+  lineChart.querySelectorAll('.rate-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      selectedRateTab = tab.dataset.tab;
+      renderAttributeRatesChart();
+    });
+  });
 }
 
 // 상태별 차트 (도넛) - 필터링된 데이터 기준
