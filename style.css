@@ -889,11 +889,11 @@ body {
 
   /* 데스크톱 필터/라인탭 숨김 */
   .filter-bar {
-    display: none;
+    display: none !important;
   }
 
   .line-tabs-wrapper {
-    display: none;
+    display: none !important;
   }
 
   /* 모바일 검색바 표시 (필터 버튼 포함) */
