@@ -2527,8 +2527,11 @@ body {
 
 .calc-section {
   padding: 24px;
+  padding-top: 200px;
   max-width: 1000px;
   margin: 0 auto;
+  min-height: calc(100vh - 130px);
+  background: var(--bg-primary);
 }
 
 .calc-container {
