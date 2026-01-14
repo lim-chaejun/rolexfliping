@@ -24,14 +24,17 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
+  padding-top: 125px; /* 헤더(73px) + 메인탭(52px) */
 }
 
 /* 헤더 */
 .header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 101;
 }
 
@@ -785,8 +788,10 @@ body {
 .main-nav {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
+  position: fixed;
   top: 73px;
+  left: 0;
+  right: 0;
   z-index: 100;
 }
 
@@ -2577,7 +2582,7 @@ body {
   bottom: 0;
   overflow-y: auto;
   background: var(--bg-primary);
-  z-index: 999;
+  z-index: 50;
   padding: 24px;
   box-sizing: border-box;
 }

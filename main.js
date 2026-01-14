@@ -2012,8 +2012,6 @@ async function changeUserRole(selectEl) {
     // UI 업데이트 (등급 표시)
     renderAdminUserList();
 
-    alert(`등급이 ${ROLE_LABELS[newRole]}(으)로 변경되었습니다.`);
-
   } catch (error) {
     console.error('등급 변경 실패:', error);
     alert('등급 변경에 실패했습니다.');
