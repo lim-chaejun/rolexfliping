@@ -834,12 +834,7 @@ body {
 }
 
 @media (max-width: 768px) {
-  /* body padding 조정 */
-  body {
-    padding-top: 110px; /* 헤더(56px) + 메인탭(54px) */
-  }
-
-  /* 헤더 모바일 최적화 */
+  /* 헤더 - 상단 고정 */
   .header {
     position: fixed;
     top: 0;
@@ -847,13 +842,14 @@ body {
     right: 0;
     z-index: 1001;
     background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .header-inner {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
+    padding: 14px 16px;
   }
 
   .header-stats {
@@ -868,10 +864,10 @@ body {
     font-size: 20px;
   }
 
-  /* 메인 탭 모바일 */
+  /* 메인 탭 - 헤더 바로 아래 고정 */
   .main-nav {
     position: fixed;
-    top: 56px;
+    top: 52px;
     left: 0;
     right: 0;
     z-index: 1000;
@@ -887,7 +883,7 @@ body {
   .main-nav-tab {
     flex: 1;
     justify-content: center;
-    padding: 16px 0;
+    padding: 14px 0;
     gap: 0;
   }
 
@@ -898,6 +894,19 @@ body {
   .main-nav-tab svg {
     width: 22px;
     height: 22px;
+  }
+
+  /* 콘텐츠 영역 - 고정 영역 아래에서 시작 */
+  body {
+    padding-top: 0;
+  }
+
+  .container,
+  .test-section,
+  .calc-section,
+  .admin-section,
+  .stats-section {
+    margin-top: 104px; /* 헤더(52px) + 탭(52px) */
   }
 
   /* 차트 섹션 숨김 */
@@ -917,17 +926,22 @@ body {
   /* 모바일 검색바 표시 */
   .mobile-search-bar {
     display: flex;
+    margin: 12px 16px;
+    position: sticky;
+    top: 104px;
+    z-index: 99;
+    background: var(--bg-primary);
   }
 
   /* 결과 헤더 조정 */
   .results-header {
-    padding: 12px 16px;
+    padding: 8px 16px;
   }
 
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-    padding: 0 12px;
+    padding: 0 12px 80px;
   }
 
   .container {
