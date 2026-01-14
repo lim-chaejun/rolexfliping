@@ -89,7 +89,7 @@ body {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
-  top: 73px;
+  top: 125px; /* 헤더(73px) + 메인탭(52px) */
   z-index: 99;
 }
 
