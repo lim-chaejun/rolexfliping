@@ -142,14 +142,27 @@ const materialNames = {
 // 초기화
 async function init() {
   try {
-    // Firestore에서 시계 데이터 로드
-    const snapshot = await db.collection('watches').get();
-    watches = [];
-    snapshot.forEach(doc => {
-      watches.push({ id: doc.id, ...doc.data() });
-    });
+    // 로컬 JSON 파일에서 시계 데이터 로드 (Firebase 읽기 한도 절약)
+    const response = await fetch('rolex_watches.json');
+    watches = await response.json();
 
-    console.log(`Firestore에서 ${watches.length}개 시계 로드 완료`);
+    // Firebase에서 상태만 가져와서 병합 (단일 문서 = 1회 읽기)
+    try {
+      const statusDoc = await db.collection('settings').doc('watchStatuses').get();
+      if (statusDoc.exists) {
+        const statuses = statusDoc.data();
+        watches.forEach(watch => {
+          if (statuses[watch.model_number]) {
+            watch.buy_status = statuses[watch.model_number];
+          }
+        });
+        console.log('Firebase에서 상태 동기화 완료');
+      }
+    } catch (e) {
+      console.log('상태 동기화 실패, 기본값 사용:', e);
+    }
+
+    console.log(`로컬 JSON에서 ${watches.length}개 시계 로드 완료`);
 
     totalCount.textContent = watches.length.toLocaleString();
 
@@ -1635,12 +1648,10 @@ async function updateWatchStatusBtn(event, btn) {
   if (watches[watchIndex].buy_status === newStatus) return;
 
   try {
-    // Firestore watches 컬렉션 직접 업데이트
-    await db.collection('watches').doc(modelNumber).update({
-      buy_status: newStatus,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: currentUser.email
-    });
+    // Firebase 단일 문서에 상태 저장 (1회 쓰기로 공유 가능)
+    await db.collection('settings').doc('watchStatuses').set({
+      [modelNumber]: newStatus
+    }, { merge: true });
 
     // 로컬 watches 배열 업데이트
     watches[watchIndex].buy_status = newStatus;

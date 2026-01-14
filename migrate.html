@@ -118,7 +118,11 @@
     </button>
 
     <button class="btn btn-primary" id="migrate-btn" onclick="startMigration()" style="display:none;">
-      마이그레이션 시작
+      JSON → Firebase 업로드
+    </button>
+
+    <button class="btn btn-danger" id="status-migrate-btn" onclick="migrateStatuses()" style="display:none; background: #8b5cf6; margin-top: 10px;">
+      상태 데이터 → 단일 문서로 이전 (권장)
     </button>
 
     <div class="log" id="log"></div>
@@ -153,6 +157,7 @@
           log(`로그인 성공: ${user.email}`, 'success');
           document.getElementById('login-btn').style.display = 'none';
           document.getElementById('migrate-btn').style.display = 'block';
+          document.getElementById('status-migrate-btn').style.display = 'block';
           document.getElementById('status').textContent = '마이그레이션 준비 완료';
         } else {
           log(`권한 없음: ${user.email} (소유자: ${OWNER_EMAIL})`, 'error');
@@ -282,6 +287,52 @@
         log('마이그레이션 완료!', 'success');
         document.getElementById('status').textContent = '완료!';
         btn.textContent = '완료';
+
+      } catch (error) {
+        log(`오류 발생: ${error.message}`, 'error');
+        btn.disabled = false;
+        btn.textContent = '다시 시도';
+      }
+    }
+
+    // 상태 데이터만 단일 문서로 이전 (Firebase 읽기 절약용)
+    async function migrateStatuses() {
+      const btn = document.getElementById('status-migrate-btn');
+      btn.disabled = true;
+      btn.textContent = '이전 중...';
+
+      try {
+        log('=============================');
+        log('상태 데이터 이전 시작...', 'success');
+
+        // watches 컬렉션에서 모든 buy_status 가져오기
+        log('watches 컬렉션 읽는 중...');
+        const snapshot = await db.collection('watches').get();
+
+        const statuses = {};
+        let count = 0;
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.buy_status) {
+            statuses[doc.id] = data.buy_status;
+            count++;
+          }
+        });
+
+        log(`${count}개 상태 데이터 수집 완료`, 'success');
+
+        // settings/watchStatuses 단일 문서에 저장
+        log('settings/watchStatuses에 저장 중...');
+        await db.collection('settings').doc('watchStatuses').set(statuses);
+
+        log('=============================');
+        log('상태 데이터 이전 완료!', 'success');
+        log('이제 페이지 로드 시 Firebase 읽기가 800→1회로 감소합니다.', 'success');
+
+        document.getElementById('status').textContent = '상태 이전 완료!';
+        btn.textContent = '완료!';
+        btn.style.background = '#22c55e';
 
       } catch (error) {
         log(`오류 발생: ${error.message}`, 'error');
