@@ -2001,12 +2001,10 @@ body {
 }
 
 .status-btn {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border: 2px solid var(--border-color);
   border-radius: 50%;
-  font-size: 20px;
-  font-weight: 700;
   background: var(--bg-secondary);
   cursor: pointer;
   transition: all 0.2s;
@@ -2016,48 +2014,109 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.status-btn span {
+  display: block;
+}
+
 .status-btn:hover {
   transform: scale(1.1);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 매입 버튼 - 원형 */
 .status-btn.buy {
-  color: var(--status-buy);
   border-color: var(--status-buy);
+}
+
+.status-btn.buy span {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--status-buy);
+  border-radius: 50%;
+  background: transparent;
 }
 
 .status-btn.buy:hover,
 .status-btn.buy.active {
   background: var(--status-buy);
   border-color: var(--status-buy);
-  color: #fff;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
 }
 
+.status-btn.buy:hover span,
+.status-btn.buy.active span {
+  border-color: #fff;
+}
+
+/* 검토 버튼 - 삼각형 */
 .status-btn.pending {
-  color: var(--status-pending);
   border-color: var(--status-pending);
+}
+
+.status-btn.pending span {
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 12px solid var(--status-pending);
+  margin-top: -2px;
 }
 
 .status-btn.pending:hover,
 .status-btn.pending.active {
   background: var(--status-pending);
   border-color: var(--status-pending);
-  color: #fff;
   box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
 }
 
+.status-btn.pending:hover span,
+.status-btn.pending.active span {
+  border-bottom-color: #fff;
+}
+
+/* 불가 버튼 - X자 */
 .status-btn.no {
-  color: var(--status-no);
   border-color: var(--status-no);
+}
+
+.status-btn.no span {
+  position: relative;
+  width: 12px;
+  height: 12px;
+}
+
+.status-btn.no span::before,
+.status-btn.no span::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 2px;
+  background: var(--status-no);
+  border-radius: 1px;
+}
+
+.status-btn.no span::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.status-btn.no span::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .status-btn.no:hover,
 .status-btn.no.active {
   background: var(--status-no);
   border-color: var(--status-no);
-  color: #fff;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.status-btn.no:hover span::before,
+.status-btn.no:hover span::after,
+.status-btn.no.active span::before,
+.status-btn.no.active span::after {
+  background: #fff;
 }
 
 /* ==========================================

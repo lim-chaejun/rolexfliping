@@ -495,18 +495,18 @@ function renderProducts() {
   productGrid.innerHTML = displayWatches.map(watch => {
     const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
 
-    // 매니저 이상용 상태 변경 버튼 (○, △, ✕)
+    // 매니저 이상용 상태 변경 버튼 (CSS 도형)
     const adminControls = canAccess('watch:edit_status') ? `
       <div class="admin-status-control">
         <button class="status-btn buy ${watch.buy_status === 'buy' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="buy"
-                onclick="updateWatchStatusBtn(event, this)">○</button>
+                onclick="updateWatchStatusBtn(event, this)"><span></span></button>
         <button class="status-btn pending ${watch.buy_status === 'pending' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="pending"
-                onclick="updateWatchStatusBtn(event, this)">△</button>
+                onclick="updateWatchStatusBtn(event, this)"><span></span></button>
         <button class="status-btn no ${watch.buy_status === 'no' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="no"
-                onclick="updateWatchStatusBtn(event, this)">✕</button>
+                onclick="updateWatchStatusBtn(event, this)"><span></span></button>
       </div>
     ` : '';
 
