@@ -115,18 +115,31 @@ body {
 
 .line-tabs-row {
   display: flex;
-  justify-content: center;
+  align-items: center;
   gap: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 .line-tabs-row:first-of-type {
   border-bottom: 1px solid var(--border-color);
 }
 
-.line-tabs-row::-webkit-scrollbar {
+.line-category-btn {
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  padding: 10px 16px;
+}
+
+.line-tabs-items {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.line-tabs-items::-webkit-scrollbar {
   display: none;
 }
 

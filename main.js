@@ -3,6 +3,7 @@ let watches = [];
 let filteredWatches = [];
 let displayedCount = 50;
 let selectedLine = '';
+let selectedCategory = ''; // 선택된 카테고리 (professional/classic)
 let dataLoaded = false; // 데이터 로딩 완료 플래그
 let pendingAuthUser = null; // 데이터 로딩 전 로그인한 사용자 저장
 
@@ -153,7 +154,17 @@ function createLineTabs() {
 
   // 전체 탭 클릭 이벤트 추가
   const allTab = document.getElementById('line-tab-all');
-  allTab.addEventListener('click', () => selectLine(''));
+  allTab.addEventListener('click', () => {
+    selectedCategory = '';
+    selectLine('');
+  });
+
+  // 카테고리 버튼 클릭 이벤트 추가
+  const categoryProfessional = document.getElementById('category-professional');
+  const categoryClassic = document.getElementById('category-classic');
+
+  categoryProfessional.addEventListener('click', () => selectCategory('professional'));
+  categoryClassic.addEventListener('click', () => selectCategory('classic'));
 
   const professionalContainer = document.getElementById('line-tabs-professional');
   const classicContainer = document.getElementById('line-tabs-classic');
@@ -175,14 +186,36 @@ function createLineTabs() {
   });
 }
 
+// 카테고리 선택 (프로페셔널/클래식)
+function selectCategory(category) {
+  selectedCategory = category;
+  selectedLine = ''; // 개별 라인 선택 초기화
+  displayedCount = 50;
+
+  // 탭 활성화 업데이트
+  document.querySelectorAll('.line-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  document.querySelector(`[data-category="${category}"]`).classList.add('active');
+
+  // 현재 라인명 표시
+  const categoryName = category === 'professional' ? '프로페셔널' : '클래식';
+  if (currentLineName) currentLineName.textContent = categoryName;
+
+  applyFilters();
+}
+
 // 라인 선택
 function selectLine(line) {
   selectedLine = line;
+  selectedCategory = ''; // 카테고리 선택 초기화
   displayedCount = 50;
 
   // 탭 활성화
   document.querySelectorAll('.line-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.line === line);
+    const isActive = tab.dataset.line === line ||
+                     (line === '' && tab.id === 'line-tab-all');
+    tab.classList.toggle('active', isActive);
   });
 
   // 현재 라인명 표시
@@ -229,6 +262,10 @@ function applyFilters() {
     .map(cb => cb.value);
 
   filteredWatches = watches.filter(watch => {
+    // 카테고리 필터 (프로페셔널/클래식)
+    if (selectedCategory === 'professional' && !professionalLines.includes(watch.line)) return false;
+    if (selectedCategory === 'classic' && !classicLines.includes(watch.line)) return false;
+
     // 라인 필터
     if (selectedLine && watch.line !== selectedLine) return false;
 
