@@ -928,28 +928,25 @@ function calculateMargin() {
   const performanceRate = parseFloat(document.getElementById('calc-point-rate').value) || 0;
   const sellingPrice = parseNumber(document.getElementById('calc-sell').value);
 
-  // 상품권 액면가 = 리테일가 (구매하는 상품권 총액)
-  const giftCardFaceValue = retailPrice;
+  // 상품권 액면가 = 리테일가를 50만원 단위로 올림
+  const giftCardFaceValue = Math.ceil(retailPrice / 500000) * 500000;
+
+  // 거스름돈 (현금) = 상품권 액면가 - 리테일가
+  const change = giftCardFaceValue - retailPrice;
 
   // 상품권 실구매가 = 상품권 액면가 × (1 - 상품권 요율)
   const giftCardActualCost = giftCardFaceValue * (1 - giftCardRate / 100);
 
-  // 상품권 할인액 = 액면가 - 실구매가
-  const giftCardDiscount = giftCardFaceValue - giftCardActualCost;
-
-  // 남는 상품권 (거스름) = 상품권 액면가 - 리테일가 (현재는 0)
-  const remainingGiftCard = 0;
-
   // 포인트 현금화 = 리테일가 × 실적 요율
   const pointsCashback = retailPrice * (performanceRate / 100);
 
-  // 총이득 = (판매가 + 포인트 + 남는 상품권) - 상품권 실구매가
-  const totalProfit = (sellingPrice + pointsCashback + remainingGiftCard) - giftCardActualCost;
+  // 총이득 = (판매가 + 포인트 + 거스름) - 상품권 실구매가
+  const totalProfit = (sellingPrice + pointsCashback + change) - giftCardActualCost;
 
   // 결과 표시
   document.getElementById('result-gift-face').textContent = formatNumber(giftCardFaceValue);
   document.getElementById('result-gift-real').textContent = formatNumber(giftCardActualCost);
-  document.getElementById('result-change').textContent = formatNumber(remainingGiftCard);
+  document.getElementById('result-change').textContent = formatNumber(change);
   document.getElementById('result-point').textContent = formatNumber(pointsCashback);
   document.getElementById('result-sell').textContent = formatNumber(sellingPrice);
   document.getElementById('result-total').textContent = formatNumber(totalProfit);
