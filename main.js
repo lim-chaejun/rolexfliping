@@ -17,9 +17,6 @@ let isAdmin = false;
 let userProfile = null;
 let isApproved = false;
 
-// 상태 오버라이드 (Firestore에서 로드)
-let statusOverrides = {};
-
 // DOM 요소
 const productGrid = document.getElementById('product-grid');
 const loading = document.getElementById('loading');
@@ -84,18 +81,21 @@ const materialNames = {
 // 초기화
 async function init() {
   try {
-    const response = await fetch('rolex_watches.json');
-    watches = await response.json();
+    // Firestore에서 시계 데이터 로드
+    const snapshot = await db.collection('watches').get();
+    watches = [];
+    snapshot.forEach(doc => {
+      watches.push({ id: doc.id, ...doc.data() });
+    });
+
+    console.log(`Firestore에서 ${watches.length}개 시계 로드 완료`);
 
     totalCount.textContent = watches.length.toLocaleString();
 
     createLineTabs();
     populateFilters();
 
-    // Firestore에서 상태 오버라이드 로드 (모든 사용자)
-    await loadStatusOverrides();
-
-    updateStatusCountsWithOverrides();
+    updateStatusCounts();
     applyFilters();
     renderCharts();
 
@@ -188,9 +188,8 @@ function applyFilters() {
     // 라인 필터
     if (selectedLine && watch.line !== selectedLine) return false;
 
-    // 상태 필터 (오버라이드 적용)
-    const currentStatus = statusOverrides[watch.model_number] || watch.buy_status;
-    if (!selectedStatuses.includes(currentStatus)) return false;
+    // 상태 필터
+    if (!selectedStatuses.includes(watch.buy_status)) return false;
 
     // 검색 필터
     if (searchTerm) {
@@ -258,19 +257,17 @@ function renderProducts() {
 
   productGrid.innerHTML = displayWatches.map(watch => {
     const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
-    // 상태 오버라이드 적용
-    const currentStatus = statusOverrides[watch.model_number] || watch.buy_status;
 
     // 관리자용 상태 변경 버튼 (○, △, ✕)
     const adminControls = isAdmin ? `
       <div class="admin-status-control">
-        <button class="status-btn buy ${currentStatus === 'buy' ? 'active' : ''}"
+        <button class="status-btn buy ${watch.buy_status === 'buy' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="buy"
                 onclick="updateWatchStatusBtn(event, this)">○</button>
-        <button class="status-btn pending ${currentStatus === 'pending' ? 'active' : ''}"
+        <button class="status-btn pending ${watch.buy_status === 'pending' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="pending"
                 onclick="updateWatchStatusBtn(event, this)">△</button>
-        <button class="status-btn no ${currentStatus === 'no' ? 'active' : ''}"
+        <button class="status-btn no ${watch.buy_status === 'no' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="no"
                 onclick="updateWatchStatusBtn(event, this)">✕</button>
       </div>
@@ -279,7 +276,7 @@ function renderProducts() {
     return `
       <div class="product-card">
         <div class="product-image-wrapper">
-          <span class="product-badge ${currentStatus}">${statusText[currentStatus]}</span>
+          <span class="product-badge ${watch.buy_status}">${statusText[watch.buy_status]}</span>
           <img
             class="product-image"
             src="${imagePath}"
@@ -1194,20 +1191,6 @@ viewStatsBtn.addEventListener('click', () => switchTab('stats'));
 // 관리자 기능 - 상태 관리
 // ==========================================
 
-// Firestore에서 상태 오버라이드 로드
-async function loadStatusOverrides() {
-  try {
-    const snapshot = await db.collection('watchStatus').get();
-    statusOverrides = {};
-    snapshot.forEach(doc => {
-      statusOverrides[doc.id] = doc.data().status;
-    });
-    console.log('상태 오버라이드 로드됨:', Object.keys(statusOverrides).length);
-  } catch (error) {
-    console.error('상태 로드 실패:', error);
-  }
-}
-
 // 시계 상태 업데이트 - 버튼용 (관리자 전용)
 async function updateWatchStatusBtn(event, btn) {
   event.stopPropagation();
@@ -1218,26 +1201,28 @@ async function updateWatchStatusBtn(event, btn) {
   const modelNumber = btn.dataset.model;
   const newStatus = btn.dataset.status;
 
+  // 로컬 watches 배열에서 해당 시계 찾기
+  const watchIndex = watches.findIndex(w => w.model_number === modelNumber);
+  if (watchIndex === -1) return;
+
   // 이미 같은 상태면 무시
-  if (statusOverrides[modelNumber] === newStatus) return;
-  const watch = watches.find(w => w.model_number === modelNumber);
-  if (!statusOverrides[modelNumber] && watch?.buy_status === newStatus) return;
+  if (watches[watchIndex].buy_status === newStatus) return;
 
   try {
-    // Firestore에 저장
-    await db.collection('watchStatus').doc(modelNumber).set({
-      status: newStatus,
+    // Firestore watches 컬렉션 직접 업데이트
+    await db.collection('watches').doc(modelNumber).update({
+      buy_status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentUser.email
     });
 
-    // 로컬 오버라이드 업데이트
-    statusOverrides[modelNumber] = newStatus;
+    // 로컬 watches 배열 업데이트
+    watches[watchIndex].buy_status = newStatus;
 
     // 상태 카운트 업데이트
-    updateStatusCountsWithOverrides();
+    updateStatusCounts();
 
-    // 전체 리렌더링 대신 해당 카드만 업데이트
+    // 해당 카드만 업데이트
     const card = btn.closest('.product-card');
     if (card) {
       // 뱃지 업데이트
@@ -1259,20 +1244,6 @@ async function updateWatchStatusBtn(event, btn) {
   }
 }
 
-// 상태 카운트 업데이트 (오버라이드 포함)
-function updateStatusCountsWithOverrides() {
-  const counts = { buy: 0, pending: 0, no: 0 };
-  watches.forEach(w => {
-    const status = statusOverrides[w.model_number] || w.buy_status;
-    if (counts.hasOwnProperty(status)) {
-      counts[status]++;
-    }
-  });
-
-  document.getElementById('count-buy').textContent = counts.buy.toLocaleString();
-  document.getElementById('count-pending').textContent = counts.pending.toLocaleString();
-  document.getElementById('count-no').textContent = counts.no.toLocaleString();
-}
 
 // ==========================================
 // 사용자 프로필 및 승인 시스템
