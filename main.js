@@ -72,6 +72,8 @@ const totalCount = document.getElementById('total-count');
 const filteredCount = document.getElementById('filtered-count');
 const searchInput = document.getElementById('search-input');
 const materialFilter = document.getElementById('material-filter');
+const bezelFilter = document.getElementById('bezel-filter');
+const braceletFilter = document.getElementById('bracelet-filter');
 const priceFilter = document.getElementById('price-filter');
 const sortSelect = document.getElementById('sort-select');
 const resetBtn = document.getElementById('reset-filters');
@@ -278,6 +280,24 @@ function populateFilters() {
     option.textContent = materialNames[material] || material;
     materialFilter.appendChild(option);
   });
+
+  // 베젤 필터
+  const bezels = [...new Set(watches.map(w => w.bezel).filter(b => b))].sort();
+  bezels.forEach(bezel => {
+    const option = document.createElement('option');
+    option.value = bezel;
+    option.textContent = bezel;
+    bezelFilter.appendChild(option);
+  });
+
+  // 브레이슬릿 필터
+  const bracelets = [...new Set(watches.map(w => w.bracelet).filter(b => b))].sort();
+  bracelets.forEach(bracelet => {
+    const option = document.createElement('option');
+    option.value = bracelet;
+    option.textContent = bracelet;
+    braceletFilter.appendChild(option);
+  });
 }
 
 // 상태 카운트 업데이트
@@ -298,6 +318,8 @@ function updateStatusCounts() {
 function applyFilters() {
   const searchTerm = searchInput.value.toLowerCase().trim();
   const selectedMaterial = materialFilter.value;
+  const selectedBezel = bezelFilter.value;
+  const selectedBracelet = braceletFilter.value;
   const selectedPrice = priceFilter.value;
 
   // 선택된 상태들
@@ -331,6 +353,12 @@ function applyFilters() {
 
     // 소재 필터
     if (selectedMaterial && watch.material !== selectedMaterial) return false;
+
+    // 베젤 필터
+    if (selectedBezel && watch.bezel !== selectedBezel) return false;
+
+    // 브레이슬릿 필터
+    if (selectedBracelet && watch.bracelet !== selectedBracelet) return false;
 
     // 가격 필터
     if (selectedPrice) {
@@ -496,6 +524,8 @@ watchDetailModal.addEventListener('click', (e) => {
 function resetFilters() {
   searchInput.value = '';
   materialFilter.value = '';
+  bezelFilter.value = '';
+  braceletFilter.value = '';
   priceFilter.value = '';
   sortSelect.value = 'price-asc';
   selectedLine = '';
@@ -668,6 +698,16 @@ searchInput.addEventListener('input', debounce(() => {
 }, 300));
 
 materialFilter.addEventListener('change', () => {
+  displayedCount = 50;
+  applyFilters();
+});
+
+bezelFilter.addEventListener('change', () => {
+  displayedCount = 50;
+  applyFilters();
+});
+
+braceletFilter.addEventListener('change', () => {
   displayedCount = 50;
   applyFilters();
 });
