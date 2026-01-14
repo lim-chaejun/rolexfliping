@@ -502,8 +502,13 @@ function showWatchDetail(modelNumber) {
   document.getElementById('watch-detail-price').textContent = watch.formatted_price;
   document.getElementById('watch-detail-material').textContent = materialNames[watch.material] || watch.material;
   document.getElementById('watch-detail-case').textContent = watch.case_description || '-';
+  document.getElementById('watch-detail-diameter').textContent = watch.diameter || '-';
   document.getElementById('watch-detail-dial').textContent = watch.dial || '-';
+  document.getElementById('watch-detail-bezel').textContent = watch.bezel || '-';
   document.getElementById('watch-detail-bracelet').textContent = watch.bracelet || '-';
+  document.getElementById('watch-detail-material-detail').textContent = watch.material_detail || '-';
+  document.getElementById('watch-detail-movement').textContent = watch.movement || '-';
+  document.getElementById('watch-detail-cyclops').textContent = watch.cyclops || '-';
 
   watchDetailModal.classList.add('active');
   document.body.style.overflow = 'hidden';
