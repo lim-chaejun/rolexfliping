@@ -285,20 +285,20 @@ function updateFilterOptions() {
   // 기본 필터 조건으로 필터링된 제품 가져오기 (소재/베젤/브레이슬릿 제외)
   const baseFiltered = getBaseFilteredWatches();
 
-  // 소재 필터 옵션 업데이트
-  const materials = [...new Set(baseFiltered.map(w => w.material).filter(m => m))].sort();
+  // 소재 필터 옵션 업데이트 (material_detail 사용)
+  const materials = [...new Set(baseFiltered.map(w => w.material_detail).filter(m => m))].sort();
   materialFilter.innerHTML = '<option value="">전체 소재</option>';
   materials.forEach(material => {
     const option = document.createElement('option');
     option.value = material;
-    option.textContent = materialNames[material] || material;
+    option.textContent = material;
     materialFilter.appendChild(option);
   });
   materialFilter.value = materials.includes(currentMaterial) ? currentMaterial : '';
 
   // 베젤 필터 옵션 업데이트 (소재 필터 적용 후)
   const bezelFiltered = currentMaterial
-    ? baseFiltered.filter(w => w.material === currentMaterial)
+    ? baseFiltered.filter(w => w.material_detail === currentMaterial)
     : baseFiltered;
   const bezels = [...new Set(bezelFiltered.map(w => w.bezel).filter(b => b))].sort();
   bezelFilter.innerHTML = '<option value="">전체 베젤</option>';
@@ -421,8 +421,8 @@ function applyFilters() {
       if (!searchFields.includes(searchTerm)) return false;
     }
 
-    // 소재 필터
-    if (selectedMaterial && watch.material !== selectedMaterial) return false;
+    // 소재 필터 (material_detail 사용)
+    if (selectedMaterial && watch.material_detail !== selectedMaterial) return false;
 
     // 베젤 필터
     if (selectedBezel && watch.bezel !== selectedBezel) return false;
