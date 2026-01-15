@@ -210,6 +210,23 @@ async function init() {
       if (managerId) {
         // 매니저별 watchStatuses 컬렉션에서 로드
         statusDoc = await db.collection('watchStatuses').doc(managerId).get();
+
+        // 매니저/소유자인데 watchStatuses 문서가 없으면 자동 생성
+        if (!statusDoc.exists && ['manager', 'owner'].includes(userRole)) {
+          console.log(`매니저(${managerId}) watchStatuses 문서 자동 생성 중...`);
+          const initialStatuses = {};
+          watches.forEach(watch => {
+            initialStatuses[watch.model_number] = 'no';
+          });
+          initialStatuses.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+          initialStatuses.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          initialStatuses.autoCreated = true;
+          await db.collection('watchStatuses').doc(managerId).set(initialStatuses);
+
+          // 생성된 문서 다시 로드
+          statusDoc = await db.collection('watchStatuses').doc(managerId).get();
+          console.log(`매니저(${managerId}) watchStatuses 문서 자동 생성 완료`);
+        }
       } else {
         // 레거시: 기존 settings/watchStatuses에서 로드 (하위 호환성)
         statusDoc = await db.collection('settings').doc('watchStatuses').get();
@@ -220,12 +237,27 @@ async function init() {
         watches.forEach(watch => {
           if (statuses[watch.model_number]) {
             watch.buy_status = statuses[watch.model_number];
+          } else {
+            // 상태가 없는 시계는 기본값 'no'로 설정
+            watch.buy_status = 'no';
           }
         });
         console.log(`매니저(${managerId || 'legacy'}) watchStatuses 동기화 완료`);
+      } else {
+        // watchStatuses 문서가 없는 경우 모든 시계를 기본값 'no'로 설정
+        watches.forEach(watch => {
+          watch.buy_status = 'no';
+        });
+        console.log('watchStatuses 문서 없음, 기본값(no) 적용');
       }
     } catch (e) {
       console.log('상태 동기화 실패, 기본값 사용:', e);
+      // 오류 발생 시에도 기본값 설정
+      watches.forEach(watch => {
+        if (!watch.buy_status) {
+          watch.buy_status = 'no';
+        }
+      });
     }
 
     console.log(`로컬 JSON에서 ${watches.length}개 시계 로드 완료`);
