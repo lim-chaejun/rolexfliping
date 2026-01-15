@@ -387,6 +387,15 @@
         </button>
       </div>
 
+      <!-- 매입 데이터 소스 선택 (소유자 전용, 승인 완료 탭에서만 표시) -->
+      <div class="data-source-selector" id="data-source-selector" style="display:none;">
+        <span class="data-source-label">매입 데이터 소스:</span>
+        <select id="data-source-select">
+          <option value="">내 데이터</option>
+        </select>
+        <span class="data-source-hint">다른 매니저 선택 시 수정 불가</span>
+      </div>
+
       <div class="admin-user-list" id="admin-user-list">
         <!-- 동적 생성 -->
       </div>

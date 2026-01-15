@@ -35,6 +35,8 @@ let userProfile = null;
 let isApproved = false;
 let currentManagerId = null;  // 소속 매니저 ID
 let myInviteCode = null;      // 내 초대코드 (매니저 이상)
+let dataSourceManagerId = null;  // 소유자가 선택한 매입 데이터 소스 (매니저 UID)
+let isUsingOtherManagerData = false;  // 다른 매니저 데이터 사용 중 여부
 
 // ==========================================
 // 권한 체크 유틸리티 함수
@@ -72,6 +74,12 @@ function canAccess(feature) {
 
   const allowedRoles = permissions[feature];
   if (!allowedRoles) return false;
+
+  // 소유자가 다른 매니저 데이터를 사용 중이면 상태 수정 불가
+  if (feature === 'watch:edit_status' && isUsingOtherManagerData) {
+    return false;
+  }
+
   return allowedRoles.includes(userRole);
 }
 
@@ -223,6 +231,10 @@ function normalizeBracelet(bracelet) {
 // 초기화
 // 대상 매니저 ID 반환 (매입 상태 조회/저장용)
 function getWatchStatusesManagerId() {
+  // 소유자가 다른 매니저의 데이터를 사용하도록 설정한 경우
+  if (userRole === 'owner' && dataSourceManagerId) {
+    return dataSourceManagerId;
+  }
   // 매니저/소유자는 자신의 watchStatuses 사용
   if (['manager', 'owner'].includes(userRole)) {
     return currentUser.uid;
@@ -3303,6 +3315,10 @@ async function handleAuthStateChange(user) {
       isApproved = true;
       hideProfileModal();
 
+      // 소유자의 매입 데이터 소스 설정 로드
+      dataSourceManagerId = userProfile.dataSourceManagerId || null;
+      isUsingOtherManagerData = !!dataSourceManagerId;
+
       // 소유자 초대코드/watchStatuses 초기화 (최초 1회)
       if (!myInviteCode) {
         try {
@@ -3479,6 +3495,12 @@ function switchAdminTab(tab) {
     t.classList.toggle('active', t.dataset.adminTab === tab);
   });
 
+  // 매입 데이터 소스 선택기 표시/숨김 (승인 완료 탭에서만 표시)
+  const dataSourceSelector = document.getElementById('data-source-selector');
+  if (dataSourceSelector) {
+    dataSourceSelector.style.display = (tab === 'approved') ? 'flex' : 'none';
+  }
+
   // 사용자 목록 렌더링
   renderAdminUserList();
 }
@@ -3508,9 +3530,66 @@ async function loadAdminPage() {
       pendingCountEl.textContent = pendingCount;
     }
 
+    // 매입 데이터 소스 드롭다운 초기화 (소유자 전용)
+    initDataSourceSelector();
+
     renderAdminUserList();
   } catch (error) {
     console.error('사용자 목록 로드 실패:', error);
+  }
+}
+
+// 매입 데이터 소스 선택기 초기화
+function initDataSourceSelector() {
+  const selector = document.getElementById('data-source-selector');
+  const select = document.getElementById('data-source-select');
+  if (!selector || !select) return;
+
+  // 매니저 목록 가져오기 (role이 manager인 사용자)
+  const managers = allUsers.filter(u => u.role === 'manager' && u.status === 'approved');
+
+  // 드롭다운 옵션 생성
+  select.innerHTML = '<option value="">내 데이터</option>';
+  managers.forEach(manager => {
+    const option = document.createElement('option');
+    option.value = manager.id;
+    option.textContent = manager.nickname || manager.name || manager.email;
+    select.appendChild(option);
+  });
+
+  // 현재 설정된 값 선택
+  if (dataSourceManagerId) {
+    select.value = dataSourceManagerId;
+  }
+
+  // 이벤트 리스너 추가
+  select.onchange = () => changeDataSource(select.value);
+}
+
+// 매입 데이터 소스 변경
+async function changeDataSource(managerId) {
+  if (!currentUser || userRole !== 'owner') return;
+
+  try {
+    // Firestore에 저장
+    await db.collection('users').doc(currentUser.uid).update({
+      dataSourceManagerId: managerId || null
+    });
+
+    // 전역 변수 업데이트
+    dataSourceManagerId = managerId || null;
+    isUsingOtherManagerData = !!managerId;
+
+    // 메인 페이지 데이터 새로고침이 필요함을 알림
+    alert(managerId
+      ? '다른 매니저의 매입 데이터를 사용합니다. 메인 탭에서 수정이 불가능합니다.'
+      : '내 데이터를 사용합니다. 메인 탭에서 수정이 가능합니다.');
+
+    // 메인 탭 데이터 새로고침 (watchStatuses 다시 로드)
+    dataLoaded = false;
+  } catch (error) {
+    console.error('데이터 소스 변경 실패:', error);
+    alert('설정 저장에 실패했습니다.');
   }
 }
 
