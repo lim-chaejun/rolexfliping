@@ -346,6 +346,7 @@
   <section class="calc-section" id="calc-section" style="display:none;">
     <div class="calc-container">
       <h2 class="calc-title">마진 계산기</h2>
+      <p class="calc-subtitle">거래 조건을 입력하여 예상 이윤을 계산하세요.</p>
 
       <!-- 입력 영역 -->
       <div class="calc-input-panel">
@@ -798,14 +799,8 @@
         <button class="filter-modal-close" id="filter-modal-close">&times;</button>
       </div>
       <div class="filter-modal-body">
-        <!-- 검색 -->
-        <div class="filter-modal-section">
-          <div class="filter-modal-section-title">검색</div>
-          <input type="text" class="filter-modal-search" id="mobile-search-input" placeholder="모델명, 모델번호 검색">
-        </div>
-
-        <!-- 라인 선택 -->
-        <div class="filter-modal-section">
+        <!-- 라인 선택 (모바일 전용) -->
+        <div class="filter-modal-section mobile-only-section" id="filter-line-section">
           <div class="filter-modal-section-title">라인</div>
           <div class="filter-line-grid" id="mobile-line-grid">
             <!-- JS에서 동적 생성 -->
