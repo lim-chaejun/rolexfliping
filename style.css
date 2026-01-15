@@ -836,9 +836,9 @@ body {
 @media (max-width: 768px) {
   /* 헤더 - sticky로 상단 고정 (문서 흐름 유지) */
   .header {
-    position: sticky;
-    top: 0;
-    z-index: 1001;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1001 !important;
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
   }
@@ -864,9 +864,9 @@ body {
 
   /* 메인 탭 - sticky로 헤더 아래 고정 (문서 흐름 유지) */
   .main-nav {
-    position: sticky;
-    top: 52px;
-    z-index: 1000;
+    position: sticky !important;
+    top: 52px !important;
+    z-index: 1000 !important;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
   }
