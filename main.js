@@ -2981,7 +2981,7 @@ async function submitProfile(e) {
         createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-    } else {
+    } else if (signupInviteData && signupInviteCode) {
       // 일반 초대코드 가입
       const managerId = signupInviteData.managerId;
       userData = {
@@ -2994,6 +2994,20 @@ async function submitProfile(e) {
         status: 'approved',
         managerId: managerId,
         linkedByCode: signupInviteCode,
+        createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    } else {
+      // TODO: 임시 - 초대코드 없이 가입 (오너 설정 후 제거)
+      userData = {
+        ...existingData,
+        name,
+        nickname,
+        phone,
+        email: currentUser.email,
+        photoURL: currentUser.photoURL,
+        status: 'pending', // 승인 대기
+        role: 'member',
         createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
