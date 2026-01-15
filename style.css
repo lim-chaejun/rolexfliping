@@ -1386,13 +1386,33 @@ body {
 }
 
 @media (max-width: 768px) {
+  #watch-detail-modal {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .watch-detail-content {
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 0;
+  }
+
   .watch-detail-body {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 16px;
   }
 
   .watch-detail-image-wrapper {
-    max-height: 300px;
+    min-height: unset;
+    max-height: 40vh;
+    aspect-ratio: unset;
+  }
+
+  .watch-detail-image {
+    max-height: 40vh;
+    width: auto;
+    max-width: 100%;
   }
 
   .watch-detail-title {
