@@ -287,7 +287,7 @@ body {
   gap: 16px;
   flex-wrap: wrap;
   position: sticky;
-  top: 140px; /* header(86px) + main-nav(54px) */
+  top: 222px; /* header(86px) + main-nav(54px) + line-tabs(~82px) */
   background: var(--bg-primary);
   z-index: 90;
 }
