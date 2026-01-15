@@ -25,6 +25,30 @@ const ROLE_LABELS = {
   member: '일반회원'
 };
 
+// 초대코드 생성 함수 (6자리, 혼동 문자 제외)
+function generateInviteCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // O, 0, I, 1 제외
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// 초대코드 유효성 검증
+async function validateInviteCode(code) {
+  if (!code || code.length !== 6) return null;
+
+  try {
+    const codeDoc = await db.collection('inviteCodes').doc(code.toUpperCase()).get();
+    if (!codeDoc.exists || !codeDoc.data().active) return null;
+    return codeDoc.data();
+  } catch (error) {
+    console.error('초대코드 검증 실패:', error);
+    return null;
+  }
+}
+
 // Firebase 설정
 const firebaseConfig = {
   apiKey: "AIzaSyBunJyCChJ4GdpJwjVDrfeS9UTdyTqwssk",

@@ -247,7 +247,18 @@
   <!-- 통계 섹션 -->
   <section class="stats-section" id="stats-section" style="display:none;">
     <div class="stats-container">
-      <h2 class="stats-page-title">나의 테스트 통계</h2>
+      <div class="stats-header">
+        <h2 class="stats-page-title">나의 테스트 통계</h2>
+        <button class="stats-reset-btn" id="stats-reset-btn" title="통계 초기화">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M3 21v-5h5"/>
+          </svg>
+          <span>리셋</span>
+        </button>
+      </div>
 
       <div class="stats-summary" id="stats-page-summary">
         <div class="stats-card">
@@ -482,6 +493,11 @@
           <label for="profile-referrer">추천인</label>
           <input type="text" id="profile-referrer" placeholder="추천인이 있다면 입력하세요">
         </div>
+        <div class="form-group">
+          <label for="profile-invite-code">초대코드</label>
+          <input type="text" id="profile-invite-code" placeholder="6자리 초대코드" maxlength="6" style="text-transform: uppercase;">
+          <span class="form-hint">매니저에게 받은 코드가 있다면 입력하세요</span>
+        </div>
         <button type="submit" class="submit-profile-btn">가입 신청</button>
       </form>
     </div>
@@ -514,6 +530,23 @@
           <div class="my-info-item">
             <span class="my-info-label">활동 기간</span>
             <span class="my-info-value" id="my-info-activedays">-</span>
+          </div>
+        </div>
+        <!-- 초대코드 섹션 (매니저 이상만 표시) -->
+        <div class="my-info-invite-section" id="my-info-invite-section" style="display: none;">
+          <div class="my-info-section-title">내 초대코드</div>
+          <div class="invite-code-display">
+            <span class="invite-code" id="my-info-invite-code">-</span>
+            <button class="copy-code-btn" onclick="copyInviteCode()">복사</button>
+          </div>
+          <div class="form-hint">이 코드를 공유하면 새 회원이 자동 승인됩니다</div>
+        </div>
+        <!-- 소속 매니저 섹션 (일반 회원/딜러만 표시) -->
+        <div class="my-info-manager-section" id="my-info-manager-section" style="display: none;">
+          <div class="my-info-section-title">소속 매니저</div>
+          <div class="manager-info">
+            <span class="manager-info-icon">👤</span>
+            <span class="manager-info-name" id="my-info-manager-name">-</span>
           </div>
         </div>
         <div class="my-info-tests">

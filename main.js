@@ -18,6 +18,8 @@ let currentUser = null;
 let userRole = 'member';  // 사용자 등급: owner, manager, dealer, member
 let userProfile = null;
 let isApproved = false;
+let currentManagerId = null;  // 소속 매니저 ID
+let myInviteCode = null;      // 내 초대코드 (매니저 이상)
 
 // ==========================================
 // 권한 체크 유틸리티 함수
@@ -61,6 +63,48 @@ function canAccess(feature) {
 // 하위 호환성을 위한 isAdmin getter (기존 코드 호환)
 function isAdmin() {
   return userRole === 'owner';
+}
+
+// 고유 초대코드 생성 (중복 체크)
+async function createUniqueInviteCode() {
+  let code;
+  let exists = true;
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  while (exists && attempts < maxAttempts) {
+    code = generateInviteCode();
+    const existingDoc = await db.collection('inviteCodes').doc(code).get();
+    exists = existingDoc.exists;
+    attempts++;
+  }
+
+  if (exists) {
+    throw new Error('고유한 초대코드 생성 실패');
+  }
+
+  return code;
+}
+
+// 클립보드에 초대코드 복사
+function copyInviteCode() {
+  if (!myInviteCode) return;
+
+  navigator.clipboard.writeText(myInviteCode).then(() => {
+    const btn = document.querySelector('.copy-code-btn');
+    if (btn) {
+      const originalText = btn.textContent;
+      btn.textContent = '복사됨!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+  }).catch(err => {
+    console.error('클립보드 복사 실패:', err);
+    alert('복사에 실패했습니다. 직접 코드를 복사해주세요.');
+  });
 }
 
 // DOM 요소
@@ -139,15 +183,38 @@ const materialNames = {
 };
 
 // 초기화
+// 대상 매니저 ID 반환 (매입 상태 조회/저장용)
+function getWatchStatusesManagerId() {
+  // 매니저/소유자는 자신의 watchStatuses 사용
+  if (['manager', 'owner'].includes(userRole)) {
+    return currentUser.uid;
+  }
+  // 일반 회원/딜러는 소속 매니저의 watchStatuses 사용
+  if (currentManagerId) {
+    return currentManagerId;
+  }
+  // 매니저가 없는 경우 (레거시 데이터) null 반환
+  return null;
+}
+
 async function init() {
   try {
     // 로컬 JSON 파일에서 시계 데이터 로드 (Firebase 읽기 한도 절약)
     const response = await fetch('rolex_watches.json');
     watches = await response.json();
 
-    // Firebase에서 상태만 가져와서 병합 (단일 문서 = 1회 읽기)
+    // 매니저별 watchStatuses 로드
+    const managerId = getWatchStatusesManagerId();
     try {
-      const statusDoc = await db.collection('settings').doc('watchStatuses').get();
+      let statusDoc;
+      if (managerId) {
+        // 매니저별 watchStatuses 컬렉션에서 로드
+        statusDoc = await db.collection('watchStatuses').doc(managerId).get();
+      } else {
+        // 레거시: 기존 settings/watchStatuses에서 로드 (하위 호환성)
+        statusDoc = await db.collection('settings').doc('watchStatuses').get();
+      }
+
       if (statusDoc.exists) {
         const statuses = statusDoc.data();
         watches.forEach(watch => {
@@ -155,7 +222,7 @@ async function init() {
             watch.buy_status = statuses[watch.model_number];
           }
         });
-        console.log('Firebase에서 상태 동기화 완료');
+        console.log(`매니저(${managerId || 'legacy'}) watchStatuses 동기화 완료`);
       }
     } catch (e) {
       console.log('상태 동기화 실패, 기본값 사용:', e);
@@ -1249,6 +1316,42 @@ async function showMyInfoModal() {
     }
   }
 
+  // 초대코드 섹션 (매니저 이상만 표시)
+  const inviteSection = document.getElementById('my-info-invite-section');
+  const managerSection = document.getElementById('my-info-manager-section');
+
+  if (['manager', 'owner'].includes(userRole) && myInviteCode) {
+    // 매니저 이상: 초대코드 표시
+    if (inviteSection) {
+      inviteSection.style.display = 'block';
+      document.getElementById('my-info-invite-code').textContent = myInviteCode;
+    }
+    if (managerSection) managerSection.style.display = 'none';
+  } else if (currentManagerId) {
+    // 일반 회원/딜러: 소속 매니저 표시
+    if (inviteSection) inviteSection.style.display = 'none';
+    if (managerSection) {
+      managerSection.style.display = 'block';
+      // 매니저 이름 가져오기
+      try {
+        const managerDoc = await db.collection('users').doc(currentManagerId).get();
+        if (managerDoc.exists) {
+          const managerName = managerDoc.data().name || managerDoc.data().email?.split('@')[0] || '매니저';
+          document.getElementById('my-info-manager-name').textContent = managerName;
+        } else {
+          document.getElementById('my-info-manager-name').textContent = '-';
+        }
+      } catch (error) {
+        console.error('매니저 정보 로드 실패:', error);
+        document.getElementById('my-info-manager-name').textContent = '-';
+      }
+    }
+  } else {
+    // 둘 다 해당 없음
+    if (inviteSection) inviteSection.style.display = 'none';
+    if (managerSection) managerSection.style.display = 'none';
+  }
+
   // 최근 테스트 3개 불러오기
   const testsListEl = document.getElementById('my-info-tests-list');
   if (testsListEl) {
@@ -1838,29 +1941,80 @@ async function loadStatsPage() {
   await loadUserStatsForPage();
 }
 
-// 사용자 통계 로드 (페이지용)
+// 사용자 통계 로드 (페이지용) - statsResetAt 기준 필터링
 async function loadUserStatsForPage() {
   try {
-    // 통계 문서 가져오기
-    const statsDoc = await db.collection('users').doc(currentUser.uid).get();
+    // 사용자 문서에서 statsResetAt 확인
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const statsResetAt = userData.statsResetAt?.toDate() || null;
 
-    // 최근 테스트 기록 가져오기
-    const scoresSnapshot = await db.collection('users').doc(currentUser.uid)
+    // scores 쿼리 - statsResetAt 이후 기록만 조회
+    let scoresQuery = db.collection('users').doc(currentUser.uid)
       .collection('scores')
-      .orderBy('timestamp', 'desc')
-      .limit(10)
-      .get();
+      .orderBy('timestamp', 'desc');
 
-    if (statsDoc.exists) {
-      const stats = statsDoc.data();
-      renderStatsPage(stats, scoresSnapshot.docs);
-    } else {
-      renderEmptyStatsPage();
+    if (statsResetAt) {
+      scoresQuery = db.collection('users').doc(currentUser.uid)
+        .collection('scores')
+        .where('timestamp', '>', statsResetAt)
+        .orderBy('timestamp', 'desc');
     }
+
+    const scoresSnapshot = await scoresQuery.get();
+
+    if (scoresSnapshot.empty) {
+      renderEmptyStatsPage();
+      return;
+    }
+
+    // scores에서 통계 계산
+    const calculatedStats = calculateStatsFromScores(scoresSnapshot.docs);
+    renderStatsPage(calculatedStats, scoresSnapshot.docs.slice(0, 10));
   } catch (error) {
     console.error('통계 로드 실패:', error);
     renderEmptyStatsPage();
   }
+}
+
+// scores 기록에서 통계 계산
+function calculateStatsFromScores(scoreDocs) {
+  const stats = {
+    totalTests: 0,
+    totalCorrect: 0,
+    totalQuestions: 0,
+    lineStats: {},
+    wrongModels: {}
+  };
+
+  scoreDocs.forEach(doc => {
+    const data = doc.data();
+
+    // 전체 통계
+    stats.totalTests += 1;
+    stats.totalCorrect += data.score || 0;
+    stats.totalQuestions += data.totalQuestions || 10;
+
+    // 라인별 통계
+    const line = data.line || 'all';
+    if (!stats.lineStats[line]) {
+      stats.lineStats[line] = { correct: 0, total: 0 };
+    }
+    stats.lineStats[line].correct += data.score || 0;
+    stats.lineStats[line].total += data.totalQuestions || 10;
+
+    // 틀린 모델 추적
+    if (data.answers && Array.isArray(data.answers)) {
+      data.answers.forEach(answer => {
+        const modelKey = answer.question?.model_number || answer.model;
+        if (!answer.isCorrect && modelKey) {
+          stats.wrongModels[modelKey] = (stats.wrongModels[modelKey] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  return stats;
 }
 
 // 통계 페이지 렌더링
@@ -1919,7 +2073,7 @@ function renderStatsPage(stats, recentScores) {
 
     const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
     return `
-      <div class="wrong-model-item">
+      <div class="wrong-model-item clickable" onclick="showWatchDetail('${modelNumber}')">
         <img class="wrong-model-image" src="${imagePath}"
              onerror="this.src='${watch.image_url}'" alt="">
         <div class="wrong-model-info">
@@ -1974,8 +2128,35 @@ function renderEmptyStatsPage() {
   document.getElementById('page-recent-tests').innerHTML = '<p class="empty-message">테스트 기록 없음</p>';
 }
 
+// 통계 리셋 함수
+async function resetStats() {
+  if (!currentUser) return;
+
+  const confirmed = confirm('통계를 리셋하시겠습니까?\n(기존 테스트 기록은 삭제되지 않습니다)');
+  if (!confirmed) return;
+
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      statsResetAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 통계 페이지 새로고침
+    await loadStatsPage();
+    alert('통계가 리셋되었습니다.');
+  } catch (error) {
+    console.error('통계 리셋 실패:', error);
+    alert('통계 리셋에 실패했습니다.');
+  }
+}
+
 // 통계 버튼 이벤트 리스너 (테스트 결과에서 통계 탭으로 이동)
 viewStatsBtn.addEventListener('click', () => switchTab('stats'));
+
+// 통계 리셋 버튼 이벤트 리스너
+const statsResetBtn = document.getElementById('stats-reset-btn');
+if (statsResetBtn) {
+  statsResetBtn.addEventListener('click', resetStats);
+}
 
 // ==========================================
 // 관리자 기능 - 상태 관리
@@ -1999,10 +2180,19 @@ async function updateWatchStatusBtn(event, btn) {
   if (watches[watchIndex].buy_status === newStatus) return;
 
   try {
-    // Firebase 단일 문서에 상태 저장 (1회 쓰기로 공유 가능)
-    await db.collection('settings').doc('watchStatuses').set({
-      [modelNumber]: newStatus
-    }, { merge: true });
+    // 매니저별 watchStatuses에 저장
+    const managerId = getWatchStatusesManagerId();
+    if (managerId) {
+      await db.collection('watchStatuses').doc(managerId).set({
+        [modelNumber]: newStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    } else {
+      // 레거시: 기존 settings/watchStatuses에 저장 (하위 호환성)
+      await db.collection('settings').doc('watchStatuses').set({
+        [modelNumber]: newStatus
+      }, { merge: true });
+    }
 
     // 로컬 watches 배열 업데이트
     watches[watchIndex].buy_status = newStatus;
@@ -2083,13 +2273,22 @@ async function checkUserProfile() {
         });
       }
 
+      // 소속 매니저 ID 설정
+      currentManagerId = data.managerId || null;
+
+      // 내 초대코드 설정 (매니저 이상)
+      myInviteCode = data.inviteCode || null;
+
       return {
         name: data.name,
         phone: data.phone,
         referrer: data.referrer,
         status: data.status || 'pending',
         role: role,
-        createdAt: data.createdAt
+        createdAt: data.createdAt,
+        managerId: data.managerId,
+        inviteCode: data.inviteCode,
+        linkedByCode: data.linkedByCode
       };
     }
     return null;
@@ -2164,6 +2363,8 @@ async function submitProfile(e) {
   const name = document.getElementById('profile-name').value.trim();
   const phone = document.getElementById('profile-phone').value.trim();
   const referrer = document.getElementById('profile-referrer').value.trim();
+  const inviteCodeInput = document.getElementById('profile-invite-code');
+  const inviteCode = inviteCodeInput ? inviteCodeInput.value.trim().toUpperCase() : '';
 
   if (!name || !phone) {
     alert('이름과 연락처는 필수입니다.');
@@ -2171,29 +2372,66 @@ async function submitProfile(e) {
   }
 
   try {
+    // 초대코드 검증
+    let codeData = null;
+    let autoApprove = false;
+    let managerId = null;
+
+    if (inviteCode) {
+      codeData = await validateInviteCode(inviteCode);
+      if (codeData) {
+        // 유효한 초대코드 - 자동 승인 + 해당 매니저에 매칭
+        autoApprove = true;
+        managerId = codeData.managerId;
+      } else {
+        alert('유효하지 않은 초대코드입니다. 코드 없이 가입하시려면 초대코드 칸을 비워주세요.');
+        return;
+      }
+    }
+
     // 기존 데이터 유지하면서 프로필 정보 저장
     const userRef = db.collection('users').doc(currentUser.uid);
     const existingDoc = await userRef.get();
     const existingData = existingDoc.exists ? existingDoc.data() : {};
 
-    await userRef.set({
+    const userData = {
       ...existingData,
       name,
       phone,
       referrer,
       email: currentUser.email,
       photoURL: currentUser.photoURL,
-      status: 'pending', // 가입 신청 시 대기 상태
+      status: autoApprove ? 'approved' : 'pending',
       createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    };
+
+    // 초대코드로 가입한 경우 매니저 정보 저장
+    if (autoApprove && managerId) {
+      userData.managerId = managerId;
+      userData.linkedByCode = inviteCode;
+    }
+
+    await userRef.set(userData, { merge: true });
 
     hideProfileModal();
 
-    // 프로필 저장 후 승인 대기 화면 표시
-    userProfile = { name, phone, referrer, status: 'pending' };
-    isApproved = false;
-    showPendingApproval();
+    if (autoApprove) {
+      // 자동 승인된 경우 바로 메인 콘텐츠 표시
+      userProfile = { ...userData };
+      currentManagerId = managerId;
+      isApproved = true;
+      if (!dataLoaded) {
+        await init();
+      }
+      showMainContent();
+      updateUIByRole();
+    } else {
+      // 수동 승인 대기
+      userProfile = { name, phone, referrer, status: 'pending' };
+      isApproved = false;
+      showPendingApproval();
+    }
 
   } catch (error) {
     console.error('프로필 저장 실패:', error);
@@ -2230,6 +2468,40 @@ async function handleAuthStateChange(user) {
       // 소유자는 항상 승인된 상태
       isApproved = true;
       hideProfileModal();
+
+      // 소유자 초대코드/watchStatuses 초기화 (최초 1회)
+      if (!myInviteCode) {
+        try {
+          const newCode = await createUniqueInviteCode();
+          await db.collection('users').doc(user.uid).update({
+            inviteCode: newCode,
+            role: 'owner',
+            status: 'approved'
+          });
+          await db.collection('inviteCodes').doc(newCode).set({
+            managerId: user.uid,
+            managerName: userProfile?.name || user.email,
+            active: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          myInviteCode = newCode;
+
+          // 레거시 watchStatuses를 소유자 문서로 마이그레이션
+          const legacyDoc = await db.collection('settings').doc('watchStatuses').get();
+          if (legacyDoc.exists) {
+            const legacyStatuses = legacyDoc.data();
+            legacyStatuses.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            legacyStatuses.migratedFrom = 'settings/watchStatuses';
+            await db.collection('watchStatuses').doc(user.uid).set(legacyStatuses);
+            console.log('레거시 watchStatuses 마이그레이션 완료');
+          }
+
+          console.log('소유자 초대코드 생성:', newCode);
+        } catch (e) {
+          console.log('소유자 초대코드 생성 실패 (이미 존재할 수 있음):', e);
+        }
+      }
+
       // 승인된 사용자만 데이터 로드
       if (!dataLoaded) {
         await init();
@@ -2478,15 +2750,20 @@ async function approveUser(userId) {
   if (!canAccess('user:approve')) return;
 
   try {
+    // 수동 승인: 승인자(소유자)에게 매칭
     await db.collection('users').doc(userId).update({
       status: 'approved',
       approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      approvedBy: currentUser.email
+      approvedBy: currentUser.email,
+      managerId: currentUser.uid  // 승인자(소유자)에게 매칭
     });
 
     // 로컬 데이터 업데이트
     const user = allUsers.find(u => u.id === userId);
-    if (user) user.status = 'approved';
+    if (user) {
+      user.status = 'approved';
+      user.managerId = currentUser.uid;
+    }
 
     // UI 업데이트
     const pendingCount = allUsers.filter(u => u.status === 'pending').length;
@@ -2544,6 +2821,8 @@ async function changeUserRole(selectEl) {
 
   const userId = selectEl.dataset.userId;
   const newRole = selectEl.value;
+  const user = allUsers.find(u => u.id === userId);
+  const oldRole = user?.role || 'member';
 
   // 자기 자신의 등급은 변경 불가
   if (userId === currentUser.uid) {
@@ -2552,26 +2831,115 @@ async function changeUserRole(selectEl) {
     return;
   }
 
+  // 매니저 이상에서 딜러/일반회원으로 강등 시 경고
+  const wasManager = ['manager', 'owner'].includes(oldRole);
+  const isManager = ['manager', 'owner'].includes(newRole);
+
+  if (wasManager && !isManager) {
+    const linkedCount = allUsers.filter(u => u.managerId === userId).length;
+    const message = linkedCount > 0
+      ? `이 매니저에게 연결된 ${linkedCount}명의 회원이 모두 승인 취소됩니다. 계속하시겠습니까?`
+      : '매니저 권한을 박탈하면 초대코드가 비활성화됩니다. 계속하시겠습니까?';
+    if (!confirm(message)) {
+      selectEl.value = oldRole;
+      return;
+    }
+  }
+
   try {
-    await db.collection('users').doc(userId).update({
+    const updateData = {
       role: newRole,
       roleUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       roleUpdatedBy: currentUser.email
-    });
+    };
+
+    // 매니저 이상으로 승급 시 초대코드 생성 또는 재활성화
+    if (!wasManager && isManager) {
+      // 기존 초대코드가 있으면 재활성화, 없으면 새로 생성
+      if (user.inviteCode) {
+        // 기존 코드 재활성화
+        await db.collection('inviteCodes').doc(user.inviteCode).update({
+          active: true,
+          reactivatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } else {
+        // 새 코드 생성
+        const newCode = await createUniqueInviteCode();
+        updateData.inviteCode = newCode;
+
+        // inviteCodes 컬렉션에 등록
+        await db.collection('inviteCodes').doc(newCode).set({
+          managerId: userId,
+          managerName: user.name || user.email,
+          active: true,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // watchStatuses 초기화 (모든 상품 불가 상태)
+        const initialStatuses = {};
+        watches.forEach(watch => {
+          initialStatuses[watch.model_number] = 'no';
+        });
+        initialStatuses.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('watchStatuses').doc(userId).set(initialStatuses);
+      }
+    }
+
+    // 매니저에서 강등 시 초대코드 비활성화 + 소속 회원 승인 취소
+    if (wasManager && !isManager) {
+      // 초대코드 비활성화
+      if (user.inviteCode) {
+        await db.collection('inviteCodes').doc(user.inviteCode).update({
+          active: false,
+          deactivatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
+      // 소속 회원 전원 승인 취소
+      const linkedUsersSnapshot = await db.collection('users')
+        .where('managerId', '==', userId)
+        .get();
+
+      const batch = db.batch();
+      linkedUsersSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, {
+          status: 'rejected',
+          rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          rejectedReason: '소속 매니저 권한 박탈'
+        });
+      });
+      await batch.commit();
+
+      // 로컬 데이터 업데이트 (소속 회원)
+      allUsers.forEach(u => {
+        if (u.managerId === userId) {
+          u.status = 'rejected';
+        }
+      });
+    }
+
+    // 사용자 정보 업데이트
+    await db.collection('users').doc(userId).update(updateData);
 
     // 로컬 데이터 업데이트
-    const user = allUsers.find(u => u.id === userId);
-    if (user) user.role = newRole;
+    if (user) {
+      user.role = newRole;
+      if (updateData.inviteCode) user.inviteCode = updateData.inviteCode;
+    }
 
-    // UI 업데이트 (등급 표시)
+    // UI 업데이트
     renderAdminUserList();
+
+    // 성공 메시지
+    if (!wasManager && isManager) {
+      alert(`${user.name || user.email}님이 ${ROLE_LABELS[newRole]}로 승급되었습니다. 초대코드가 생성되었습니다.`);
+    }
 
   } catch (error) {
     console.error('등급 변경 실패:', error);
     alert('등급 변경에 실패했습니다.');
     // 원래 값으로 복원
-    const user = allUsers.find(u => u.id === userId);
-    selectEl.value = user?.role || 'member';
+    selectEl.value = oldRole;
   }
 }
 
