@@ -18,24 +18,15 @@ let testLine = '';
 let specQuestionPhase = 0; // 0: 소재, 1: 베젤, 2: 브레이슬릿
 let specCurrentAnswer = {}; // 현재 시계의 3개 답변 저장
 
-// 스펙 테스트 선택지 데이터
+// 스펙 테스트 선택지 데이터 (메인 필터와 동일한 데이터 사용)
 const SPEC_OPTIONS = {
-  material: [
-    { value: 'alt-steel', label: '오이스터스틸' },
-    { value: 'alt-18-ct-yellow-gold', label: '옐로 골드' },
-    { value: 'alt-18-ct-pink-gold', label: '에버로즈 골드' },
-    { value: 'alt-18-ct-white-gold', label: '화이트 골드' },
-    { value: 'alt-platinum', label: '플래티넘' },
-    { value: 'alt-rolesor-everose', label: '에버로즈 롤레조' },
-    { value: 'alt-rolesor-yellow', label: '옐로 롤레조' },
-    { value: 'alt-rolesium', label: '롤레슘' }
-  ],
+  material_detail: [], // 동적으로 시계 데이터에서 추출
   bezel: [], // 동적으로 시계 데이터에서 추출
   bracelet: [] // 동적으로 시계 데이터에서 추출
 };
 
 const SPEC_PHASE_LABELS = ['소재를 맞춰보세요', '베젤을 맞춰보세요', '브레이슬릿을 맞춰보세요'];
-const SPEC_PHASE_KEYS = ['material', 'bezel', 'bracelet'];
+const SPEC_PHASE_KEYS = ['material_detail', 'bezel', 'bracelet'];
 
 // 인증 관련 변수
 let currentUser = null;
@@ -226,6 +217,12 @@ const materialNames = {
   'alt-rolesor-yellow': '옐로 롤레조',
   'alt-rolesium': '롤레슘'
 };
+
+// 브레이슬릿 이름 정규화 (브레슬릿 → 브레이슬릿 통일)
+function normalizeBracelet(bracelet) {
+  if (!bracelet) return bracelet;
+  return bracelet.replace(/브레슬릿/g, '브레이슬릿');
+}
 
 // 초기화
 // 대상 매니저 ID 반환 (매입 상태 조회/저장용)
@@ -469,7 +466,8 @@ function updateFilterOptions() {
   if (currentBezel) {
     braceletFiltered = braceletFiltered.filter(w => w.bezel === currentBezel);
   }
-  const bracelets = [...new Set(braceletFiltered.map(w => w.bracelet).filter(b => b))].sort();
+  // 브레이슬릿 정규화 적용 (브레슬릿 → 브레이슬릿 통일)
+  const bracelets = [...new Set(braceletFiltered.map(w => normalizeBracelet(w.bracelet)).filter(b => b))].sort();
   braceletFilter.innerHTML = '<option value="">전체 브레이슬릿</option>';
   bracelets.forEach(bracelet => {
     const option = document.createElement('option');
@@ -592,8 +590,8 @@ function applyFilters() {
     // 베젤 필터
     if (selectedBezel && watch.bezel !== selectedBezel) return false;
 
-    // 브레이슬릿 필터
-    if (selectedBracelet && watch.bracelet !== selectedBracelet) return false;
+    // 브레이슬릿 필터 (정규화 적용)
+    if (selectedBracelet && normalizeBracelet(watch.bracelet) !== selectedBracelet) return false;
 
     // 가격 필터
     if (selectedPrice) {
@@ -765,7 +763,7 @@ function showWatchDetail(modelNumber) {
   setSpecValue('watch-detail-diameter', watch.diameter);
   setSpecValue('watch-detail-dial', watch.dial);
   setSpecValue('watch-detail-bezel', watch.bezel);
-  setSpecValue('watch-detail-bracelet', watch.bracelet);
+  setSpecValue('watch-detail-bracelet', normalizeBracelet(watch.bracelet));
   setSpecValue('watch-detail-material-detail', watch.material_detail);
   setSpecValue('watch-detail-movement', watch.movement);
   setSpecValue('watch-detail-cyclops', watch.cyclops);
@@ -2151,24 +2149,28 @@ function showTestTypeSelect() {
   testProgress.style.display = 'none';
   testResult.style.display = 'none';
 
-  // 베젤/브레이슬릿 옵션 추출 (최초 1회)
-  if (SPEC_OPTIONS.bezel.length === 0) {
+  // 소재/베젤/브레이슬릿 옵션 추출 (최초 1회)
+  if (SPEC_OPTIONS.material_detail.length === 0) {
     extractSpecOptions();
   }
 }
 
-// 시계 데이터에서 베젤/브레이슬릿 옵션 추출
+// 시계 데이터에서 소재/베젤/브레이슬릿 옵션 추출 (메인 필터와 동일한 방식)
 function extractSpecOptions() {
+  const materials = new Set();
   const bezels = new Set();
   const bracelets = new Set();
 
   watches.forEach(w => {
+    if (w.material_detail) materials.add(w.material_detail);
     if (w.bezel) bezels.add(w.bezel);
-    if (w.bracelet) bracelets.add(w.bracelet);
+    if (w.bracelet) bracelets.add(normalizeBracelet(w.bracelet)); // 정규화 적용
   });
 
-  SPEC_OPTIONS.bezel = [...bezels].map(b => ({ value: b, label: b }));
-  SPEC_OPTIONS.bracelet = [...bracelets].map(b => ({ value: b, label: b }));
+  // 메인 필터와 동일하게 정렬 후 value/label 동일하게 설정
+  SPEC_OPTIONS.material_detail = [...materials].sort().map(m => ({ value: m, label: m }));
+  SPEC_OPTIONS.bezel = [...bezels].sort().map(b => ({ value: b, label: b }));
+  SPEC_OPTIONS.bracelet = [...bracelets].sort().map(b => ({ value: b, label: b }));
 }
 
 // 테스트 유형 선택
@@ -2321,7 +2323,11 @@ function showSpecQuestion() {
 
   // 4지선다 선택지 생성
   const phaseKey = SPEC_PHASE_KEYS[specQuestionPhase];
-  const correctAnswer = question[phaseKey];
+  let correctAnswer = question[phaseKey];
+  // 브레이슬릿은 정규화 적용
+  if (phaseKey === 'bracelet') {
+    correctAnswer = normalizeBracelet(correctAnswer);
+  }
   const choices = generateSpecChoices(correctAnswer, phaseKey);
 
   specChoicesEl.innerHTML = choices.map(choice => `
@@ -2356,7 +2362,11 @@ function generateSpecChoices(correctAnswer, phaseKey) {
 function selectSpecAnswer(choice) {
   const question = testQuestions[currentQuestion];
   const phaseKey = SPEC_PHASE_KEYS[specQuestionPhase];
-  const correctAnswer = question[phaseKey];
+  let correctAnswer = question[phaseKey];
+  // 브레이슬릿은 정규화 적용
+  if (phaseKey === 'bracelet') {
+    correctAnswer = normalizeBracelet(correctAnswer);
+  }
   const isCorrect = choice === correctAnswer;
 
   // 현재 답변 저장
@@ -2388,7 +2398,7 @@ function selectSpecAnswer(choice) {
       // 시계 하나 완료 - 답변 저장
       testAnswers.push({
         question: question,
-        material: specCurrentAnswer.material,
+        material_detail: specCurrentAnswer.material_detail,
         bezel: specCurrentAnswer.bezel,
         bracelet: specCurrentAnswer.bracelet
       });
@@ -2414,7 +2424,7 @@ function showSpecResult() {
   // 정답 수 계산 (각 시계당 3문제)
   let correctCount = 0;
   testAnswers.forEach(a => {
-    if (a.material?.isCorrect) correctCount++;
+    if (a.material_detail?.isCorrect) correctCount++;
     if (a.bezel?.isCorrect) correctCount++;
     if (a.bracelet?.isCorrect) correctCount++;
   });
@@ -2436,7 +2446,7 @@ function showSpecResult() {
   // 상세 결과
   const detailsHtml = testAnswers.map((answer) => {
     const imagePath = `images/${answer.question.line}/${answer.question.model_number}.jpg`;
-    const materialResult = answer.material?.isCorrect ? '✓' : '✗';
+    const materialResult = answer.material_detail?.isCorrect ? '✓' : '✗';
     const bezelResult = answer.bezel?.isCorrect ? '✓' : '✗';
     const braceletResult = answer.bracelet?.isCorrect ? '✓' : '✗';
 
@@ -2447,7 +2457,7 @@ function showSpecResult() {
         <div class="result-item-info">
           <div class="result-item-title">${answer.question.title}</div>
           <div class="result-item-specs">
-            <span class="${answer.material?.isCorrect ? 'correct' : 'wrong'}">${materialResult} 소재</span>
+            <span class="${answer.material_detail?.isCorrect ? 'correct' : 'wrong'}">${materialResult} 소재</span>
             <span class="${answer.bezel?.isCorrect ? 'correct' : 'wrong'}">${bezelResult} 베젤</span>
             <span class="${answer.bracelet?.isCorrect ? 'correct' : 'wrong'}">${braceletResult} 브레이슬릿</span>
           </div>
@@ -2478,7 +2488,7 @@ async function saveSpecTestScore(score, total) {
       answers: testAnswers.map(a => ({
         model: a.question.model_number,
         line: a.question.line,
-        material: a.material,
+        material_detail: a.material_detail,
         bezel: a.bezel,
         bracelet: a.bracelet
       }))
