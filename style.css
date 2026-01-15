@@ -1403,104 +1403,114 @@ body {
 }
 
 .watch-detail-content {
-  max-width: 1100px;
+  max-width: 600px;
   width: 95%;
   margin: auto;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-.watch-detail-body {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 40px;
-  padding: 10px;
-}
-
-.watch-detail-image-wrapper {
-  background: linear-gradient(145deg, #f8f8f8 0%, #f0f0f0 100%);
-  border-radius: 16px;
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 히어로 섹션 (이미지 + 오버레이) */
+.watch-detail-hero {
+  position: relative;
+  background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 16px 16px 0 0;
   overflow: hidden;
-  min-height: 520px;
 }
 
 .watch-detail-image {
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1;
   object-fit: contain;
-  padding: 10px;
-  transition: transform 0.3s ease;
+  padding: 20px;
 }
 
-.watch-detail-image:hover {
-  transform: scale(1.05);
+.watch-detail-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 60px 24px 24px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+  color: white;
 }
 
-.watch-detail-info {
+.watch-detail-overlay-info {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 20px 0;
+  gap: 4px;
 }
 
 .watch-detail-badge {
-  display: inline-block;
+  position: absolute;
+  top: 16px;
+  left: 16px;
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
-  width: fit-content;
 }
 
 .watch-detail-badge.buy {
-  background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
 }
 
 .watch-detail-badge.pending {
-  background: rgba(234, 179, 8, 0.15);
-  color: #eab308;
+  background: rgba(234, 179, 8, 0.9);
+  color: white;
 }
 
 .watch-detail-badge.no {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
 }
 
 .watch-detail-line {
   font-size: 13px;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.7);
 }
 
 .watch-detail-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.2;
+  color: white;
 }
 
 .watch-detail-model {
-  font-size: 14px;
-  color: var(--text-secondary);
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
   font-family: monospace;
 }
 
+.watch-detail-summary {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  margin-top: 4px;
+}
+
+/* 스펙 섹션 */
+.watch-detail-specs-section {
+  padding: 20px 24px;
+  background: var(--bg-primary);
+}
+
 .watch-detail-price {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-top: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .watch-detail-specs {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
 }
 
 .watch-detail-spec {
@@ -1580,44 +1590,49 @@ body {
 
 @media (max-width: 768px) {
   #watch-detail-modal {
-    align-items: center;
-    padding: 20px;
+    align-items: flex-start;
+    padding: 10px;
   }
 
   .watch-detail-content {
     width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
+    max-height: 95vh;
     margin: 0;
+    border-radius: 16px;
   }
 
-  .watch-detail-body {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .watch-detail-image-wrapper {
-    min-height: unset;
-    max-height: 40vh;
-    aspect-ratio: unset;
-  }
-
-  .watch-detail-image {
-    max-height: 40vh;
-    width: auto;
-    max-width: 100%;
+  .watch-detail-hero {
+    border-radius: 16px 16px 0 0;
   }
 
   .watch-detail-title {
     font-size: 20px;
   }
 
+  .watch-detail-model {
+    font-size: 16px;
+  }
+
+  .watch-detail-summary {
+    font-size: 13px;
+  }
+
+  .watch-detail-overlay {
+    padding: 40px 16px 16px;
+  }
+
+  .watch-detail-specs-section {
+    padding: 16px;
+  }
+
   .watch-detail-price {
     font-size: 18px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
   }
 
   .related-models-section {
-    padding: 16px 20px 20px;
+    padding: 16px;
   }
 
   .related-models-title {

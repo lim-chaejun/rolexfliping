@@ -1076,53 +1076,16 @@
   <div class="modal-overlay" id="watch-detail-modal">
     <div class="modal-content watch-detail-content">
       <button class="modal-close" id="watch-detail-close">&times;</button>
-      <div class="watch-detail-body">
-        <div class="watch-detail-image-wrapper">
-          <img id="watch-detail-image" class="watch-detail-image" src="" alt="">
-        </div>
-        <div class="watch-detail-info">
-          <div class="watch-detail-badge" id="watch-detail-badge"></div>
-          <div class="watch-detail-line" id="watch-detail-line"></div>
-          <h2 class="watch-detail-title" id="watch-detail-title"></h2>
-          <div class="watch-detail-model" id="watch-detail-model"></div>
-          <div class="watch-detail-price" id="watch-detail-price"></div>
-          <div class="watch-detail-specs">
-            <div class="watch-detail-spec">
-              <span class="spec-label">소재</span>
-              <span class="spec-value" id="watch-detail-material"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">케이스</span>
-              <span class="spec-value" id="watch-detail-case"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">지름</span>
-              <span class="spec-value" id="watch-detail-diameter"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">다이얼</span>
-              <span class="spec-value" id="watch-detail-dial"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">베젤</span>
-              <span class="spec-value" id="watch-detail-bezel"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">브레이슬릿</span>
-              <span class="spec-value" id="watch-detail-bracelet"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">소재 상세</span>
-              <span class="spec-value" id="watch-detail-material-detail"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">무브먼트</span>
-              <span class="spec-value" id="watch-detail-movement"></span>
-            </div>
-            <div class="watch-detail-spec">
-              <span class="spec-label">사이클롭스</span>
-              <span class="spec-value" id="watch-detail-cyclops"></span>
-            </div>
+      <!-- 이미지 + 오버레이 정보 -->
+      <div class="watch-detail-hero">
+        <img id="watch-detail-image" class="watch-detail-image" src="" alt="">
+        <div class="watch-detail-overlay">
+          <span class="watch-detail-badge" id="watch-detail-badge"></span>
+          <div class="watch-detail-overlay-info">
+            <div class="watch-detail-line" id="watch-detail-line"></div>
+            <h2 class="watch-detail-title" id="watch-detail-title"></h2>
+            <div class="watch-detail-model" id="watch-detail-model"></div>
+            <div class="watch-detail-summary" id="watch-detail-summary"></div>
           </div>
         </div>
       </div>
@@ -1130,6 +1093,40 @@
       <div class="related-models-section" id="related-models-section" style="display: none;">
         <h3 class="related-models-title" id="related-models-title"></h3>
         <div class="related-models-list" id="related-models-list"></div>
+      </div>
+      <!-- 상세 스펙 -->
+      <div class="watch-detail-specs-section">
+        <div class="watch-detail-price" id="watch-detail-price"></div>
+        <div class="watch-detail-specs">
+          <div class="watch-detail-spec">
+            <span class="spec-label">지름</span>
+            <span class="spec-value" id="watch-detail-diameter"></span>
+          </div>
+          <div class="watch-detail-spec">
+            <span class="spec-label">다이얼</span>
+            <span class="spec-value" id="watch-detail-dial"></span>
+          </div>
+          <div class="watch-detail-spec">
+            <span class="spec-label">베젤</span>
+            <span class="spec-value" id="watch-detail-bezel"></span>
+          </div>
+          <div class="watch-detail-spec">
+            <span class="spec-label">브레이슬릿</span>
+            <span class="spec-value" id="watch-detail-bracelet"></span>
+          </div>
+          <div class="watch-detail-spec">
+            <span class="spec-label">소재 상세</span>
+            <span class="spec-value" id="watch-detail-material-detail"></span>
+          </div>
+          <div class="watch-detail-spec">
+            <span class="spec-label">무브먼트</span>
+            <span class="spec-value" id="watch-detail-movement"></span>
+          </div>
+          <div class="watch-detail-spec">
+            <span class="spec-label">사이클롭스</span>
+            <span class="spec-value" id="watch-detail-cyclops"></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

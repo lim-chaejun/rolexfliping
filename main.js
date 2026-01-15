@@ -748,6 +748,16 @@ function showWatchDetail(modelNumber) {
 
   const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
 
+  // 모델번호에서 숫자부분 추출 (m278344rbr-0035 → 278344rbr)
+  const modelPrefix = watch.model_number.split('-')[0];
+  const modelNum = modelPrefix.replace(/^m/, '');
+
+  // 다이얼 색상 추출 (다이얼 제거)
+  const dialColor = (watch.dial || '').replace(/\s*다이얼\s*/g, '').trim();
+
+  // 브레슬릿 종류 추출 (브레슬릿 제거)
+  const braceletType = (watch.bracelet || '').replace(/\s*브레슬릿\s*/g, '').trim().split(' ').pop() || '';
+
   // 모달 내용 채우기
   document.getElementById('watch-detail-image').src = imagePath;
   document.getElementById('watch-detail-image').onerror = function() {
@@ -757,7 +767,8 @@ function showWatchDetail(modelNumber) {
   document.getElementById('watch-detail-badge').className = `watch-detail-badge ${watch.buy_status}`;
   document.getElementById('watch-detail-line').textContent = lineNames[watch.line] || watch.line;
   document.getElementById('watch-detail-title').textContent = watch.title;
-  document.getElementById('watch-detail-model').textContent = watch.model_number;
+  document.getElementById('watch-detail-model').textContent = modelNum;
+  document.getElementById('watch-detail-summary').textContent = `${watch.diameter}, ${dialColor}, ${braceletType}`;
   document.getElementById('watch-detail-price').textContent = watch.formatted_price;
 
   // 스펙 항목 설정 (데이터 없으면 숨김)
@@ -775,8 +786,6 @@ function showWatchDetail(modelNumber) {
     }
   };
 
-  setSpecValue('watch-detail-material', materialNames[watch.material] || watch.material);
-  setSpecValue('watch-detail-case', watch.case_description);
   setSpecValue('watch-detail-diameter', watch.diameter);
   setSpecValue('watch-detail-dial', watch.dial);
   setSpecValue('watch-detail-bezel', watch.bezel);
@@ -786,7 +795,6 @@ function showWatchDetail(modelNumber) {
   setSpecValue('watch-detail-cyclops', watch.cyclops);
 
   // 동일 라인 다른 모델 찾기 (모델번호 앞부분이 같은 것)
-  const modelPrefix = watch.model_number.split('-')[0]; // m278344rbr-0035 → m278344rbr
   const relatedModels = watches.filter(w =>
     w.model_number !== watch.model_number &&
     w.model_number.startsWith(modelPrefix + '-')
@@ -797,8 +805,6 @@ function showWatchDetail(modelNumber) {
   const relatedList = document.getElementById('related-models-list');
 
   if (relatedModels.length > 0) {
-    // 모델번호 숫자부분 추출 (m278344rbr → 278344rbr)
-    const modelNum = modelPrefix.replace(/^m/, '');
     relatedTitle.textContent = `${watch.title} ${modelNum}의 다른 모델`;
 
     relatedList.innerHTML = relatedModels.slice(0, 10).map(related => {
