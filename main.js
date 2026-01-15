@@ -679,6 +679,18 @@ function renderProducts() {
     const sizeMatch = watch.title.match(/(\d+)$/);
     const sizeClass = sizeMatch ? `size-${sizeMatch[1]}` : '';
 
+    // 모델번호에서 숫자부분 추출 (m124270-0001 → 124270, m278289rbr-0012 → 278289rbr)
+    const modelNum = watch.model_number.replace(/^m/, '').split('-')[0];
+
+    // 사이즈 추출 (40mm → 40)
+    const size = (watch.diameter || '').replace('mm', '').trim();
+
+    // 다이얼에서 색상만 (다이얼 제거)
+    const dialColor = (watch.dial || '').replace(/\s*다이얼\s*/g, '').trim();
+
+    // 브레슬릿에서 종류만 (브레슬릿 제거, 마지막 단어 사용)
+    const braceletType = (watch.bracelet || '').replace(/\s*브레슬릿\s*/g, '').trim().split(' ').pop() || '';
+
     return `
       <div class="product-card line-${watch.line} ${sizeClass}" data-model="${watch.model_number}" onclick="showWatchDetail('${watch.model_number}')">
         <div class="product-image-wrapper">
@@ -692,11 +704,9 @@ function renderProducts() {
           >
         </div>
         <div class="product-info">
-          <div class="product-line">${lineNames[watch.line] || watch.line}</div>
-          <div class="product-title">${watch.case_description || watch.title}</div>
-          <div class="product-model">${watch.model_number}</div>
+          <div class="product-title">${watch.title} <strong>${modelNum}</strong></div>
+          <div class="product-specs">${size}mm, ${dialColor}, ${braceletType}</div>
           <div class="product-price">${watch.formatted_price}</div>
-          <div class="product-dial">${watch.dial || '-'}</div>
           ${adminControls}
         </div>
       </div>

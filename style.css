@@ -533,41 +533,35 @@ body {
   padding: 14px;
 }
 
-.product-line {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-}
-
 .product-title {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.4;
 }
 
-.product-model {
+.product-title strong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.product-specs {
   font-size: 11px;
   color: var(--text-muted);
   margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .product-price {
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
-}
-
-.product-dial {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 4px;
 }
 
 /* 로딩 */
