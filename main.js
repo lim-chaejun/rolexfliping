@@ -2924,6 +2924,9 @@ function renderAdminUserList() {
     return;
   }
 
+  // 매니저 목록 (매니저 선택 드롭다운용)
+  const managers = allUsers.filter(u => ['manager', 'owner'].includes(u.role) && u.status === 'approved');
+
   userList.innerHTML = filteredUsers.map(user => {
     const createdAt = user.createdAt?.toDate?.();
     const dateStr = createdAt
@@ -2942,9 +2945,32 @@ function renderAdminUserList() {
       </div>
     ` : '';
 
+    // 매니저 선택 드롭다운 (승인 완료 탭 + 일반회원/딜러만 표시)
+    const isNonManager = !['manager', 'owner'].includes(user.role);
+    const managerSelector = (currentAdminTab === 'approved' && isNonManager && userRole === 'owner') ? `
+      <div class="manager-selector">
+        <select class="manager-select" data-user-id="${user.id}" onchange="changeUserManager(this)">
+          <option value="">소속 매니저 선택</option>
+          ${managers.map(m => `
+            <option value="${m.id}" ${user.managerId === m.id ? 'selected' : ''}>
+              ${m.name || m.email?.split('@')[0]} ${m.role === 'owner' ? '(소유자)' : '(매니저)'}
+            </option>
+          `).join('')}
+        </select>
+      </div>
+    ` : '';
+
     // 현재 등급 표시 (승인 완료 탭에서만)
     const roleDisplay = (currentAdminTab === 'approved') ? `
       <div class="user-role">등급: <strong>${ROLE_LABELS[user.role] || '일반회원'}</strong></div>
+    ` : '';
+
+    // 소속 매니저 표시 (매니저가 아닌 회원만)
+    const currentManager = user.managerId ? managers.find(m => m.id === user.managerId) : null;
+    const managerDisplay = (currentAdminTab === 'approved' && isNonManager && currentManager) ? `
+      <div class="user-manager">소속: <strong>${currentManager.name || currentManager.email?.split('@')[0]}</strong></div>
+    ` : (currentAdminTab === 'approved' && isNonManager && !currentManager) ? `
+      <div class="user-manager no-manager">소속: <strong>미지정</strong></div>
     ` : '';
 
     return `
@@ -2959,9 +2985,11 @@ function renderAdminUserList() {
           <div class="user-referrer">${user.referrer ? '추천인: ' + user.referrer : ''}</div>
           <div class="user-date">가입신청: ${dateStr}</div>
           ${roleDisplay}
+          ${managerDisplay}
         </div>
         <div class="user-actions">
           ${roleSelector}
+          ${managerSelector}
           ${user.status === 'pending' ? `
             <button class="approve-btn" onclick="approveUser('${user.id}')">승인</button>
             <button class="reject-btn" onclick="rejectUser('${user.id}')">거절</button>
@@ -3173,6 +3201,63 @@ async function changeUserRole(selectEl) {
     alert('등급 변경에 실패했습니다.');
     // 원래 값으로 복원
     selectEl.value = oldRole;
+  }
+}
+
+// 사용자 소속 매니저 변경 (소유자 전용)
+async function changeUserManager(selectEl) {
+  if (userRole !== 'owner') {
+    alert('매니저 변경 권한이 없습니다.');
+    return;
+  }
+
+  const userId = selectEl.dataset.userId;
+  const newManagerId = selectEl.value;
+  const user = allUsers.find(u => u.id === userId);
+  const oldManagerId = user?.managerId || '';
+
+  // 같은 매니저면 무시
+  if (newManagerId === oldManagerId) return;
+
+  // 매니저 정보 가져오기
+  const newManager = newManagerId ? allUsers.find(u => u.id === newManagerId) : null;
+  const newManagerName = newManager ? (newManager.name || newManager.email?.split('@')[0]) : '없음';
+
+  try {
+    const updateData = {
+      managerId: newManagerId || null,
+      managerChangedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      managerChangedBy: currentUser.email
+    };
+
+    // 매니저 해제 시 linkedByCode도 제거
+    if (!newManagerId) {
+      updateData.linkedByCode = null;
+    }
+
+    await db.collection('users').doc(userId).update(updateData);
+
+    // 로컬 데이터 업데이트
+    if (user) {
+      user.managerId = newManagerId || null;
+      if (!newManagerId) user.linkedByCode = null;
+    }
+
+    // UI 업데이트
+    renderAdminUserList();
+
+    // 알림
+    if (newManagerId) {
+      console.log(`${user.name || user.email}의 소속 매니저가 ${newManagerName}(으)로 변경되었습니다.`);
+    } else {
+      console.log(`${user.name || user.email}의 소속 매니저가 해제되었습니다.`);
+    }
+
+  } catch (error) {
+    console.error('매니저 변경 실패:', error);
+    alert('매니저 변경에 실패했습니다.');
+    // 원래 값으로 복원
+    selectEl.value = oldManagerId;
   }
 }
 
