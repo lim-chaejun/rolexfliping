@@ -1804,11 +1804,13 @@ let signupInviteData = JSON.parse(sessionStorage.getItem('signupInviteData') || 
 
 // 초대코드 정보 저장 (sessionStorage 포함)
 function setSignupInviteInfo(code, data) {
+  console.log('[DEBUG] setSignupInviteInfo 호출:', code, data);
   signupInviteCode = code;
   signupInviteData = data;
   if (code && data) {
     sessionStorage.setItem('signupInviteCode', code);
     sessionStorage.setItem('signupInviteData', JSON.stringify(data));
+    console.log('[DEBUG] sessionStorage 저장 완료');
   } else {
     sessionStorage.removeItem('signupInviteCode');
     sessionStorage.removeItem('signupInviteData');
@@ -2868,6 +2870,9 @@ async function submitProfile(e) {
   }
 
   // 초대코드 필수 확인 (회원가입 시 미리 검증됨)
+  console.log('[DEBUG] submitProfile - signupInviteCode:', signupInviteCode);
+  console.log('[DEBUG] submitProfile - signupInviteData:', signupInviteData);
+  console.log('[DEBUG] submitProfile - currentUser:', currentUser?.uid);
   if (!signupInviteCode || !signupInviteData) {
     alert('초대코드 정보가 없습니다. 다시 회원가입을 진행해주세요.');
     await auth.signOut();
