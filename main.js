@@ -3032,6 +3032,7 @@ function renderAdminUserList() {
           ` : ''}
           ${user.status === 'rejected' ? `
             <button class="approve-btn" onclick="approveUser('${user.id}')">승인</button>
+            <button class="delete-btn" onclick="deleteUser('${user.id}')">삭제</button>
           ` : ''}
         </div>
       </div>
@@ -3101,6 +3102,55 @@ async function rejectUser(userId) {
   } catch (error) {
     console.error('거절 실패:', error);
     alert('거절 처리에 실패했습니다.');
+  }
+}
+
+// 사용자 삭제 (소유자 전용 - 재가입 가능하도록)
+async function deleteUser(userId) {
+  if (userRole !== 'owner') {
+    alert('삭제 권한이 없습니다.');
+    return;
+  }
+
+  const user = allUsers.find(u => u.id === userId);
+  if (!user) return;
+
+  const userName = getDisplayName(user);
+
+  if (!confirm(`"${userName}" 사용자를 삭제하시겠습니까?\n\n삭제 후 해당 사용자는 재가입이 가능합니다.`)) {
+    return;
+  }
+
+  try {
+    // Firestore에서 사용자 문서 삭제
+    await db.collection('users').doc(userId).delete();
+
+    // 해당 사용자의 scores 하위 컬렉션도 삭제 (있는 경우)
+    try {
+      const scoresSnapshot = await db.collection('users').doc(userId).collection('scores').get();
+      const batch = db.batch();
+      scoresSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    } catch (e) {
+      console.log('scores 컬렉션 삭제 실패 (없을 수 있음):', e);
+    }
+
+    // 로컬 데이터에서 제거
+    const index = allUsers.findIndex(u => u.id === userId);
+    if (index !== -1) {
+      allUsers.splice(index, 1);
+    }
+
+    // UI 업데이트
+    renderAdminUserList();
+
+    alert(`"${userName}" 사용자가 삭제되었습니다.`);
+
+  } catch (error) {
+    console.error('사용자 삭제 실패:', error);
+    alert('사용자 삭제에 실패했습니다.');
   }
 }
 

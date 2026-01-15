@@ -3724,3 +3724,20 @@ body {
 .user-manager.no-manager strong {
   color: var(--text-muted);
 }
+
+/* 사용자 삭제 버튼 */
+.delete-btn {
+  padding: 8px 16px;
+  background: #7f1d1d;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  background: #991b1b;
+}
