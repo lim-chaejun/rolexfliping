@@ -1850,6 +1850,77 @@ async function loginWithGoogle() {
   }
 }
 
+// 오너 설정 모드 플래그
+let isOwnerSetupMode = false;
+
+// 시스템에 오너가 있는지 확인
+async function checkOwnerExists() {
+  try {
+    const ownerSnapshot = await db.collection('users')
+      .where('role', '==', 'owner')
+      .limit(1)
+      .get();
+    return !ownerSnapshot.empty;
+  } catch (error) {
+    console.error('오너 확인 실패:', error);
+    return true; // 에러 시 안전하게 true 반환
+  }
+}
+
+// 초대코드 입력 화면 표시 시 오너 존재 여부 확인
+async function showLoginStepInviteWithOwnerCheck() {
+  showLoginStepInvite();
+
+  // 오너가 없으면 "최초 관리자 설정" 버튼 표시
+  const ownerExists = await checkOwnerExists();
+  const ownerSetupBtn = document.getElementById('owner-setup-btn');
+  if (ownerSetupBtn) {
+    ownerSetupBtn.style.display = ownerExists ? 'none' : 'block';
+  }
+}
+
+// 최초 관리자(오너) 설정
+async function setupOwnerAccount() {
+  // 다시 한번 오너 존재 여부 확인
+  const ownerExists = await checkOwnerExists();
+  if (ownerExists) {
+    alert('이미 관리자가 존재합니다.\n초대코드를 입력해주세요.');
+    return;
+  }
+
+  isOwnerSetupMode = true;
+  signupInviteCode = 'OWNER_SETUP';
+  signupInviteData = { isOwnerSetup: true };
+
+  // Google 회원가입 진행
+  try {
+    const result = await auth.signInWithPopup(googleProvider);
+    const user = result.user;
+
+    // 이미 등록된 회원인지 확인
+    const userDoc = await db.collection('users').doc(user.uid).get();
+
+    if (userDoc.exists && userDoc.data().name) {
+      alert('이미 가입된 계정입니다.');
+      isOwnerSetupMode = false;
+      signupInviteCode = null;
+      signupInviteData = null;
+      return;
+    }
+
+    hideLoginModal();
+    window.location.reload();
+  } catch (error) {
+    console.error('관리자 설정 실패:', error);
+    isOwnerSetupMode = false;
+    signupInviteCode = null;
+    signupInviteData = null;
+    if (error.code !== 'auth/popup-closed-by-user') {
+      alert('관리자 설정에 실패했습니다: ' + error.message);
+    }
+  }
+}
+
 // 초대코드 검증 후 Google 회원가입
 async function validateAndSignup() {
   const code = signupInviteInput.value.trim().toUpperCase();
@@ -1905,6 +1976,7 @@ async function logout() {
 
 // 인증 이벤트 리스너
 const googleSignupBtn = document.getElementById('google-signup-btn');
+const ownerSetupBtn = document.getElementById('owner-setup-btn');
 loginBtn.addEventListener('click', showLoginModal);
 logoutBtn.addEventListener('click', logout);
 loginModalClose.addEventListener('click', () => {
@@ -1912,9 +1984,10 @@ loginModalClose.addEventListener('click', () => {
   showLoginStepSelect();
 });
 googleLoginBtn.addEventListener('click', loginWithGoogle);
-if (googleSignupBtn) googleSignupBtn.addEventListener('click', showLoginStepInvite);
+if (googleSignupBtn) googleSignupBtn.addEventListener('click', showLoginStepInviteWithOwnerCheck);
 if (inviteBackBtn) inviteBackBtn.addEventListener('click', showLoginStepSelect);
 if (inviteNextBtn) inviteNextBtn.addEventListener('click', validateAndSignup);
+if (ownerSetupBtn) ownerSetupBtn.addEventListener('click', setupOwnerAccount);
 if (signupInviteInput) {
   signupInviteInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') validateAndSignup();
@@ -2842,8 +2915,9 @@ async function submitProfile(e) {
     return;
   }
 
-  // 초대코드 필수 확인 (회원가입 시 미리 검증됨)
-  if (!signupInviteCode || !signupInviteData) {
+  // 초대코드 필수 확인 (회원가입 시 미리 검증됨) - 오너 설정 모드 제외
+  const isOwnerSetup = signupInviteData && signupInviteData.isOwnerSetup;
+  if (!isOwnerSetup && (!signupInviteCode || !signupInviteData)) {
     alert('초대코드 정보가 없습니다. 다시 회원가입을 진행해주세요.');
     await auth.signOut();
     window.location.reload();
@@ -2858,39 +2932,76 @@ async function submitProfile(e) {
       return;
     }
 
-    // 초대코드로 자동 승인 + 매니저 매칭
-    const managerId = signupInviteData.managerId;
-
     // 기존 데이터 유지하면서 프로필 정보 저장
     const userRef = db.collection('users').doc(currentUser.uid);
     const existingDoc = await userRef.get();
     const existingData = existingDoc.exists ? existingDoc.data() : {};
 
-    const userData = {
-      ...existingData,
-      name,
-      nickname,
-      phone,
-      email: currentUser.email,
-      photoURL: currentUser.photoURL,
-      status: 'approved', // 초대코드로 가입하면 자동 승인
-      managerId: managerId,
-      linkedByCode: signupInviteCode,
-      createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
+    let userData;
+
+    if (isOwnerSetup) {
+      // 오너 설정 모드
+      userData = {
+        ...existingData,
+        name,
+        nickname,
+        phone,
+        email: currentUser.email,
+        photoURL: currentUser.photoURL,
+        status: 'approved',
+        role: 'owner', // 오너 역할 부여
+        createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    } else {
+      // 일반 초대코드 가입
+      const managerId = signupInviteData.managerId;
+      userData = {
+        ...existingData,
+        name,
+        nickname,
+        phone,
+        email: currentUser.email,
+        photoURL: currentUser.photoURL,
+        status: 'approved',
+        managerId: managerId,
+        linkedByCode: signupInviteCode,
+        createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    }
 
     await userRef.set(userData, { merge: true });
+
+    // 오너 설정 시 초대코드 생성 및 watchStatuses 초기화
+    if (isOwnerSetup) {
+      try {
+        const newCode = await createUniqueInviteCode();
+        await db.collection('inviteCodes').doc(newCode).set({
+          managerId: currentUser.uid,
+          managerName: nickname,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          active: true
+        });
+        // watchStatuses 초기화
+        await db.collection('watchStatuses').doc(currentUser.uid).set({
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (err) {
+        console.error('오너 초기화 실패:', err);
+      }
+    }
 
     // 초대코드 정보 초기화
     signupInviteCode = null;
     signupInviteData = null;
+    isOwnerSetupMode = false;
 
     hideProfileModal();
 
     // 자동 승인 - 바로 메인 콘텐츠 표시
     userProfile = { ...userData };
-    currentManagerId = managerId;
+    currentManagerId = userData.managerId || null;
     isApproved = true;
     if (!dataLoaded) {
       await init();

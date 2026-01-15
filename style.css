@@ -1683,6 +1683,24 @@ body {
   background: #c9a227;
 }
 
+.owner-setup-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.owner-setup-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
 /* ==========================================
    테스트 모드 버튼
    ========================================== */
