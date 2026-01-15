@@ -1834,7 +1834,7 @@ function showLoginStepSelect() {
   if (loginStepSelect) loginStepSelect.style.display = 'block';
   if (loginStepInvite) loginStepInvite.style.display = 'none';
   if (signupInviteInput) signupInviteInput.value = '';
-  clearSignupInviteInfo();
+  // 초대코드 정보는 여기서 지우지 않음 (회원가입 완료 시점에 지움)
 }
 
 function showLoginStepInvite() {
