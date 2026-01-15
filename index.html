@@ -62,6 +62,15 @@
               </svg>
               내 정보
             </button>
+            <button class="dropdown-item" id="dropdown-invite-code" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 00-3-3.87"/>
+                <path d="M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+              초대코드
+            </button>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item logout" id="logout-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -557,6 +566,49 @@
           <button class="my-info-stats-btn" id="my-info-stats-btn">
             테스트 통계 상세보기 →
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 초대코드 모달 (매니저 이상) -->
+  <div class="modal-overlay" id="invite-code-modal">
+    <div class="modal-content invite-code-modal-content">
+      <button class="modal-close" id="invite-code-modal-close">&times;</button>
+      <h2 class="modal-title">내 초대코드</h2>
+      <div class="invite-code-modal-body">
+        <div class="invite-code-display-large">
+          <span class="invite-code-value" id="modal-invite-code">------</span>
+        </div>
+        <button class="invite-code-copy-btn" id="modal-copy-invite-code">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+          코드 복사하기
+        </button>
+        <div class="invite-code-info">
+          <div class="invite-code-info-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 00-3-3.87"/>
+              <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            <span>이 코드로 가입한 회원은 자동 승인됩니다</span>
+          </div>
+          <div class="invite-code-info-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>초대코드는 매니저 본인만 확인 가능합니다</span>
+          </div>
+        </div>
+        <div class="invite-code-stats" id="invite-code-stats">
+          <div class="invite-stat-item">
+            <span class="invite-stat-value" id="invited-members-count">0</span>
+            <span class="invite-stat-label">초대된 회원</span>
+          </div>
         </div>
       </div>
     </div>

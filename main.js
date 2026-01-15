@@ -1445,6 +1445,109 @@ if (dropdownMyInfo) {
   });
 }
 
+// ==========================================
+// 초대코드 모달 (매니저 이상)
+// ==========================================
+const inviteCodeModal = document.getElementById('invite-code-modal');
+const inviteCodeModalClose = document.getElementById('invite-code-modal-close');
+const dropdownInviteCode = document.getElementById('dropdown-invite-code');
+const modalCopyInviteCode = document.getElementById('modal-copy-invite-code');
+
+// 초대코드 모달 표시
+async function showInviteCodeModal() {
+  if (!inviteCodeModal) return;
+
+  // 초대코드 표시
+  const codeDisplay = document.getElementById('modal-invite-code');
+  if (codeDisplay) {
+    codeDisplay.textContent = myInviteCode || '------';
+  }
+
+  // 초대된 회원 수 조회
+  try {
+    const linkedUsersSnapshot = await db.collection('users')
+      .where('managerId', '==', currentUser.uid)
+      .get();
+
+    const invitedCount = document.getElementById('invited-members-count');
+    if (invitedCount) {
+      invitedCount.textContent = linkedUsersSnapshot.size;
+    }
+  } catch (e) {
+    console.log('초대된 회원 수 조회 실패:', e);
+  }
+
+  inviteCodeModal.classList.add('active');
+}
+
+// 초대코드 모달 숨기기
+function hideInviteCodeModal() {
+  if (inviteCodeModal) {
+    inviteCodeModal.classList.remove('active');
+  }
+}
+
+// 초대코드 복사 (모달용)
+async function copyInviteCodeFromModal() {
+  if (!myInviteCode) return;
+
+  try {
+    await navigator.clipboard.writeText(myInviteCode);
+
+    // 복사 완료 피드백
+    const copyBtn = document.getElementById('modal-copy-invite-code');
+    if (copyBtn) {
+      const originalHTML = copyBtn.innerHTML;
+      copyBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        복사됨!
+      `;
+      copyBtn.classList.add('copied');
+
+      setTimeout(() => {
+        copyBtn.innerHTML = originalHTML;
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    }
+  } catch (e) {
+    // 클립보드 API 실패 시 fallback
+    const textarea = document.createElement('textarea');
+    textarea.value = myInviteCode;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert('초대코드가 복사되었습니다: ' + myInviteCode);
+  }
+}
+
+// 초대코드 버튼 클릭 이벤트
+if (dropdownInviteCode) {
+  dropdownInviteCode.addEventListener('click', () => {
+    closeUserDropdown();
+    showInviteCodeModal();
+  });
+}
+
+// 초대코드 모달 닫기 버튼
+if (inviteCodeModalClose) {
+  inviteCodeModalClose.addEventListener('click', hideInviteCodeModal);
+}
+
+// 초대코드 모달 배경 클릭 시 닫기
+if (inviteCodeModal) {
+  inviteCodeModal.addEventListener('click', (e) => {
+    if (e.target === inviteCodeModal) hideInviteCodeModal();
+  });
+}
+
+// 초대코드 복사 버튼
+if (modalCopyInviteCode) {
+  modalCopyInviteCode.addEventListener('click', copyInviteCodeFromModal);
+}
+
 // 테스트 통계 상세보기 버튼 (내 정보 모달 내)
 const myInfoStatsBtn = document.getElementById('my-info-stats-btn');
 if (myInfoStatsBtn) {
@@ -2604,6 +2707,7 @@ function showRejectedScreen() {
 function updateUIByRole() {
   const navCalc = document.getElementById('nav-calc');
   const navAdmin = document.getElementById('nav-admin');
+  const dropdownInviteCode = document.getElementById('dropdown-invite-code');
 
   // 계산기 탭: dealer 이상만 표시
   if (navCalc) {
@@ -2613,6 +2717,11 @@ function updateUIByRole() {
   // 관리자 탭: owner만 표시
   if (navAdmin) {
     navAdmin.style.display = canAccess('tab:admin') ? 'flex' : 'none';
+  }
+
+  // 초대코드 버튼: manager/owner만 표시
+  if (dropdownInviteCode) {
+    dropdownInviteCode.style.display = ['manager', 'owner'].includes(userRole) ? 'flex' : 'none';
   }
 }
 
