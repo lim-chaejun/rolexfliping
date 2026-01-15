@@ -863,9 +863,10 @@ body {
 }
 
 @media (max-width: 768px) {
-  /* 모바일에서 body padding 제거 (sticky 사용하므로 불필요) */
-  body {
+  /* 모바일에서 body padding 제거 및 가로 스크롤 방지 */
+  html, body {
     padding-top: 0 !important;
+    overflow-x: hidden;
   }
 
   /* 헤더 - sticky로 상단 고정 (문서 흐름 유지) */
@@ -903,27 +904,38 @@ body {
     z-index: 1000 !important;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
-  .main-nav-inner {
-    justify-content: center;
-    padding: 0;
-  }
-
-  .main-nav-tab {
-    flex: 1;
-    justify-content: center;
-    padding: 14px 0;
-    gap: 0;
-  }
-
-  .main-nav-tab span {
+  .main-nav::-webkit-scrollbar {
     display: none;
   }
 
+  .main-nav-inner {
+    justify-content: flex-start;
+    padding: 0;
+    min-width: max-content;
+  }
+
+  .main-nav-tab {
+    flex: 0 0 auto;
+    justify-content: center;
+    padding: 14px 16px;
+    gap: 6px;
+    min-width: 60px;
+  }
+
+  .main-nav-tab span {
+    display: block;
+    font-size: 11px;
+  }
+
   .main-nav-tab svg {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
   }
 
   /* content-wrapper - margin 불필요 (sticky라 문서 흐름 유지됨) */
@@ -974,7 +986,35 @@ body {
 
 @media (max-width: 480px) {
   .product-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 0 8px 80px;
+  }
+
+  .product-card {
+    padding: 8px;
+  }
+
+  .product-image {
+    height: 100px;
+  }
+
+  .product-name {
+    font-size: 11px;
+    -webkit-line-clamp: 1;
+  }
+
+  .product-ref {
+    font-size: 10px;
+  }
+
+  .product-price {
+    font-size: 12px;
+  }
+
+  .product-status-badge {
+    font-size: 9px;
+    padding: 2px 6px;
   }
 }
 
@@ -5314,25 +5354,41 @@ body {
   .site-footer {
     padding: 30px 0 24px;
     margin-top: 40px;
+    overflow-x: hidden;
+  }
+
+  .footer-inner {
+    padding: 0 16px;
   }
 
   .footer-top {
     flex-direction: column;
     align-items: flex-start;
-    gap: 20px;
+    gap: 16px;
   }
 
   .footer-nav {
-    gap: 4px;
+    gap: 0;
+    flex-wrap: wrap;
+    width: 100%;
   }
 
   .footer-nav-link {
-    padding: 4px 6px;
+    padding: 6px 8px;
     font-size: 12px;
   }
 
   .footer-nav-divider {
     display: none;
+  }
+
+  .footer-disclaimer {
+    font-size: 10px;
+    word-break: keep-all;
+  }
+
+  .footer-copyright {
+    font-size: 11px;
   }
 
   .footer-company-info {
