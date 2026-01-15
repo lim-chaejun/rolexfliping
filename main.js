@@ -65,6 +65,27 @@ function isAdmin() {
   return userRole === 'owner';
 }
 
+// ==========================================
+// 닉네임 관련 유틸리티 함수
+// ==========================================
+
+// 닉네임 중복 검사
+async function checkNicknameDuplicate(nickname, excludeUserId = null) {
+  const snapshot = await db.collection('users')
+    .where('nickname', '==', nickname)
+    .get();
+
+  // 자기 자신 제외 (수정 시)
+  const duplicates = snapshot.docs.filter(doc => doc.id !== excludeUserId);
+  return duplicates.length > 0;
+}
+
+// 사용자 표시 이름 반환 (닉네임 우선)
+function getDisplayName(user) {
+  if (!user) return '사용자';
+  return user.nickname || user.name || user.email?.split('@')[0] || '사용자';
+}
+
 // 고유 초대코드 생성 (중복 체크)
 async function createUniqueInviteCode() {
   let code;
@@ -1321,9 +1342,10 @@ async function showMyInfoModal() {
 
   // 기본 정보 채우기
   document.getElementById('my-info-avatar').src = currentUser.photoURL || 'https://via.placeholder.com/80';
-  document.getElementById('my-info-name').textContent = currentUser.displayName || currentUser.email?.split('@')[0] || '사용자';
+  document.getElementById('my-info-name').textContent = getDisplayName(userProfile);
   document.getElementById('my-info-email').textContent = currentUser.email || '';
   document.getElementById('my-info-realname').textContent = userProfile.name || '-';
+  document.getElementById('my-info-nickname').textContent = userProfile.nickname || '-';
   document.getElementById('my-info-phone').textContent = userProfile.phone || '-';
 
   // 가입일 표시
@@ -1367,11 +1389,12 @@ async function showMyInfoModal() {
     if (joinManagerSection) joinManagerSection.style.display = 'none';
     if (managerSection) {
       managerSection.style.display = 'block';
-      // 매니저 이름 가져오기
+      // 매니저 이름 가져오기 (닉네임 우선)
       try {
         const managerDoc = await db.collection('users').doc(currentManagerId).get();
         if (managerDoc.exists) {
-          const managerName = managerDoc.data().name || managerDoc.data().email?.split('@')[0] || '매니저';
+          const managerData = managerDoc.data();
+          const managerName = getDisplayName(managerData);
           document.getElementById('my-info-manager-name').textContent = managerName;
         } else {
           document.getElementById('my-info-manager-name').textContent = '-';
@@ -2508,6 +2531,7 @@ async function checkUserProfile() {
 
       return {
         name: data.name,
+        nickname: data.nickname,
         phone: data.phone,
         referrer: data.referrer,
         status: data.status || 'pending',
@@ -2588,17 +2612,25 @@ async function submitProfile(e) {
   e.preventDefault();
 
   const name = document.getElementById('profile-name').value.trim();
+  const nickname = document.getElementById('profile-nickname').value.trim();
   const phone = document.getElementById('profile-phone').value.trim();
   const referrer = document.getElementById('profile-referrer').value.trim();
   const inviteCodeInput = document.getElementById('profile-invite-code');
   const inviteCode = inviteCodeInput ? inviteCodeInput.value.trim().toUpperCase() : '';
 
-  if (!name || !phone) {
-    alert('이름과 연락처는 필수입니다.');
+  if (!name || !nickname || !phone) {
+    alert('이름, 닉네임, 연락처는 필수입니다.');
     return;
   }
 
   try {
+    // 닉네임 중복 검사
+    const isDuplicate = await checkNicknameDuplicate(nickname, currentUser.uid);
+    if (isDuplicate) {
+      alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
+      return;
+    }
+
     // 초대코드 검증
     let codeData = null;
     let autoApprove = false;
@@ -2624,6 +2656,7 @@ async function submitProfile(e) {
     const userData = {
       ...existingData,
       name,
+      nickname,
       phone,
       referrer,
       email: currentUser.email,
@@ -2707,7 +2740,7 @@ async function handleAuthStateChange(user) {
           });
           await db.collection('inviteCodes').doc(newCode).set({
             managerId: user.uid,
-            managerName: userProfile?.name || user.email,
+            managerName: getDisplayName(userProfile) || user.email,
             active: true,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
@@ -2953,7 +2986,7 @@ function renderAdminUserList() {
           <option value="">소속 매니저 선택</option>
           ${managers.map(m => `
             <option value="${m.id}" ${user.managerId === m.id ? 'selected' : ''}>
-              ${m.name || m.email?.split('@')[0]} ${m.role === 'owner' ? '(소유자)' : '(매니저)'}
+              ${getDisplayName(m)} ${m.role === 'owner' ? '(소유자)' : '(매니저)'}
             </option>
           `).join('')}
         </select>
@@ -2968,7 +3001,7 @@ function renderAdminUserList() {
     // 소속 매니저 표시 (매니저가 아닌 회원만)
     const currentManager = user.managerId ? managers.find(m => m.id === user.managerId) : null;
     const managerDisplay = (currentAdminTab === 'approved' && isNonManager && currentManager) ? `
-      <div class="user-manager">소속: <strong>${currentManager.name || currentManager.email?.split('@')[0]}</strong></div>
+      <div class="user-manager">소속: <strong>${getDisplayName(currentManager)}</strong></div>
     ` : (currentAdminTab === 'approved' && isNonManager && !currentManager) ? `
       <div class="user-manager no-manager">소속: <strong>미지정</strong></div>
     ` : '';
@@ -2979,7 +3012,7 @@ function renderAdminUserList() {
           <img src="${user.photoURL || 'https://via.placeholder.com/48'}" alt="">
         </div>
         <div class="user-info">
-          <div class="user-name">${user.name}</div>
+          <div class="user-name">${getDisplayName(user)}</div>
           <div class="user-email">${user.email}</div>
           <div class="user-phone">${user.phone || '-'}</div>
           <div class="user-referrer">${user.referrer ? '추천인: ' + user.referrer : ''}</div>
@@ -3131,7 +3164,7 @@ async function changeUserRole(selectEl) {
         // inviteCodes 컬렉션에 등록
         await db.collection('inviteCodes').doc(newCode).set({
           managerId: userId,
-          managerName: user.name || user.email,
+          managerName: getDisplayName(user),
           active: true,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });

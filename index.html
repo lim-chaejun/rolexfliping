@@ -495,6 +495,11 @@
           <input type="text" id="profile-name" required placeholder="실명을 입력하세요">
         </div>
         <div class="form-group">
+          <label for="profile-nickname">닉네임/업체명 *</label>
+          <input type="text" id="profile-nickname" required placeholder="표시될 이름 (업체명 가능)">
+          <span class="form-hint">다른 사용자에게 보여질 이름입니다</span>
+        </div>
+        <div class="form-group">
           <label for="profile-phone">연락처 *</label>
           <input type="tel" id="profile-phone" required placeholder="010-0000-0000">
         </div>
@@ -527,6 +532,10 @@
           <div class="my-info-item">
             <span class="my-info-label">이름</span>
             <span class="my-info-value" id="my-info-realname">-</span>
+          </div>
+          <div class="my-info-item">
+            <span class="my-info-label">닉네임</span>
+            <span class="my-info-value" id="my-info-nickname">-</span>
           </div>
           <div class="my-info-item">
             <span class="my-info-label">연락처</span>
