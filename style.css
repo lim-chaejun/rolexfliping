@@ -1740,6 +1740,63 @@ body {
   padding: 40px 24px;
 }
 
+/* 테스트 유형 선택 화면 */
+.test-type-select {
+  text-align: center;
+}
+
+.test-type-select h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.test-type-select p {
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.test-type-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.test-type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 20px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.test-type-btn:hover {
+  border-color: var(--accent-gold);
+  background: var(--bg-tertiary);
+}
+
+.test-type-icon {
+  font-size: 32px;
+}
+
+.test-type-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.test-type-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 /* 테스트 시작 화면 */
 .test-start {
   text-align: center;
@@ -1950,6 +2007,82 @@ body {
 .choice-btn.wrong {
   border-color: var(--status-no) !important;
   background: rgba(239, 68, 68, 0.15) !important;
+}
+
+/* 스펙 테스트 영역 */
+.spec-test-area {
+  margin-top: 24px;
+}
+
+.spec-question-type {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.spec-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.spec-choice-btn {
+  padding: 16px 12px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.spec-choice-btn:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  background: var(--bg-tertiary);
+}
+
+.spec-choice-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.spec-choice-btn.correct {
+  border-color: var(--status-buy) !important;
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: var(--status-buy);
+}
+
+.spec-choice-btn.wrong {
+  border-color: var(--status-no) !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: var(--status-no);
+}
+
+/* 스펙 테스트 결과 스타일 */
+.result-item.spec-result .result-item-specs {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.result-item.spec-result .result-item-specs span {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+}
+
+.result-item.spec-result .result-item-specs span.correct {
+  color: var(--status-buy);
+}
+
+.result-item.spec-result .result-item-specs span.wrong {
+  color: var(--status-no);
 }
 
 /* 테스트 결과 화면 */

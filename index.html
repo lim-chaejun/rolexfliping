@@ -182,10 +182,28 @@
   <!-- 테스트 모드 섹션 -->
   <section class="test-section" id="test-section" style="display:none;">
     <div class="test-container">
+      <!-- 테스트 유형 선택 화면 -->
+      <div class="test-type-select" id="test-type-select">
+        <h2>테스트 선택</h2>
+        <p>원하는 테스트 유형을 선택하세요.</p>
+        <div class="test-type-buttons">
+          <button class="test-type-btn" data-type="purchase">
+            <span class="test-type-icon">📋</span>
+            <span class="test-type-name">매입 판단 테스트</span>
+            <span class="test-type-desc">시계를 보고 매입/컨펌/불가 판단</span>
+          </button>
+          <button class="test-type-btn" data-type="spec">
+            <span class="test-type-icon">🔍</span>
+            <span class="test-type-name">스펙 맞추기 테스트</span>
+            <span class="test-type-desc">소재, 베젤, 브레이슬릿 맞추기</span>
+          </button>
+        </div>
+      </div>
+
       <!-- 테스트 시작 화면 -->
-      <div class="test-start" id="test-start">
-        <h2>매입 판단 테스트</h2>
-        <p>10개의 시계에 대한 매입 판단을 테스트합니다.</p>
+      <div class="test-start" id="test-start" style="display:none;">
+        <h2 id="test-start-title">매입 판단 테스트</h2>
+        <p id="test-start-desc">10개의 시계에 대한 매입 판단을 테스트합니다.</p>
         <div class="test-options" id="test-options">
           <label class="test-option">
             <input type="radio" name="test-line" value="" checked>
@@ -217,7 +235,8 @@
           </div>
         </div>
 
-        <div class="test-choices">
+        <!-- 매입 판단 테스트 선택지 -->
+        <div class="test-choices" id="purchase-choices">
           <button class="choice-btn buy" data-choice="buy">
             <span class="choice-icon">O</span>
             <span>매입</span>
@@ -231,14 +250,22 @@
             <span>불가</span>
           </button>
         </div>
+
+        <!-- 스펙 맞추기 테스트 선택지 -->
+        <div class="spec-test-area" id="spec-test-area" style="display:none;">
+          <div class="spec-question-type" id="spec-question-type">소재를 맞춰보세요</div>
+          <div class="spec-choices" id="spec-choices">
+            <!-- 4개 버튼이 동적으로 생성됨 -->
+          </div>
+        </div>
       </div>
 
       <!-- 테스트 결과 화면 -->
       <div class="test-result" id="test-result" style="display:none;">
-        <h2>테스트 결과</h2>
+        <h2 id="result-title">테스트 결과</h2>
         <div class="result-score">
           <span class="score-value" id="score-value">0</span>
-          <span class="score-total">/10</span>
+          <span class="score-total" id="score-total">/10</span>
         </div>
         <div class="result-grade" id="result-grade">우수</div>
 

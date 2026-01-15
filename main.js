@@ -8,10 +8,34 @@ let dataLoaded = false; // 데이터 로딩 완료 플래그
 
 // 테스트 관련 변수
 let testMode = false;
+let testType = 'purchase'; // 'purchase' | 'spec'
 let testQuestions = [];
 let currentQuestion = 0;
 let testAnswers = [];
 let testLine = '';
+
+// 스펙 테스트 관련 변수
+let specQuestionPhase = 0; // 0: 소재, 1: 베젤, 2: 브레이슬릿
+let specCurrentAnswer = {}; // 현재 시계의 3개 답변 저장
+
+// 스펙 테스트 선택지 데이터
+const SPEC_OPTIONS = {
+  material: [
+    { value: 'alt-steel', label: '오이스터스틸' },
+    { value: 'alt-18-ct-yellow-gold', label: '옐로 골드' },
+    { value: 'alt-18-ct-pink-gold', label: '에버로즈 골드' },
+    { value: 'alt-18-ct-white-gold', label: '화이트 골드' },
+    { value: 'alt-platinum', label: '플래티넘' },
+    { value: 'alt-rolesor-everose', label: '에버로즈 롤레조' },
+    { value: 'alt-rolesor-yellow', label: '옐로 롤레조' },
+    { value: 'alt-rolesium', label: '롤레슘' }
+  ],
+  bezel: [], // 동적으로 시계 데이터에서 추출
+  bracelet: [] // 동적으로 시계 데이터에서 추출
+};
+
+const SPEC_PHASE_LABELS = ['소재를 맞춰보세요', '베젤을 맞춰보세요', '브레이슬릿을 맞춰보세요'];
+const SPEC_PHASE_KEYS = ['material', 'bezel', 'bracelet'];
 
 // 인증 관련 변수
 let currentUser = null;
@@ -1964,6 +1988,7 @@ const navCalc = document.getElementById('nav-calc');
 const calcSection = document.getElementById('calc-section');
 
 // 테스트 DOM 요소
+const testTypeSelect = document.getElementById('test-type-select');
 const testStart = document.getElementById('test-start');
 const testProgress = document.getElementById('test-progress');
 const testResult = document.getElementById('test-result');
@@ -1971,6 +1996,9 @@ const testOptions = document.getElementById('test-options');
 const startTestBtn = document.getElementById('start-test-btn');
 const retryBtn = document.getElementById('retry-btn');
 const viewStatsBtn = document.getElementById('view-stats-btn');
+const purchaseChoices = document.getElementById('purchase-choices');
+const specTestArea = document.getElementById('spec-test-area');
+const specChoicesEl = document.getElementById('spec-choices');
 
 // 현재 활성 탭
 let currentTab = 'main';
@@ -2001,7 +2029,7 @@ function switchTab(tab) {
     testSection.style.display = 'block';
     if (statsSection) statsSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
-    showTestStart();
+    showTestTypeSelect();
   } else if (tab === 'stats') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -2116,11 +2144,57 @@ if (calcResultModal) {
   });
 }
 
+// 테스트 유형 선택 화면 표시
+function showTestTypeSelect() {
+  testTypeSelect.style.display = 'block';
+  testStart.style.display = 'none';
+  testProgress.style.display = 'none';
+  testResult.style.display = 'none';
+
+  // 베젤/브레이슬릿 옵션 추출 (최초 1회)
+  if (SPEC_OPTIONS.bezel.length === 0) {
+    extractSpecOptions();
+  }
+}
+
+// 시계 데이터에서 베젤/브레이슬릿 옵션 추출
+function extractSpecOptions() {
+  const bezels = new Set();
+  const bracelets = new Set();
+
+  watches.forEach(w => {
+    if (w.bezel) bezels.add(w.bezel);
+    if (w.bracelet) bracelets.add(w.bracelet);
+  });
+
+  SPEC_OPTIONS.bezel = [...bezels].map(b => ({ value: b, label: b }));
+  SPEC_OPTIONS.bracelet = [...bracelets].map(b => ({ value: b, label: b }));
+}
+
+// 테스트 유형 선택
+function selectTestType(type) {
+  testType = type;
+  showTestStart();
+}
+
 // 테스트 시작 화면 표시
 function showTestStart() {
+  testTypeSelect.style.display = 'none';
   testStart.style.display = 'block';
   testProgress.style.display = 'none';
   testResult.style.display = 'none';
+
+  // 테스트 유형에 따른 제목/설명 변경
+  const titleEl = document.getElementById('test-start-title');
+  const descEl = document.getElementById('test-start-desc');
+
+  if (testType === 'spec') {
+    titleEl.textContent = '스펙 맞추기 테스트';
+    descEl.textContent = '10개 시계의 소재, 베젤, 브레이슬릿을 맞춰보세요. (총 30문제)';
+  } else {
+    titleEl.textContent = '매입 판단 테스트';
+    descEl.textContent = '10개의 시계에 대한 매입 판단을 테스트합니다.';
+  }
 
   // 라인 옵션 생성 (체크박스로 다중 선택 가능)
   const lines = [...new Set(watches.map(w => w.line))].sort();
@@ -2177,15 +2251,31 @@ function startTest() {
     ? watches.filter(w => selectedLines.includes(w.line))
     : watches;
 
+  // 스펙 테스트의 경우 필수 속성이 있는 시계만 선택
+  if (testType === 'spec') {
+    pool = pool.filter(w => w.material && w.bezel && w.bracelet);
+  }
+
   // 셔플 후 10개 선택
   testQuestions = shuffleArray([...pool]).slice(0, 10);
   currentQuestion = 0;
   testAnswers = [];
+  specQuestionPhase = 0;
+  specCurrentAnswer = {};
 
   testStart.style.display = 'none';
   testProgress.style.display = 'block';
 
-  showQuestion();
+  // 테스트 유형에 따른 UI 전환
+  if (testType === 'spec') {
+    purchaseChoices.style.display = 'none';
+    specTestArea.style.display = 'block';
+    showSpecQuestion();
+  } else {
+    purchaseChoices.style.display = 'flex';
+    specTestArea.style.display = 'none';
+    showQuestion();
+  }
 }
 
 // 배열 셔플
@@ -2197,7 +2287,212 @@ function shuffleArray(array) {
   return array;
 }
 
-// 문제 표시
+// 스펙 테스트 문제 표시
+function showSpecQuestion() {
+  const question = testQuestions[currentQuestion];
+  const imagePath = `images/${question.line}/${question.model_number}.jpg`;
+  const totalQuestions = testQuestions.length * 3; // 10문제 x 3질문
+  const currentQNum = currentQuestion * 3 + specQuestionPhase + 1;
+
+  document.getElementById('current-q').textContent = currentQNum;
+  document.getElementById('progress-fill').style.width = `${(currentQNum / totalQuestions) * 100}%`;
+
+  // 문제 수 업데이트 (30문제)
+  const countEl = document.querySelector('.test-count');
+  if (countEl) {
+    countEl.innerHTML = `문제 <span id="current-q">${currentQNum}</span>/${totalQuestions}`;
+  }
+
+  const testImage = document.getElementById('test-image');
+  testImage.src = imagePath;
+  testImage.onerror = function() {
+    this.src = question.image_url;
+  };
+
+  // 시계 정보 표시 (스펙 테스트에서는 정답 힌트가 될 수 있는 정보 숨김)
+  document.getElementById('test-line-name').textContent = lineNames[question.line] || question.line;
+  document.getElementById('test-title').textContent = question.title;
+  document.getElementById('test-model').textContent = question.model_number;
+  document.getElementById('test-price').textContent = question.formatted_price;
+  document.getElementById('test-material').textContent = '???'; // 숨김
+
+  // 질문 유형 표시
+  document.getElementById('spec-question-type').textContent = SPEC_PHASE_LABELS[specQuestionPhase];
+
+  // 4지선다 선택지 생성
+  const phaseKey = SPEC_PHASE_KEYS[specQuestionPhase];
+  const correctAnswer = question[phaseKey];
+  const choices = generateSpecChoices(correctAnswer, phaseKey);
+
+  specChoicesEl.innerHTML = choices.map(choice => `
+    <button class="spec-choice-btn" data-choice="${choice.value}">
+      ${choice.label}
+    </button>
+  `).join('');
+
+  // 선택지 클릭 이벤트
+  specChoicesEl.querySelectorAll('.spec-choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectSpecAnswer(btn.dataset.choice));
+  });
+}
+
+// 스펙 테스트 선택지 생성 (정답 1개 + 랜덤 오답 3개)
+function generateSpecChoices(correctAnswer, phaseKey) {
+  const allOptions = SPEC_OPTIONS[phaseKey];
+  const correctOption = allOptions.find(o => o.value === correctAnswer);
+
+  if (!correctOption) {
+    // 정답이 옵션 목록에 없으면 추가
+    const wrongOptions = shuffleArray([...allOptions]).slice(0, 3);
+    return shuffleArray([{ value: correctAnswer, label: correctAnswer }, ...wrongOptions]);
+  }
+
+  const wrongOptions = allOptions.filter(o => o.value !== correctAnswer);
+  const selectedWrong = shuffleArray([...wrongOptions]).slice(0, 3);
+  return shuffleArray([correctOption, ...selectedWrong]);
+}
+
+// 스펙 테스트 답변 선택
+function selectSpecAnswer(choice) {
+  const question = testQuestions[currentQuestion];
+  const phaseKey = SPEC_PHASE_KEYS[specQuestionPhase];
+  const correctAnswer = question[phaseKey];
+  const isCorrect = choice === correctAnswer;
+
+  // 현재 답변 저장
+  specCurrentAnswer[phaseKey] = {
+    userChoice: choice,
+    correctAnswer: correctAnswer,
+    isCorrect: isCorrect
+  };
+
+  // 피드백 표시
+  specChoicesEl.querySelectorAll('.spec-choice-btn').forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.choice === choice) {
+      btn.classList.add(isCorrect ? 'correct' : 'wrong');
+    }
+    if (btn.dataset.choice === correctAnswer) {
+      btn.classList.add('correct');
+    }
+  });
+
+  // 0.8초 후 다음으로
+  setTimeout(() => {
+    specQuestionPhase++;
+
+    if (specQuestionPhase < 3) {
+      // 같은 시계의 다음 질문
+      showSpecQuestion();
+    } else {
+      // 시계 하나 완료 - 답변 저장
+      testAnswers.push({
+        question: question,
+        material: specCurrentAnswer.material,
+        bezel: specCurrentAnswer.bezel,
+        bracelet: specCurrentAnswer.bracelet
+      });
+
+      specQuestionPhase = 0;
+      specCurrentAnswer = {};
+      currentQuestion++;
+
+      if (currentQuestion < testQuestions.length) {
+        showSpecQuestion();
+      } else {
+        showSpecResult();
+      }
+    }
+  }, 800);
+}
+
+// 스펙 테스트 결과 표시
+function showSpecResult() {
+  testProgress.style.display = 'none';
+  testResult.style.display = 'block';
+
+  // 정답 수 계산 (각 시계당 3문제)
+  let correctCount = 0;
+  testAnswers.forEach(a => {
+    if (a.material?.isCorrect) correctCount++;
+    if (a.bezel?.isCorrect) correctCount++;
+    if (a.bracelet?.isCorrect) correctCount++;
+  });
+
+  const totalQuestions = testQuestions.length * 3;
+  document.getElementById('score-value').textContent = correctCount;
+  document.getElementById('score-total').textContent = `/${totalQuestions}`;
+  document.getElementById('result-title').textContent = '스펙 테스트 결과';
+
+  // 등급 계산 (30문제 기준)
+  let grade = '';
+  if (correctCount >= 27) grade = '우수';
+  else if (correctCount >= 21) grade = '양호';
+  else if (correctCount >= 15) grade = '보통';
+  else grade = '노력필요';
+
+  document.getElementById('result-grade').textContent = grade;
+
+  // 상세 결과
+  const detailsHtml = testAnswers.map((answer) => {
+    const imagePath = `images/${answer.question.line}/${answer.question.model_number}.jpg`;
+    const materialResult = answer.material?.isCorrect ? '✓' : '✗';
+    const bezelResult = answer.bezel?.isCorrect ? '✓' : '✗';
+    const braceletResult = answer.bracelet?.isCorrect ? '✓' : '✗';
+
+    return `
+      <div class="result-item spec-result">
+        <img class="result-item-image" src="${imagePath}"
+             onerror="this.src='${answer.question.image_url}'" alt="">
+        <div class="result-item-info">
+          <div class="result-item-title">${answer.question.title}</div>
+          <div class="result-item-specs">
+            <span class="${answer.material?.isCorrect ? 'correct' : 'wrong'}">${materialResult} 소재</span>
+            <span class="${answer.bezel?.isCorrect ? 'correct' : 'wrong'}">${bezelResult} 베젤</span>
+            <span class="${answer.bracelet?.isCorrect ? 'correct' : 'wrong'}">${braceletResult} 브레이슬릿</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('result-details').innerHTML = detailsHtml;
+
+  // 로그인된 경우 점수 저장
+  if (currentUser) {
+    saveSpecTestScore(correctCount, totalQuestions);
+  }
+}
+
+// 스펙 테스트 점수 저장
+async function saveSpecTestScore(score, total) {
+  if (!currentUser) return;
+
+  try {
+    const scoreData = {
+      score,
+      totalQuestions: total,
+      testType: 'spec',
+      line: testLine || 'all',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      answers: testAnswers.map(a => ({
+        model: a.question.model_number,
+        line: a.question.line,
+        material: a.material,
+        bezel: a.bezel,
+        bracelet: a.bracelet
+      }))
+    };
+
+    await db.collection('users').doc(currentUser.uid)
+      .collection('scores').add(scoreData);
+
+  } catch (error) {
+    console.error('스펙 테스트 점수 저장 실패:', error);
+  }
+}
+
+// 문제 표시 (매입 판단 테스트)
 function showQuestion() {
   const question = testQuestions[currentQuestion];
   const imagePath = `images/${question.line}/${question.model_number}.jpg`;
@@ -2259,13 +2554,15 @@ function selectAnswer(choice) {
   }, 1000);
 }
 
-// 결과 표시
+// 결과 표시 (매입 판단 테스트)
 function showResult() {
   testProgress.style.display = 'none';
   testResult.style.display = 'block';
 
   const correctCount = testAnswers.filter(a => a.isCorrect).length;
   document.getElementById('score-value').textContent = correctCount;
+  document.getElementById('score-total').textContent = '/10';
+  document.getElementById('result-title').textContent = '테스트 결과';
 
   // 등급 계산
   let grade = '';
@@ -2393,10 +2690,15 @@ async function updateUserStats(score) {
 }
 
 // 테스트 이벤트 리스너
-// 테스트 이벤트 리스너
 startTestBtn.addEventListener('click', startTest);
-retryBtn.addEventListener('click', showTestStart);
+retryBtn.addEventListener('click', showTestTypeSelect);
 
+// 테스트 유형 선택 버튼
+document.querySelectorAll('.test-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => selectTestType(btn.dataset.type));
+});
+
+// 매입 판단 테스트 선택 버튼
 document.querySelectorAll('.choice-btn').forEach(btn => {
   btn.addEventListener('click', () => selectAnswer(btn.dataset.choice));
 });
@@ -3654,7 +3956,7 @@ switchTab = function(tab) {
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
-    showTestStart();
+    showTestTypeSelect();
   } else if (tab === 'stats') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
