@@ -1383,22 +1383,16 @@ async function showMyInfoModal() {
     }
   }
 
-  // 초대코드 섹션 (매니저 이상만 표시)
-  const inviteSection = document.getElementById('my-info-invite-section');
+  // 소속 매니저 / 초대코드 입력 섹션
   const managerSection = document.getElementById('my-info-manager-section');
   const joinManagerSection = document.getElementById('my-info-join-manager-section');
 
-  if (['manager', 'owner'].includes(userRole) && myInviteCode) {
-    // 매니저 이상: 초대코드 표시
-    if (inviteSection) {
-      inviteSection.style.display = 'block';
-      document.getElementById('my-info-invite-code').textContent = myInviteCode;
-    }
+  if (['manager', 'owner'].includes(userRole)) {
+    // 매니저 이상: 소속 매니저 섹션 숨김
     if (managerSection) managerSection.style.display = 'none';
     if (joinManagerSection) joinManagerSection.style.display = 'none';
   } else if (currentManagerId) {
     // 일반 회원/딜러: 소속 매니저 표시
-    if (inviteSection) inviteSection.style.display = 'none';
     if (joinManagerSection) joinManagerSection.style.display = 'none';
     if (managerSection) {
       managerSection.style.display = 'block';
@@ -1419,7 +1413,6 @@ async function showMyInfoModal() {
     }
   } else {
     // 소속 매니저 없음: 초대코드 입력 섹션 표시
-    if (inviteSection) inviteSection.style.display = 'none';
     if (managerSection) managerSection.style.display = 'none';
     if (joinManagerSection) joinManagerSection.style.display = 'block';
   }

@@ -1478,8 +1478,7 @@ body {
   color: var(--status-no);
 }
 
-/* 내 정보 - 초대코드/매니저 섹션 */
-.my-info-invite-section,
+/* 내 정보 - 매니저 섹션 */
 .my-info-manager-section {
   margin-top: 12px;
   padding-top: 12px;
