@@ -1927,8 +1927,12 @@ async function setupOwnerAccount() {
     isOwnerSetupMode = true;
     setSignupInviteInfo('OWNER_SETUP', { isOwnerSetup: true });
 
+    // currentUser 설정
+    currentUser = user;
+
+    // 페이지 새로고침 없이 직접 프로필 모달 표시
     hideLoginModal();
-    window.location.reload();
+    showProfileModal();
   } catch (error) {
     console.error('관리자 설정 실패:', error);
     isOwnerSetupMode = false;
@@ -1969,10 +1973,17 @@ async function validateAndSignup() {
     if (userDoc.exists && userDoc.data().name) {
       alert('이미 가입된 계정입니다.\n로그인으로 진행합니다.');
       clearSignupInviteInfo();
+      hideLoginModal();
+      window.location.reload();
+      return;
     }
 
+    // currentUser 설정
+    currentUser = user;
+
+    // 페이지 새로고침 없이 직접 프로필 모달 표시
     hideLoginModal();
-    window.location.reload();
+    showProfileModal();
   } catch (error) {
     console.error('회원가입 실패:', error);
     if (error.code !== 'auth/popup-closed-by-user') {
