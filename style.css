@@ -356,6 +356,8 @@ body {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 150px;
 }
 
 .search-icon {
@@ -366,7 +368,7 @@ body {
 
 #search-input {
   padding: 10px 12px 10px 38px;
-  width: 220px;
+  width: 100%;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 13px;
