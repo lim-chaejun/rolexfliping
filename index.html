@@ -772,6 +772,13 @@
             <span class="chip-dot"></span>
             <span class="chip-text">불가</span>
           </label>
+          <div class="edit-mode-toggle" id="edit-mode-toggle" style="display:none;">
+            <span class="edit-mode-label">수정</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="edit-mode-checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
         </div>
       </div>
       <div class="filter-right">
@@ -1171,6 +1178,18 @@
               <input type="checkbox" value="no" checked style="display:none;">
               <span class="chip-dot no"></span>
               불가
+            </label>
+          </div>
+        </div>
+
+        <!-- 수정모드 토글 (매니저 이상만 표시) -->
+        <div class="filter-modal-section" id="mobile-edit-mode-section" style="display:none;">
+          <div class="filter-modal-section-title">수정 모드</div>
+          <div class="mobile-edit-mode-toggle">
+            <span class="mobile-edit-mode-desc">매입 상태 수정 기능</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="mobile-edit-mode-checkbox" checked>
+              <span class="toggle-slider"></span>
             </label>
           </div>
         </div>

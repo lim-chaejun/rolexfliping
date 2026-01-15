@@ -299,6 +299,7 @@ body {
 
 .status-chips {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -345,6 +346,81 @@ body {
 .status-chip.buy input:checked ~ .chip-dot { box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 3px var(--status-buy); }
 .status-chip.pending input:checked ~ .chip-dot { box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 3px var(--status-pending); }
 .status-chip.no input:checked ~ .chip-dot { box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 3px var(--status-no); }
+
+/* 수정모드 토글 */
+.edit-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
+}
+
+.edit-mode-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: 0.3s;
+  border-radius: 22px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--status-buy);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(18px);
+}
+
+/* 모바일 수정모드 토글 */
+.mobile-edit-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.mobile-edit-mode-desc {
+  font-size: 14px;
+  color: var(--text-primary);
+}
 
 .filter-right {
   display: flex;

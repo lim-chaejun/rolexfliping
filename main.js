@@ -5,6 +5,7 @@ let displayedCount = 50;
 let selectedLine = '';
 let selectedCategory = ''; // 선택된 카테고리 (professional/classic)
 let dataLoaded = false; // 데이터 로딩 완료 플래그
+let editModeEnabled = true; // 수정 모드 활성화 여부 (매니저 이상)
 
 // 테스트 관련 변수
 let testMode = false;
@@ -660,8 +661,8 @@ function renderProducts() {
   productGrid.innerHTML = displayWatches.map(watch => {
     const imagePath = `images/${watch.line}/${watch.model_number}.jpg`;
 
-    // 매니저 이상용 상태 변경 버튼 (CSS 도형)
-    const adminControls = canAccess('watch:edit_status') ? `
+    // 매니저 이상용 상태 변경 버튼 (CSS 도형) - 수정 모드가 켜져 있을 때만 표시
+    const adminControls = (canAccess('watch:edit_status') && editModeEnabled) ? `
       <div class="admin-status-control">
         <button class="status-btn buy ${watch.buy_status === 'buy' ? 'active' : ''}"
                 data-model="${watch.model_number}" data-status="buy"
@@ -1111,6 +1112,28 @@ statusCheckboxes.forEach(cb => {
   });
 });
 
+// 수정모드 토글 이벤트 리스너
+const editModeCheckbox = document.getElementById('edit-mode-checkbox');
+const mobileEditModeCheckbox = document.getElementById('mobile-edit-mode-checkbox');
+
+if (editModeCheckbox) {
+  editModeCheckbox.addEventListener('change', () => {
+    editModeEnabled = editModeCheckbox.checked;
+    // 모바일 토글 동기화
+    if (mobileEditModeCheckbox) mobileEditModeCheckbox.checked = editModeEnabled;
+    renderProducts();
+  });
+}
+
+if (mobileEditModeCheckbox) {
+  mobileEditModeCheckbox.addEventListener('change', () => {
+    editModeEnabled = mobileEditModeCheckbox.checked;
+    // PC 토글 동기화
+    if (editModeCheckbox) editModeCheckbox.checked = editModeEnabled;
+    renderProducts();
+  });
+}
+
 // ==========================================
 // 모바일 필터 모달
 // ==========================================
@@ -1165,6 +1188,12 @@ function syncDesktopToMobile() {
     lineButtons.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.line === selectedLine);
     });
+  }
+
+  // 수정모드 토글 동기화
+  const mobileEditModeCheckbox = document.getElementById('mobile-edit-mode-checkbox');
+  if (mobileEditModeCheckbox) {
+    mobileEditModeCheckbox.checked = editModeEnabled;
   }
 }
 
@@ -3959,6 +3988,16 @@ function updateUIByRole() {
   // 초대코드 버튼: manager/owner만 표시
   if (dropdownInviteCode) {
     dropdownInviteCode.style.display = ['manager', 'owner'].includes(userRole) ? 'flex' : 'none';
+  }
+
+  // 수정모드 토글: watch:edit_status 권한 있는 사용자만 표시
+  const editModeToggle = document.getElementById('edit-mode-toggle');
+  const mobileEditModeSection = document.getElementById('mobile-edit-mode-section');
+  if (editModeToggle) {
+    editModeToggle.style.display = canAccess('watch:edit_status') ? 'flex' : 'none';
+  }
+  if (mobileEditModeSection) {
+    mobileEditModeSection.style.display = canAccess('watch:edit_status') ? 'block' : 'none';
   }
 }
 
