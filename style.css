@@ -834,12 +834,10 @@ body {
 }
 
 @media (max-width: 768px) {
-  /* 헤더 - 상단 고정 */
+  /* 헤더 - sticky로 상단 고정 (문서 흐름 유지) */
   .header {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0;
     z-index: 1001;
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
@@ -864,12 +862,10 @@ body {
     font-size: 20px;
   }
 
-  /* 메인 탭 - 헤더 바로 아래 고정 */
+  /* 메인 탭 - sticky로 헤더 아래 고정 (문서 흐름 유지) */
   .main-nav {
-    position: fixed;
+    position: sticky;
     top: 52px;
-    left: 0;
-    right: 0;
     z-index: 1000;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
@@ -896,14 +892,9 @@ body {
     height: 22px;
   }
 
-  /* 콘텐츠 영역 - 고정 영역 아래에서 시작 */
-  body {
-    padding-top: 0;
-  }
-
-  /* 콘텐츠 래퍼에 상단 마진 적용 */
+  /* content-wrapper - margin 불필요 (sticky라 문서 흐름 유지됨) */
   .content-wrapper {
-    margin-top: 104px; /* 헤더(52px) + 탭(52px) */
+    margin-top: 0;
   }
 
   /* 차트 섹션 숨김 */
@@ -925,9 +916,10 @@ body {
     display: flex !important;
     margin: 12px 16px;
     position: sticky;
-    top: 104px;
+    top: 104px; /* 헤더(52px) + 네비(52px) */
     z-index: 99;
     background: var(--bg-primary);
+    padding: 8px 0;
   }
 
   /* 결과 헤더 조정 */
