@@ -3741,3 +3741,115 @@ body {
 .delete-btn:hover {
   background: #991b1b;
 }
+
+/* ==========================================
+   내 정보 수정 기능
+   ========================================== */
+.my-info-role {
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.my-info-role-badge {
+  padding: 4px 12px;
+  background: var(--accent-gold);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.my-info-editable {
+  padding: 12px 0;
+}
+
+.my-info-edit-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-info-edit-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.my-info-edit-item {
+  margin-bottom: 12px;
+}
+
+.my-info-edit-item .my-info-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.my-info-edit-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.my-info-edit-input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.my-info-edit-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.my-info-cancel-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-info-cancel-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.my-info-save-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-info-save-btn:hover {
+  background: var(--accent-gold-hover);
+}
+
+.my-info-save-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}

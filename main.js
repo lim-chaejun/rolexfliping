@@ -1348,6 +1348,18 @@ async function showMyInfoModal() {
   document.getElementById('my-info-nickname').textContent = userProfile.nickname || '-';
   document.getElementById('my-info-phone').textContent = userProfile.phone || '-';
 
+  // 등급 표시
+  const roleEl = document.getElementById('my-info-role');
+  if (roleEl) {
+    roleEl.textContent = ROLE_LABELS[userRole] || '일반회원';
+  }
+
+  // 수정 모드 초기화 (보기 모드로)
+  const viewMode = document.getElementById('my-info-view-mode');
+  const editMode = document.getElementById('my-info-edit-mode');
+  if (viewMode) viewMode.style.display = 'block';
+  if (editMode) editMode.style.display = 'none';
+
   // 가입일 표시
   const joinDateEl = document.getElementById('my-info-joindate');
   if (joinDateEl) {
@@ -1451,6 +1463,106 @@ async function showMyInfoModal() {
 // 내 정보 모달 숨기기
 function hideMyInfoModal() {
   myInfoModal.classList.remove('active');
+}
+
+// 내 정보 수정 모드 전환
+function showMyInfoEditMode() {
+  const viewMode = document.getElementById('my-info-view-mode');
+  const editMode = document.getElementById('my-info-edit-mode');
+
+  // 현재 값으로 입력 필드 초기화
+  document.getElementById('my-info-edit-name').value = userProfile.name || '';
+  document.getElementById('my-info-edit-nickname').value = userProfile.nickname || '';
+  document.getElementById('my-info-edit-phone').value = userProfile.phone || '';
+
+  if (viewMode) viewMode.style.display = 'none';
+  if (editMode) editMode.style.display = 'block';
+}
+
+// 내 정보 수정 취소
+function cancelMyInfoEdit() {
+  const viewMode = document.getElementById('my-info-view-mode');
+  const editMode = document.getElementById('my-info-edit-mode');
+
+  if (viewMode) viewMode.style.display = 'block';
+  if (editMode) editMode.style.display = 'none';
+}
+
+// 내 정보 저장
+async function saveMyInfoEdit() {
+  const name = document.getElementById('my-info-edit-name').value.trim();
+  const nickname = document.getElementById('my-info-edit-nickname').value.trim();
+  const phone = document.getElementById('my-info-edit-phone').value.trim();
+
+  if (!name || !nickname || !phone) {
+    alert('이름, 닉네임, 연락처는 필수입니다.');
+    return;
+  }
+
+  // 닉네임이 변경된 경우 중복 검사
+  if (nickname !== userProfile.nickname) {
+    const isDuplicate = await checkNicknameDuplicate(nickname, currentUser.uid);
+    if (isDuplicate) {
+      alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
+      return;
+    }
+  }
+
+  const saveBtn = document.getElementById('my-info-save-btn');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '저장 중...';
+  }
+
+  try {
+    // Firestore 업데이트
+    await db.collection('users').doc(currentUser.uid).update({
+      name,
+      nickname,
+      phone,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 로컬 데이터 업데이트
+    userProfile.name = name;
+    userProfile.nickname = nickname;
+    userProfile.phone = phone;
+
+    // UI 업데이트
+    document.getElementById('my-info-realname').textContent = name;
+    document.getElementById('my-info-nickname').textContent = nickname;
+    document.getElementById('my-info-phone').textContent = phone;
+    document.getElementById('my-info-name').textContent = getDisplayName(userProfile);
+
+    // 보기 모드로 전환
+    cancelMyInfoEdit();
+
+    alert('정보가 수정되었습니다.');
+
+  } catch (error) {
+    console.error('정보 수정 실패:', error);
+    alert('정보 수정에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '저장';
+    }
+  }
+}
+
+// 내 정보 수정 이벤트 리스너
+const myInfoEditBtn = document.getElementById('my-info-edit-btn');
+const myInfoCancelBtn = document.getElementById('my-info-cancel-btn');
+const myInfoSaveBtn = document.getElementById('my-info-save-btn');
+
+if (myInfoEditBtn) {
+  myInfoEditBtn.addEventListener('click', showMyInfoEditMode);
+}
+if (myInfoCancelBtn) {
+  myInfoCancelBtn.addEventListener('click', cancelMyInfoEdit);
+}
+if (myInfoSaveBtn) {
+  myInfoSaveBtn.addEventListener('click', saveMyInfoEdit);
 }
 
 // 내 정보 모달 이벤트 리스너
