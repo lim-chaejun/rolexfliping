@@ -3667,10 +3667,16 @@ async function submitProfile(e) {
   const name = document.getElementById('profile-name').value.trim();
   const nickname = document.getElementById('profile-nickname').value.trim();
   const phone = document.getElementById('profile-phone').value.trim();
+  const termsAgree = document.getElementById('profile-terms-agree')?.checked;
   const inviteCodeFromForm = document.getElementById('profile-invite-code')?.value?.trim();
 
   if (!name || !nickname || !phone) {
     alert('이름, 닉네임, 연락처는 필수입니다.');
+    return;
+  }
+
+  if (!termsAgree) {
+    alert('이용약관 및 개인정보취급방침에 동의해주세요.');
     return;
   }
 
@@ -3725,6 +3731,7 @@ async function submitProfile(e) {
       status: 'approved',
       managerId: managerId,
       linkedByCode: finalInviteCode,
+      termsAgreedAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
