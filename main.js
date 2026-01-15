@@ -784,6 +784,36 @@ function showWatchDetail(modelNumber) {
   setSpecValue('watch-detail-movement', watch.movement);
   setSpecValue('watch-detail-cyclops', watch.cyclops);
 
+  // 동일 라인 다른 모델 찾기 (모델번호 앞부분이 같은 것)
+  const modelPrefix = watch.model_number.split('-')[0]; // m278344rbr-0035 → m278344rbr
+  const relatedModels = watches.filter(w =>
+    w.model_number !== watch.model_number &&
+    w.model_number.startsWith(modelPrefix + '-')
+  );
+
+  const relatedSection = document.getElementById('related-models-section');
+  const relatedTitle = document.getElementById('related-models-title');
+  const relatedList = document.getElementById('related-models-list');
+
+  if (relatedModels.length > 0) {
+    // 모델번호 숫자부분 추출 (m278344rbr → 278344rbr)
+    const modelNum = modelPrefix.replace(/^m/, '');
+    relatedTitle.textContent = `${watch.title} ${modelNum}의 다른 모델`;
+
+    relatedList.innerHTML = relatedModels.slice(0, 10).map(related => {
+      const relatedImagePath = `images/${related.line}/${related.model_number}.jpg`;
+      return `
+        <div class="related-model-item" onclick="showWatchDetail('${related.model_number}')">
+          <img src="${relatedImagePath}" alt="${related.title}" onerror="this.src='${related.image_url}'">
+        </div>
+      `;
+    }).join('');
+
+    relatedSection.style.display = 'block';
+  } else {
+    relatedSection.style.display = 'none';
+  }
+
   watchDetailModal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
