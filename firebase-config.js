@@ -5,14 +5,16 @@ const OWNER_EMAILS = ['lcjun37@gmail.com'];
 const ROLES = {
   OWNER: 'owner',
   MANAGER: 'manager',
+  SUB_MANAGER: 'sub_manager',  // 소속매니저 (매니저와 데이터 공유)
   DEALER: 'dealer',
   MEMBER: 'member'
 };
 
 // 등급 계층 (숫자가 클수록 높은 권한)
 const ROLE_LEVELS = {
-  owner: 4,
-  manager: 3,
+  owner: 5,
+  manager: 4,
+  sub_manager: 3,  // 소속매니저
   dealer: 2,
   member: 1
 };
@@ -21,6 +23,7 @@ const ROLE_LEVELS = {
 const ROLE_LABELS = {
   owner: '소유자',
   manager: '매니저',
+  sub_manager: '소속매니저',
   dealer: '딜러',
   member: '일반회원'
 };

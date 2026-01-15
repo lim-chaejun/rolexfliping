@@ -42,14 +42,14 @@ function canAccess(feature) {
 
   const permissions = {
     // 탭 접근 권한
-    'tab:main': ['member', 'dealer', 'manager', 'owner'],
-    'tab:test': ['member', 'dealer', 'manager', 'owner'],
-    'tab:stats': ['member', 'dealer', 'manager', 'owner'],
-    'tab:calc': ['dealer', 'manager', 'owner'],
+    'tab:main': ['member', 'dealer', 'sub_manager', 'manager', 'owner'],
+    'tab:test': ['member', 'dealer', 'sub_manager', 'manager', 'owner'],
+    'tab:stats': ['member', 'dealer', 'sub_manager', 'manager', 'owner'],
+    'tab:calc': ['dealer', 'sub_manager', 'manager', 'owner'],
     'tab:admin': ['owner'],
 
     // 기능 권한
-    'watch:edit_status': ['manager', 'owner'],
+    'watch:edit_status': ['sub_manager', 'manager', 'owner'],  // 소속매니저도 수정 가능
     'user:approve': ['owner'],
     'user:reject': ['owner'],
     'user:change_role': ['owner']
@@ -210,7 +210,8 @@ function getWatchStatusesManagerId() {
   if (['manager', 'owner'].includes(userRole)) {
     return currentUser.uid;
   }
-  // 일반 회원/딜러는 소속 매니저의 watchStatuses 사용
+  // 소속매니저/딜러/일반회원은 소속 매니저의 watchStatuses 사용
+  // sub_manager도 소속 매니저의 데이터를 공유 (읽기/쓰기 모두)
   if (currentManagerId) {
     return currentManagerId;
   }
@@ -3084,6 +3085,7 @@ function renderAdminUserList() {
         <select class="role-select" data-user-id="${user.id}" onchange="changeUserRole(this)">
           <option value="member" ${user.role === 'member' || !user.role ? 'selected' : ''}>일반회원</option>
           <option value="dealer" ${user.role === 'dealer' ? 'selected' : ''}>딜러</option>
+          <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
           <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
           <option value="owner" ${user.role === 'owner' ? 'selected' : ''}>소유자</option>
         </select>
