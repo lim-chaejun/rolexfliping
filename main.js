@@ -320,7 +320,6 @@ async function init() {
 
     // 모바일 필터 초기화
     createMobileLineGrid();
-    syncMobileFilterOptions();
 
     updateStatusCounts();
     applyFilters();
@@ -1157,7 +1156,7 @@ function applyMobileFilters() {
 
 // 모바일 필터 초기화
 function resetMobileFilters() {
-  mobileSearchInput.value = '';
+  if (mobileSearchInput) mobileSearchInput.value = '';
   mobileMaterialFilter.value = '';
   mobileBezelFilter.value = '';
   mobileBraceletFilter.value = '';
@@ -1207,9 +1206,6 @@ function createMobileLineGrid() {
     });
   });
 }
-
-// 모바일 필터 드롭다운 옵션 동기화
-// syncMobileFilterOptions는 더 이상 필요 없음 (updateFilterOptions에서 직접 처리)
 
 // 이벤트 리스너
 if (mobileFilterBtn) {
