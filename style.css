@@ -3623,3 +3623,67 @@ body {
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* ==========================================
+   매니저 연결 (초대코드 입력) 섹션
+   ========================================== */
+.my-info-join-manager-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  border: 1px dashed var(--border-color);
+}
+
+.join-manager-form {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 8px;
+}
+
+.join-code-input {
+  flex: 1;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.join-code-input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.join-code-input::placeholder {
+  letter-spacing: 1px;
+  text-transform: none;
+}
+
+.join-code-btn {
+  padding: 12px 20px;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.join-code-btn:hover {
+  background: var(--accent-gold-hover);
+}
+
+.join-code-btn:disabled {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}

@@ -558,6 +558,15 @@
             <span class="manager-info-name" id="my-info-manager-name">-</span>
           </div>
         </div>
+        <!-- 초대코드 입력 섹션 (소속 매니저 없는 회원만 표시) -->
+        <div class="my-info-join-manager-section" id="my-info-join-manager-section" style="display: none;">
+          <div class="my-info-section-title">매니저 연결</div>
+          <div class="join-manager-form">
+            <input type="text" id="my-info-join-code-input" class="join-code-input" placeholder="초대코드 6자리" maxlength="6">
+            <button type="button" id="my-info-join-code-btn" class="join-code-btn">연결</button>
+          </div>
+          <div class="form-hint">매니저에게 받은 초대코드를 입력하면 해당 매니저의 매입 리스트를 볼 수 있습니다</div>
+        </div>
         <div class="my-info-tests">
           <div class="my-info-tests-title">최근 테스트</div>
           <div class="my-info-tests-list" id="my-info-tests-list">

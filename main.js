@@ -1351,6 +1351,7 @@ async function showMyInfoModal() {
   // 초대코드 섹션 (매니저 이상만 표시)
   const inviteSection = document.getElementById('my-info-invite-section');
   const managerSection = document.getElementById('my-info-manager-section');
+  const joinManagerSection = document.getElementById('my-info-join-manager-section');
 
   if (['manager', 'owner'].includes(userRole) && myInviteCode) {
     // 매니저 이상: 초대코드 표시
@@ -1359,9 +1360,11 @@ async function showMyInfoModal() {
       document.getElementById('my-info-invite-code').textContent = myInviteCode;
     }
     if (managerSection) managerSection.style.display = 'none';
+    if (joinManagerSection) joinManagerSection.style.display = 'none';
   } else if (currentManagerId) {
     // 일반 회원/딜러: 소속 매니저 표시
     if (inviteSection) inviteSection.style.display = 'none';
+    if (joinManagerSection) joinManagerSection.style.display = 'none';
     if (managerSection) {
       managerSection.style.display = 'block';
       // 매니저 이름 가져오기
@@ -1379,9 +1382,10 @@ async function showMyInfoModal() {
       }
     }
   } else {
-    // 둘 다 해당 없음
+    // 소속 매니저 없음: 초대코드 입력 섹션 표시
     if (inviteSection) inviteSection.style.display = 'none';
     if (managerSection) managerSection.style.display = 'none';
+    if (joinManagerSection) joinManagerSection.style.display = 'block';
   }
 
   // 최근 테스트 3개 불러오기
@@ -1433,6 +1437,94 @@ if (myInfoModalClose) {
 if (myInfoModal) {
   myInfoModal.addEventListener('click', (e) => {
     if (e.target === myInfoModal) hideMyInfoModal();
+  });
+}
+
+// 매니저 연결 (초대코드 입력) 기능
+const joinCodeInput = document.getElementById('my-info-join-code-input');
+const joinCodeBtn = document.getElementById('my-info-join-code-btn');
+
+async function joinManagerByCode() {
+  if (!currentUser) return;
+
+  const code = joinCodeInput.value.trim().toUpperCase();
+  if (code.length !== 6) {
+    alert('초대코드는 6자리입니다.');
+    return;
+  }
+
+  joinCodeBtn.disabled = true;
+  joinCodeBtn.textContent = '확인 중...';
+
+  try {
+    // 초대코드 확인
+    const codeDoc = await db.collection('inviteCodes').doc(code).get();
+    if (!codeDoc.exists) {
+      alert('존재하지 않는 초대코드입니다.');
+      return;
+    }
+
+    const codeData = codeDoc.data();
+    if (!codeData.active) {
+      alert('비활성화된 초대코드입니다.');
+      return;
+    }
+
+    const managerId = codeData.managerId;
+    const managerName = codeData.managerName || '매니저';
+
+    // 확인 메시지
+    if (!confirm(`${managerName} 매니저에게 연결하시겠습니까?`)) {
+      return;
+    }
+
+    // 사용자 정보 업데이트
+    await db.collection('users').doc(currentUser.uid).update({
+      managerId: managerId,
+      linkedByCode: code,
+      linkedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 로컬 변수 업데이트
+    currentManagerId = managerId;
+    if (userProfile) {
+      userProfile.managerId = managerId;
+      userProfile.linkedByCode = code;
+    }
+
+    alert(`${managerName} 매니저에게 연결되었습니다. 이제 해당 매니저의 매입 리스트를 볼 수 있습니다.`);
+
+    // 모달 닫고 데이터 새로고침
+    hideMyInfoModal();
+
+    // 시계 상태 데이터 새로고침
+    if (dataLoaded) {
+      dataLoaded = false;
+      await init();
+    }
+
+  } catch (error) {
+    console.error('매니저 연결 실패:', error);
+    alert('매니저 연결에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    joinCodeBtn.disabled = false;
+    joinCodeBtn.textContent = '연결';
+  }
+}
+
+if (joinCodeBtn) {
+  joinCodeBtn.addEventListener('click', joinManagerByCode);
+}
+
+if (joinCodeInput) {
+  // 대문자 변환 및 엔터키 처리
+  joinCodeInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase();
+  });
+  joinCodeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      joinManagerByCode();
+    }
   });
 }
 
