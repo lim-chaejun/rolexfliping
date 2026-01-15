@@ -3620,6 +3620,256 @@ body {
 }
 
 /* ==========================================
+   히스토리 섹션
+   ========================================== */
+
+.history-section {
+  position: fixed;
+  top: 125px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  z-index: 50;
+  box-sizing: border-box;
+}
+
+.history-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.history-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.history-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.history-filter {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.history-filter-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.history-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-filter-group.search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.history-filter-group label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.history-filter-group select,
+.history-filter-group input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.history-filter-group select:focus,
+.history-filter-group input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.history-empty svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.history-empty p {
+  font-size: 14px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.history-item-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.history-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-model {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item-number {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.history-item-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.history-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.history-status-badge.buy {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.history-status-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.history-status-badge.no {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.history-arrow {
+  color: var(--text-muted);
+}
+
+.history-item-meta {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.history-item-user {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.history-item-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.history-load-more {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.history-load-more-btn {
+  padding: 12px 32px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-load-more-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+@media (max-width: 768px) {
+  .history-container {
+    padding: 24px 16px;
+  }
+
+  .history-filter-row {
+    flex-direction: column;
+  }
+
+  .history-filter-group.search {
+    min-width: auto;
+  }
+
+  .history-item {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .history-item-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .history-item-meta {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+  }
+}
+
+/* ==========================================
    모바일 검색바 & 필터 버튼
    ========================================== */
 

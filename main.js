@@ -63,6 +63,7 @@ function canAccess(feature) {
     'tab:test': ['member', 'dealer', 'sub_manager', 'manager', 'owner'],
     'tab:stats': ['member', 'dealer', 'sub_manager', 'manager', 'owner'],
     'tab:calc': ['dealer', 'sub_manager', 'manager', 'owner'],
+    'tab:history': ['sub_manager', 'manager', 'owner'],
     'tab:admin': ['owner'],
 
     // 기능 권한
@@ -2967,8 +2968,11 @@ async function updateWatchStatusBtn(event, btn) {
   const watchIndex = watches.findIndex(w => w.model_number === modelNumber);
   if (watchIndex === -1) return;
 
+  // 이전 상태 저장
+  const previousStatus = watches[watchIndex].buy_status;
+
   // 이미 같은 상태면 무시
-  if (watches[watchIndex].buy_status === newStatus) return;
+  if (previousStatus === newStatus) return;
 
   try {
     // 매니저별 watchStatuses에 저장
@@ -3024,6 +3028,10 @@ async function updateWatchStatusBtn(event, btn) {
       }
     }
 
+    // 로그 기록
+    const watch = watches[watchIndex];
+    logStatusChange(watch, previousStatus, newStatus);
+
     console.log(`상태 변경: ${modelNumber} -> ${newStatus}`);
   } catch (error) {
     console.error('상태 변경 실패:', error);
@@ -3031,6 +3039,220 @@ async function updateWatchStatusBtn(event, btn) {
   }
 }
 
+// ==========================================
+// 히스토리 (상태 변경 로그) 시스템
+// ==========================================
+
+let historyLogs = [];
+let lastHistoryDoc = null;
+let historyLoading = false;
+
+// 상태 변경 로그 기록
+async function logStatusChange(watch, previousStatus, newStatus) {
+  try {
+    const managerId = getWatchStatusesManagerId();
+    if (!managerId) return;
+
+    const logData = {
+      modelNumber: watch.model_number,
+      modelName: watch.title,
+      lineName: watch.line,
+      imageUrl: watch.image_url || '',
+      previousStatus: previousStatus,
+      newStatus: newStatus,
+      changedBy: currentUser.email,
+      changedByName: userProfile?.name || currentUser.email,
+      changedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('watchStatusLogs').doc(managerId)
+      .collection('logs').add(logData);
+
+  } catch (error) {
+    console.error('로그 기록 실패:', error);
+  }
+}
+
+// 히스토리 페이지 로드
+async function loadHistoryPage() {
+  historyLogs = [];
+  lastHistoryDoc = null;
+  await loadStatusLogs();
+}
+
+// 상태 변경 로그 조회
+async function loadStatusLogs(loadMore = false) {
+  if (historyLoading) return;
+  historyLoading = true;
+
+  const historyList = document.getElementById('history-list');
+  const loadMoreBtn = document.getElementById('history-load-more');
+
+  if (!loadMore) {
+    historyList.innerHTML = '<div class="history-loading" style="text-align:center;padding:40px;color:var(--text-muted);">로딩 중...</div>';
+  }
+
+  try {
+    const managerId = getWatchStatusesManagerId();
+    if (!managerId) {
+      historyList.innerHTML = '<div class="history-empty"><p>데이터를 불러올 수 없습니다.</p></div>';
+      historyLoading = false;
+      return;
+    }
+
+    // 필터 값 가져오기
+    const dateFilter = document.getElementById('history-date-filter')?.value || '30';
+    const statusFilter = document.getElementById('history-status-filter')?.value || '';
+    const searchTerm = document.getElementById('history-search-input')?.value?.toLowerCase() || '';
+
+    // 쿼리 생성
+    let query = db.collection('watchStatusLogs').doc(managerId)
+      .collection('logs')
+      .orderBy('changedAt', 'desc');
+
+    // 날짜 필터
+    if (dateFilter !== 'all') {
+      const daysAgo = new Date();
+      daysAgo.setDate(daysAgo.getDate() - parseInt(dateFilter));
+      query = query.where('changedAt', '>=', daysAgo);
+    }
+
+    // 페이지네이션
+    if (loadMore && lastHistoryDoc) {
+      query = query.startAfter(lastHistoryDoc);
+    }
+
+    query = query.limit(20);
+
+    const snapshot = await query.get();
+
+    if (snapshot.empty && !loadMore) {
+      historyList.innerHTML = `
+        <div class="history-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <p>변경 이력이 없습니다.</p>
+        </div>
+      `;
+      loadMoreBtn.style.display = 'none';
+      historyLoading = false;
+      return;
+    }
+
+    // 마지막 문서 저장
+    if (!snapshot.empty) {
+      lastHistoryDoc = snapshot.docs[snapshot.docs.length - 1];
+    }
+
+    // 로그 데이터 처리
+    let newLogs = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // 클라이언트 사이드 필터링 (상태, 검색어)
+    if (statusFilter) {
+      newLogs = newLogs.filter(log => log.newStatus === statusFilter);
+    }
+    if (searchTerm) {
+      newLogs = newLogs.filter(log =>
+        log.modelNumber?.toLowerCase().includes(searchTerm) ||
+        log.modelName?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (loadMore) {
+      historyLogs = [...historyLogs, ...newLogs];
+    } else {
+      historyLogs = newLogs;
+    }
+
+    // 렌더링
+    renderHistoryLogs();
+
+    // 더보기 버튼 표시
+    loadMoreBtn.style.display = snapshot.size >= 20 ? 'block' : 'none';
+
+  } catch (error) {
+    console.error('로그 조회 실패:', error);
+    historyList.innerHTML = '<div class="history-empty"><p>로그를 불러오는데 실패했습니다.</p></div>';
+  }
+
+  historyLoading = false;
+}
+
+// 히스토리 로그 렌더링
+function renderHistoryLogs() {
+  const historyList = document.getElementById('history-list');
+
+  if (historyLogs.length === 0) {
+    historyList.innerHTML = `
+      <div class="history-empty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <p>변경 이력이 없습니다.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const statusText = { buy: '매입', pending: '컨펌', no: '불가' };
+
+  historyList.innerHTML = historyLogs.map(log => {
+    const date = log.changedAt?.toDate ? log.changedAt.toDate() : new Date();
+    const dateStr = date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const timeStr = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+    return `
+      <div class="history-item">
+        <img class="history-item-image" src="${log.imageUrl || 'https://via.placeholder.com/60'}" alt="${log.modelName}" onerror="this.src='https://via.placeholder.com/60'">
+        <div class="history-item-info">
+          <div class="history-item-model">${log.modelName || '알 수 없음'}</div>
+          <div class="history-item-number">${log.modelNumber}</div>
+          <div class="history-item-change">
+            <span class="history-status-badge ${log.previousStatus}">${statusText[log.previousStatus] || log.previousStatus}</span>
+            <span class="history-arrow">→</span>
+            <span class="history-status-badge ${log.newStatus}">${statusText[log.newStatus] || log.newStatus}</span>
+          </div>
+        </div>
+        <div class="history-item-meta">
+          <div class="history-item-user">${log.changedByName || log.changedBy}</div>
+          <div class="history-item-date">${dateStr} ${timeStr}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 더보기 로드
+function loadMoreLogs() {
+  loadStatusLogs(true);
+}
+
+// 히스토리 필터 이벤트 리스너
+document.addEventListener('DOMContentLoaded', () => {
+  const historyDateFilter = document.getElementById('history-date-filter');
+  const historyStatusFilter = document.getElementById('history-status-filter');
+  const historySearchInput = document.getElementById('history-search-input');
+
+  if (historyDateFilter) {
+    historyDateFilter.addEventListener('change', () => loadHistoryPage());
+  }
+  if (historyStatusFilter) {
+    historyStatusFilter.addEventListener('change', () => loadHistoryPage());
+  }
+  if (historySearchInput) {
+    let searchTimeout;
+    historySearchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => loadHistoryPage(), 300);
+    });
+  }
+});
 
 // ==========================================
 // 사용자 프로필 및 승인 시스템
@@ -3398,12 +3620,18 @@ function showRejectedScreen() {
 // 역할에 따른 UI 업데이트 (탭 표시/숨김)
 function updateUIByRole() {
   const navCalc = document.getElementById('nav-calc');
+  const navHistory = document.getElementById('nav-history');
   const navAdmin = document.getElementById('nav-admin');
   const dropdownInviteCode = document.getElementById('dropdown-invite-code');
 
   // 계산기 탭: dealer 이상만 표시
   if (navCalc) {
     navCalc.style.display = canAccess('tab:calc') ? 'flex' : 'none';
+  }
+
+  // 히스토리 탭: sub_manager 이상만 표시
+  if (navHistory) {
+    navHistory.style.display = canAccess('tab:history') ? 'flex' : 'none';
   }
 
   // 관리자 탭: owner만 표시
@@ -4061,6 +4289,10 @@ switchTab = function(tab) {
     alert('계산기 탭에 접근할 권한이 없습니다. (딜러 등급 이상 필요)');
     return;
   }
+  if (tab === 'history' && !canAccess('tab:history')) {
+    alert('히스토리 탭에 접근할 권한이 없습니다. (소속매니저 등급 이상 필요)');
+    return;
+  }
   if (tab === 'admin' && !canAccess('tab:admin')) {
     alert('관리자 페이지에 접근할 권한이 없습니다.');
     return;
@@ -4073,8 +4305,9 @@ switchTab = function(tab) {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
 
-  // calc-section 직접 DOM 조회
+  // calc-section, history-section 직접 DOM 조회
   const calcEl = document.getElementById('calc-section');
+  const historyEl = document.getElementById('history-section');
 
   // 컨텐츠 전환
   if (tab === 'main') {
@@ -4085,6 +4318,7 @@ switchTab = function(tab) {
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
+    if (historyEl) historyEl.style.display = 'none';
   } else if (tab === 'test') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -4093,6 +4327,7 @@ switchTab = function(tab) {
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
+    if (historyEl) historyEl.style.display = 'none';
     showTestTypeSelect();
   } else if (tab === 'stats') {
     mainContainer.style.display = 'none';
@@ -4102,6 +4337,7 @@ switchTab = function(tab) {
     if (statsSection) statsSection.style.display = 'block';
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
+    if (historyEl) historyEl.style.display = 'none';
     loadStatsPage();
   } else if (tab === 'calc') {
     mainContainer.style.display = 'none';
@@ -4111,6 +4347,17 @@ switchTab = function(tab) {
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'block';
+    if (historyEl) historyEl.style.display = 'none';
+  } else if (tab === 'history') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
+    if (historyEl) historyEl.style.display = 'block';
+    loadHistoryPage();
   } else if (tab === 'admin') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -4119,6 +4366,7 @@ switchTab = function(tab) {
     if (statsSection) statsSection.style.display = 'none';
     if (adminSection) adminSection.style.display = 'block';
     if (calcEl) calcEl.style.display = 'none';
+    if (historyEl) historyEl.style.display = 'none';
     loadAdminPage();
   }
 }
