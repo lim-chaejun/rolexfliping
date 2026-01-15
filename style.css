@@ -1585,6 +1585,104 @@ body {
   background: var(--bg-tertiary);
 }
 
+.google-signup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.google-signup-btn:hover {
+  background: #c9a227;
+}
+
+.login-hint {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* 회원가입 초대코드 입력 폼 */
+.invite-code-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invite-code-form .invite-code-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 18px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.invite-code-form .invite-code-input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.invite-code-form .form-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.invite-code-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.invite-back-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.invite-back-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.invite-next-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.invite-next-btn:hover {
+  background: #c9a227;
+}
+
 /* ==========================================
    테스트 모드 버튼
    ========================================== */

@@ -1792,12 +1792,53 @@ function showLoginModal() {
 
 function hideLoginModal() {
   loginModal.classList.remove('active');
+  // 모달 닫을 때 선택 화면으로 초기화
+  if (typeof showLoginStepSelect === 'function') {
+    showLoginStepSelect();
+  }
 }
 
-// Google 로그인
+// 회원가입용 초대코드 저장 변수
+let signupInviteCode = null;
+let signupInviteData = null;
+
+// 로그인 모달 단계 전환
+const loginStepSelect = document.getElementById('login-step-select');
+const loginStepInvite = document.getElementById('login-step-invite');
+const signupInviteInput = document.getElementById('signup-invite-code');
+const inviteBackBtn = document.getElementById('invite-back-btn');
+const inviteNextBtn = document.getElementById('invite-next-btn');
+
+function showLoginStepSelect() {
+  if (loginStepSelect) loginStepSelect.style.display = 'block';
+  if (loginStepInvite) loginStepInvite.style.display = 'none';
+  if (signupInviteInput) signupInviteInput.value = '';
+  signupInviteCode = null;
+  signupInviteData = null;
+}
+
+function showLoginStepInvite() {
+  if (loginStepSelect) loginStepSelect.style.display = 'none';
+  if (loginStepInvite) loginStepInvite.style.display = 'block';
+  if (signupInviteInput) signupInviteInput.focus();
+}
+
+// Google 로그인 (기존 회원만)
 async function loginWithGoogle() {
   try {
-    await auth.signInWithPopup(googleProvider);
+    const result = await auth.signInWithPopup(googleProvider);
+    const user = result.user;
+
+    // Firestore에서 기존 회원인지 확인
+    const userDoc = await db.collection('users').doc(user.uid).get();
+
+    if (!userDoc.exists || !userDoc.data().name) {
+      // 등록되지 않은 회원이면 로그아웃 후 안내
+      await auth.signOut();
+      alert('등록되지 않은 계정입니다.\n회원가입을 먼저 진행해주세요.');
+      return;
+    }
+
     hideLoginModal();
     // 로그인 성공 후 페이지 새로고침
     window.location.reload();
@@ -1805,6 +1846,50 @@ async function loginWithGoogle() {
     console.error('로그인 실패:', error);
     if (error.code !== 'auth/popup-closed-by-user') {
       alert('로그인에 실패했습니다: ' + error.message);
+    }
+  }
+}
+
+// 초대코드 검증 후 Google 회원가입
+async function validateAndSignup() {
+  const code = signupInviteInput.value.trim().toUpperCase();
+
+  if (!code || code.length !== 6) {
+    alert('6자리 초대코드를 입력해주세요.');
+    return;
+  }
+
+  // 초대코드 유효성 검증
+  const inviteData = await validateInviteCode(code);
+  if (!inviteData) {
+    alert('유효하지 않은 초대코드입니다.\n매니저에게 올바른 코드를 확인해주세요.');
+    return;
+  }
+
+  // 초대코드 저장
+  signupInviteCode = code;
+  signupInviteData = inviteData;
+
+  // Google 회원가입 진행
+  try {
+    const result = await auth.signInWithPopup(googleProvider);
+    const user = result.user;
+
+    // 이미 등록된 회원인지 확인
+    const userDoc = await db.collection('users').doc(user.uid).get();
+
+    if (userDoc.exists && userDoc.data().name) {
+      alert('이미 가입된 계정입니다.\n로그인으로 진행합니다.');
+      signupInviteCode = null;
+      signupInviteData = null;
+    }
+
+    hideLoginModal();
+    window.location.reload();
+  } catch (error) {
+    console.error('회원가입 실패:', error);
+    if (error.code !== 'auth/popup-closed-by-user') {
+      alert('회원가입에 실패했습니다: ' + error.message);
     }
   }
 }
@@ -1819,12 +1904,27 @@ async function logout() {
 }
 
 // 인증 이벤트 리스너
+const googleSignupBtn = document.getElementById('google-signup-btn');
 loginBtn.addEventListener('click', showLoginModal);
 logoutBtn.addEventListener('click', logout);
-loginModalClose.addEventListener('click', hideLoginModal);
+loginModalClose.addEventListener('click', () => {
+  hideLoginModal();
+  showLoginStepSelect();
+});
 googleLoginBtn.addEventListener('click', loginWithGoogle);
+if (googleSignupBtn) googleSignupBtn.addEventListener('click', showLoginStepInvite);
+if (inviteBackBtn) inviteBackBtn.addEventListener('click', showLoginStepSelect);
+if (inviteNextBtn) inviteNextBtn.addEventListener('click', validateAndSignup);
+if (signupInviteInput) {
+  signupInviteInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') validateAndSignup();
+  });
+}
 loginModal.addEventListener('click', (e) => {
-  if (e.target === loginModal) hideLoginModal();
+  if (e.target === loginModal) {
+    hideLoginModal();
+    showLoginStepSelect();
+  }
 });
 
 // ==========================================
@@ -1838,6 +1938,7 @@ const navStats = document.getElementById('nav-stats');
 const lineTabsWrapper = document.getElementById('line-tabs-wrapper');
 const testSection = document.getElementById('test-section');
 const mainContainer = document.getElementById('main-container');
+const mainNav = document.querySelector('.main-nav');
 const statsSection = document.getElementById('stats-section');
 const navCalc = document.getElementById('nav-calc');
 const calcSection = document.getElementById('calc-section');
@@ -2665,6 +2766,8 @@ async function checkUserProfile() {
 // 프로필 모달 표시
 function showProfileModal() {
   profileModal.classList.add('active');
+  // 네비게이션 숨기기 (프로필 미등록 상태)
+  if (mainNav) mainNav.style.display = 'none';
 }
 
 // 프로필 모달 숨기기
@@ -2681,6 +2784,8 @@ function showPendingApproval() {
   testSection.style.display = 'none';
   if (statsSection) statsSection.style.display = 'none';
   if (adminSection) adminSection.style.display = 'none';
+  // 네비게이션 숨기기 (승인 대기 상태)
+  if (mainNav) mainNav.style.display = 'none';
 }
 
 // 승인 대기 화면 숨기기
@@ -2698,6 +2803,8 @@ function showLoginRequired() {
   testSection.style.display = 'none';
   if (statsSection) statsSection.style.display = 'none';
   if (adminSection) adminSection.style.display = 'none';
+  // 네비게이션 숨기기 (비로그인 상태)
+  if (mainNav) mainNav.style.display = 'none';
 }
 
 // 로그인 필요 화면 숨기기
@@ -2713,6 +2820,8 @@ function showMainContent() {
   mainContainer.style.display = 'block';
   vizSection.style.display = 'block';
   lineTabsWrapper.style.display = 'block';
+  // 네비게이션 표시 (승인된 사용자)
+  if (mainNav) mainNav.style.display = 'flex';
 
   // 메인 컨텐츠 표시 시 필터 다시 적용
   if (watches.length > 0) {
@@ -2727,12 +2836,17 @@ async function submitProfile(e) {
   const name = document.getElementById('profile-name').value.trim();
   const nickname = document.getElementById('profile-nickname').value.trim();
   const phone = document.getElementById('profile-phone').value.trim();
-  const referrer = document.getElementById('profile-referrer').value.trim();
-  const inviteCodeInput = document.getElementById('profile-invite-code');
-  const inviteCode = inviteCodeInput ? inviteCodeInput.value.trim().toUpperCase() : '';
 
   if (!name || !nickname || !phone) {
     alert('이름, 닉네임, 연락처는 필수입니다.');
+    return;
+  }
+
+  // 초대코드 필수 확인 (회원가입 시 미리 검증됨)
+  if (!signupInviteCode || !signupInviteData) {
+    alert('초대코드 정보가 없습니다. 다시 회원가입을 진행해주세요.');
+    await auth.signOut();
+    window.location.reload();
     return;
   }
 
@@ -2744,22 +2858,8 @@ async function submitProfile(e) {
       return;
     }
 
-    // 초대코드 검증
-    let codeData = null;
-    let autoApprove = false;
-    let managerId = null;
-
-    if (inviteCode) {
-      codeData = await validateInviteCode(inviteCode);
-      if (codeData) {
-        // 유효한 초대코드 - 자동 승인 + 해당 매니저에 매칭
-        autoApprove = true;
-        managerId = codeData.managerId;
-      } else {
-        alert('유효하지 않은 초대코드입니다. 코드 없이 가입하시려면 초대코드 칸을 비워주세요.');
-        return;
-      }
-    }
+    // 초대코드로 자동 승인 + 매니저 매칭
+    const managerId = signupInviteData.managerId;
 
     // 기존 데이터 유지하면서 프로필 정보 저장
     const userRef = db.collection('users').doc(currentUser.uid);
@@ -2771,40 +2871,32 @@ async function submitProfile(e) {
       name,
       nickname,
       phone,
-      referrer,
       email: currentUser.email,
       photoURL: currentUser.photoURL,
-      status: autoApprove ? 'approved' : 'pending',
+      status: 'approved', // 초대코드로 가입하면 자동 승인
+      managerId: managerId,
+      linkedByCode: signupInviteCode,
       createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    // 초대코드로 가입한 경우 매니저 정보 저장
-    if (autoApprove && managerId) {
-      userData.managerId = managerId;
-      userData.linkedByCode = inviteCode;
-    }
-
     await userRef.set(userData, { merge: true });
+
+    // 초대코드 정보 초기화
+    signupInviteCode = null;
+    signupInviteData = null;
 
     hideProfileModal();
 
-    if (autoApprove) {
-      // 자동 승인된 경우 바로 메인 콘텐츠 표시
-      userProfile = { ...userData };
-      currentManagerId = managerId;
-      isApproved = true;
-      if (!dataLoaded) {
-        await init();
-      }
-      showMainContent();
-      updateUIByRole();
-    } else {
-      // 수동 승인 대기
-      userProfile = { name, phone, referrer, status: 'pending' };
-      isApproved = false;
-      showPendingApproval();
+    // 자동 승인 - 바로 메인 콘텐츠 표시
+    userProfile = { ...userData };
+    currentManagerId = managerId;
+    isApproved = true;
+    if (!dataLoaded) {
+      await init();
     }
+    showMainContent();
+    updateUIByRole();
 
   } catch (error) {
     console.error('프로필 저장 실패:', error);
@@ -3546,5 +3638,5 @@ if (logoutPendingBtn) {
 // 로그인 필요 화면 로그인 버튼 이벤트
 const loginRequiredBtn = document.getElementById('login-required-btn');
 if (loginRequiredBtn) {
-  loginRequiredBtn.addEventListener('click', loginWithGoogle);
+  loginRequiredBtn.addEventListener('click', showLoginModal);
 }
