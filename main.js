@@ -1057,27 +1057,8 @@ searchInput.addEventListener('input', debounce(() => {
   applyFilters();
 }, 300));
 
-materialFilter.addEventListener('change', () => {
-  displayedCount = 50;
-  applyFilters();
-});
+// 필터 드롭다운 이벤트는 모달로 이동됨 (applyMobileFilters에서 처리)
 
-bezelFilter.addEventListener('change', () => {
-  displayedCount = 50;
-  applyFilters();
-});
-
-braceletFilter.addEventListener('change', () => {
-  displayedCount = 50;
-  applyFilters();
-});
-
-priceFilter.addEventListener('change', () => {
-  displayedCount = 50;
-  applyFilters();
-});
-
-sortSelect.addEventListener('change', applyFilters);
 resetBtn.addEventListener('click', resetFilters);
 loadMoreBtn.addEventListener('click', loadMore);
 vizToggle.addEventListener('click', toggleVisualization);
