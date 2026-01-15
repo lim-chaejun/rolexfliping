@@ -1863,7 +1863,9 @@ async function checkOwnerExists() {
     return !ownerSnapshot.empty;
   } catch (error) {
     console.error('오너 확인 실패:', error);
-    return true; // 에러 시 안전하게 true 반환
+    // 에러 시(권한 문제 등) false 반환하여 버튼 표시
+    // 실제 오너 설정 시 다시 확인함
+    return false;
   }
 }
 
@@ -1881,32 +1883,30 @@ async function showLoginStepInviteWithOwnerCheck() {
 
 // 최초 관리자(오너) 설정
 async function setupOwnerAccount() {
-  // 다시 한번 오너 존재 여부 확인
-  const ownerExists = await checkOwnerExists();
-  if (ownerExists) {
-    alert('이미 관리자가 존재합니다.\n초대코드를 입력해주세요.');
-    return;
-  }
-
-  isOwnerSetupMode = true;
-  signupInviteCode = 'OWNER_SETUP';
-  signupInviteData = { isOwnerSetup: true };
-
-  // Google 회원가입 진행
+  // Google 회원가입 먼저 진행 (인증 후 오너 체크)
   try {
     const result = await auth.signInWithPopup(googleProvider);
     const user = result.user;
 
-    // 이미 등록된 회원인지 확인
-    const userDoc = await db.collection('users').doc(user.uid).get();
-
-    if (userDoc.exists && userDoc.data().name) {
-      alert('이미 가입된 계정입니다.');
-      isOwnerSetupMode = false;
-      signupInviteCode = null;
-      signupInviteData = null;
+    // 인증 후 오너 존재 여부 확인
+    const ownerExists = await checkOwnerExists();
+    if (ownerExists) {
+      await auth.signOut();
+      alert('이미 관리자가 존재합니다.\n초대코드를 입력해주세요.');
       return;
     }
+
+    // 이미 등록된 회원인지 확인
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (userDoc.exists && userDoc.data().name) {
+      alert('이미 가입된 계정입니다.');
+      return;
+    }
+
+    // 오너 설정 모드 활성화
+    isOwnerSetupMode = true;
+    signupInviteCode = 'OWNER_SETUP';
+    signupInviteData = { isOwnerSetup: true };
 
     hideLoginModal();
     window.location.reload();
