@@ -2860,6 +2860,13 @@ function showMainContent() {
 async function submitProfile(e) {
   e.preventDefault();
 
+  // Firebase 인증 상태 확인 (Firestore 권한을 위해 auth.currentUser 사용)
+  const authUser = auth.currentUser;
+  if (!authUser) {
+    alert('인증 상태를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
   const name = document.getElementById('profile-name').value.trim();
   const nickname = document.getElementById('profile-nickname').value.trim();
   const phone = document.getElementById('profile-phone').value.trim();
@@ -2872,7 +2879,7 @@ async function submitProfile(e) {
   // 초대코드 필수 확인 (회원가입 시 미리 검증됨)
   console.log('[DEBUG] submitProfile - signupInviteCode:', signupInviteCode);
   console.log('[DEBUG] submitProfile - signupInviteData:', signupInviteData);
-  console.log('[DEBUG] submitProfile - currentUser:', currentUser?.uid);
+  console.log('[DEBUG] submitProfile - authUser:', authUser?.uid);
   if (!signupInviteCode || !signupInviteData) {
     alert('초대코드 정보가 없습니다. 다시 회원가입을 진행해주세요.');
     await auth.signOut();
@@ -2882,14 +2889,14 @@ async function submitProfile(e) {
 
   try {
     // 닉네임 중복 검사
-    const isDuplicate = await checkNicknameDuplicate(nickname, currentUser.uid);
+    const isDuplicate = await checkNicknameDuplicate(nickname, authUser.uid);
     if (isDuplicate) {
       alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
       return;
     }
 
     // 기존 데이터 유지하면서 프로필 정보 저장
-    const userRef = db.collection('users').doc(currentUser.uid);
+    const userRef = db.collection('users').doc(authUser.uid);
     const existingDoc = await userRef.get();
     const existingData = existingDoc.exists ? existingDoc.data() : {};
 
@@ -2900,8 +2907,8 @@ async function submitProfile(e) {
       name,
       nickname,
       phone,
-      email: currentUser.email,
-      photoURL: currentUser.photoURL,
+      email: authUser.email,
+      photoURL: authUser.photoURL,
       status: 'approved',
       managerId: managerId,
       linkedByCode: signupInviteCode,
