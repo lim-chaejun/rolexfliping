@@ -5230,6 +5230,13 @@ body {
   fill: #fff;
 }
 
+.footer-logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
 .footer-logo-text {
   font-size: 18px;
   font-weight: 700;
@@ -5380,6 +5387,13 @@ body {
   width: 16px;
   height: 16px;
   fill: #fff;
+}
+
+.sub-header-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  object-fit: cover;
 }
 
 .sub-header-logo-text {
