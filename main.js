@@ -3466,6 +3466,8 @@ auth.onAuthStateChanged(handleAuthStateChange);
 
 let currentAdminTab = 'pending';
 let allUsers = [];
+let adminManagerFilter = '';  // 선택된 매니저/소유자 ID
+let adminSearchTerm = '';     // 회원 검색어
 
 // 관리자 탭 전환
 function switchAdminTab(tab) {
@@ -3514,10 +3516,55 @@ async function loadAdminPage() {
     // 매입 데이터 소스 드롭다운 초기화 (소유자 전용)
     initDataSourceSelector();
 
+    // 매니저 필터 드롭다운 초기화
+    initAdminManagerFilter();
+
+    // 검색 이벤트 리스너
+    initAdminSearchListener();
+
     renderAdminUserList();
   } catch (error) {
     console.error('사용자 목록 로드 실패:', error);
   }
+}
+
+// 매니저 필터 드롭다운 초기화
+function initAdminManagerFilter() {
+  const select = document.getElementById('admin-manager-filter');
+  if (!select) return;
+
+  // 매니저/소유자 목록 (소속 회원이 있을 수 있는 사람들)
+  const managersAndOwner = allUsers.filter(u =>
+    ['manager', 'owner'].includes(u.role) && u.status === 'approved'
+  );
+
+  // 드롭다운 옵션 생성
+  select.innerHTML = '<option value="">전체 회원</option>';
+  managersAndOwner.forEach(manager => {
+    const option = document.createElement('option');
+    option.value = manager.id;
+    const roleLabel = manager.role === 'owner' ? '(소유자)' : '(매니저)';
+    option.textContent = `${manager.nickname || manager.name || manager.email} ${roleLabel}`;
+    select.appendChild(option);
+  });
+
+  // 이벤트 리스너
+  select.onchange = () => {
+    adminManagerFilter = select.value;
+    renderAdminUserList();
+  };
+}
+
+// 관리자 검색 이벤트 리스너
+function initAdminSearchListener() {
+  const searchInput = document.getElementById('admin-search-input');
+  if (!searchInput) return;
+
+  // 이미 리스너가 있으면 제거 (중복 방지)
+  searchInput.oninput = debounce(() => {
+    adminSearchTerm = searchInput.value.toLowerCase().trim();
+    renderAdminUserList();
+  }, 300);
 }
 
 // 매입 데이터 소스 선택기 초기화
@@ -3580,9 +3627,27 @@ function renderAdminUserList() {
   if (!userList) return;
 
   const filteredUsers = allUsers.filter(user => {
-    if (currentAdminTab === 'pending') return user.status === 'pending';
-    if (currentAdminTab === 'approved') return user.status === 'approved';
-    if (currentAdminTab === 'rejected') return user.status === 'rejected';
+    // 1. 탭 필터 (상태)
+    if (currentAdminTab === 'pending' && user.status !== 'pending') return false;
+    if (currentAdminTab === 'approved' && user.status !== 'approved') return false;
+    if (currentAdminTab === 'rejected' && user.status !== 'rejected') return false;
+
+    // 2. 매니저 필터 (선택된 매니저의 소속 회원만)
+    if (adminManagerFilter) {
+      if (user.managerId !== adminManagerFilter && user.id !== adminManagerFilter) return false;
+    }
+
+    // 3. 검색어 필터 (이름, 연락처, 이메일)
+    if (adminSearchTerm) {
+      const searchFields = [
+        user.name || '',
+        user.nickname || '',
+        user.phone || '',
+        user.email || ''
+      ].join(' ').toLowerCase();
+      if (!searchFields.includes(adminSearchTerm)) return false;
+    }
+
     return true;
   });
 

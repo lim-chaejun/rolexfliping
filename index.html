@@ -387,6 +387,24 @@
         </button>
       </div>
 
+      <!-- 회원 필터 영역 (매니저 선택 + 검색) -->
+      <div class="admin-filter-bar">
+        <div class="admin-filter-left">
+          <select id="admin-manager-filter" class="admin-filter-select">
+            <option value="">전체 회원</option>
+          </select>
+        </div>
+        <div class="admin-filter-right">
+          <div class="admin-search-box">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" id="admin-search-input" placeholder="이름, 연락처, 이메일 검색">
+          </div>
+        </div>
+      </div>
+
       <!-- 매입 데이터 소스 선택 (소유자 전용, 승인 완료 탭에서만 표시) -->
       <div class="data-source-selector" id="data-source-selector" style="display:none;">
         <span class="data-source-label">매입 데이터 소스:</span>
