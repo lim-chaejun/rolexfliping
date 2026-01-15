@@ -2627,7 +2627,7 @@ async function checkUserProfile() {
       // role 필드가 없으면 기본값 설정 및 마이그레이션
       let role = data.role;
       if (!role) {
-        role = OWNER_EMAILS.includes(currentUser.email) ? 'owner' : 'member';
+        role = 'member'; // 신규 사용자는 기본 member, 소유자는 Firestore에서 직접 설정
         // Firestore에 role 필드 마이그레이션
         await db.collection('users').doc(currentUser.uid).update({
           role: role,
@@ -2820,12 +2820,8 @@ async function handleAuthStateChange(user) {
     // 프로필 확인
     userProfile = await checkUserProfile();
 
-    // 역할 결정
-    if (OWNER_EMAILS.includes(user.email)) {
-      // 오너 이메일이면 자동으로 owner 권한
-      userRole = 'owner';
-    } else if (userProfile && userProfile.role) {
-      // 프로필에 저장된 역할 사용
+    // 역할 결정 (Firestore의 role 필드 사용)
+    if (userProfile && userProfile.role) {
       userRole = userProfile.role;
     } else {
       userRole = 'member';

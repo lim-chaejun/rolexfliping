@@ -1435,27 +1435,28 @@ body {
 }
 
 .my-info-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .my-info-item {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
   background: var(--bg-tertiary);
   border-radius: 8px;
+  margin-bottom: 8px;
 }
 
 .my-info-label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
 .my-info-value {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -1470,11 +1471,6 @@ body {
 
 .my-info-status.rejected {
   color: var(--status-no);
-}
-
-.my-info-role {
-  color: var(--accent-gold);
-  font-weight: 500;
 }
 
 /* 내 정보 - 초대코드/매니저 섹션 */
@@ -3746,18 +3742,37 @@ body {
    내 정보 수정 기능
    ========================================== */
 .my-info-role {
-  padding-bottom: 12px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  margin-bottom: 12px;
 }
 
 .my-info-role-badge {
-  padding: 4px 12px;
+  padding: 6px 16px;
   background: var(--accent-gold);
   color: #fff;
-  border-radius: 12px;
-  font-size: 12px;
+  border-radius: 16px;
+  font-size: 13px;
   font-weight: 600;
+}
+
+/* 가입일/활동기간 2열 그리드 */
+.my-info-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.my-info-dates .my-info-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 0;
 }
 
 .my-info-editable {

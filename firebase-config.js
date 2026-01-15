@@ -1,5 +1,5 @@
-// 소유자(최고관리자) 이메일 설정
-const OWNER_EMAILS = ['lcjun37@gmail.com'];
+// 소유자 확인은 Firestore의 role 필드 사용 (이메일 노출 방지)
+const OWNER_EMAILS = [];
 
 // 등급 정의
 const ROLES = {
