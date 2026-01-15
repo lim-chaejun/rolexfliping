@@ -2944,12 +2944,13 @@ async function submitProfile(e) {
 
   // 초대코드 필수 확인 (회원가입 시 미리 검증됨) - 오너 설정 모드 제외
   const isOwnerSetup = signupInviteData && signupInviteData.isOwnerSetup;
-  if (!isOwnerSetup && (!signupInviteCode || !signupInviteData)) {
-    alert('초대코드 정보가 없습니다. 다시 회원가입을 진행해주세요.');
-    await auth.signOut();
-    window.location.reload();
-    return;
-  }
+  // TODO: 오너 설정 후 아래 주석 해제 필요!
+  // if (!isOwnerSetup && (!signupInviteCode || !signupInviteData)) {
+  //   alert('초대코드 정보가 없습니다. 다시 회원가입을 진행해주세요.');
+  //   await auth.signOut();
+  //   window.location.reload();
+  //   return;
+  // }
 
   try {
     // 닉네임 중복 검사
