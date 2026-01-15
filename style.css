@@ -286,6 +286,10 @@ body {
   border-bottom: 1px solid var(--border-color);
   gap: 16px;
   flex-wrap: wrap;
+  position: sticky;
+  top: 140px; /* header(86px) + main-nav(54px) */
+  background: var(--bg-primary);
+  z-index: 90;
 }
 
 .filter-left {
@@ -968,6 +972,7 @@ body {
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
+  justify-content: flex-start;
   gap: 8px;
 }
 
