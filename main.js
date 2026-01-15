@@ -1798,9 +1798,30 @@ function hideLoginModal() {
   }
 }
 
-// 회원가입용 초대코드 저장 변수
-let signupInviteCode = null;
-let signupInviteData = null;
+// 회원가입용 초대코드 저장 변수 (sessionStorage에서 복원)
+let signupInviteCode = sessionStorage.getItem('signupInviteCode') || null;
+let signupInviteData = JSON.parse(sessionStorage.getItem('signupInviteData') || 'null');
+
+// 초대코드 정보 저장 (sessionStorage 포함)
+function setSignupInviteInfo(code, data) {
+  signupInviteCode = code;
+  signupInviteData = data;
+  if (code && data) {
+    sessionStorage.setItem('signupInviteCode', code);
+    sessionStorage.setItem('signupInviteData', JSON.stringify(data));
+  } else {
+    sessionStorage.removeItem('signupInviteCode');
+    sessionStorage.removeItem('signupInviteData');
+  }
+}
+
+// 초대코드 정보 초기화
+function clearSignupInviteInfo() {
+  signupInviteCode = null;
+  signupInviteData = null;
+  sessionStorage.removeItem('signupInviteCode');
+  sessionStorage.removeItem('signupInviteData');
+}
 
 // 로그인 모달 단계 전환
 const loginStepSelect = document.getElementById('login-step-select');
@@ -1813,8 +1834,7 @@ function showLoginStepSelect() {
   if (loginStepSelect) loginStepSelect.style.display = 'block';
   if (loginStepInvite) loginStepInvite.style.display = 'none';
   if (signupInviteInput) signupInviteInput.value = '';
-  signupInviteCode = null;
-  signupInviteData = null;
+  clearSignupInviteInfo();
 }
 
 function showLoginStepInvite() {
@@ -1905,16 +1925,14 @@ async function setupOwnerAccount() {
 
     // 오너 설정 모드 활성화
     isOwnerSetupMode = true;
-    signupInviteCode = 'OWNER_SETUP';
-    signupInviteData = { isOwnerSetup: true };
+    setSignupInviteInfo('OWNER_SETUP', { isOwnerSetup: true });
 
     hideLoginModal();
     window.location.reload();
   } catch (error) {
     console.error('관리자 설정 실패:', error);
     isOwnerSetupMode = false;
-    signupInviteCode = null;
-    signupInviteData = null;
+    clearSignupInviteInfo();
     if (error.code !== 'auth/popup-closed-by-user') {
       alert('관리자 설정에 실패했습니다: ' + error.message);
     }
@@ -1937,9 +1955,8 @@ async function validateAndSignup() {
     return;
   }
 
-  // 초대코드 저장
-  signupInviteCode = code;
-  signupInviteData = inviteData;
+  // 초대코드 저장 (sessionStorage 포함)
+  setSignupInviteInfo(code, inviteData);
 
   // Google 회원가입 진행
   try {
@@ -1951,8 +1968,7 @@ async function validateAndSignup() {
 
     if (userDoc.exists && userDoc.data().name) {
       alert('이미 가입된 계정입니다.\n로그인으로 진행합니다.');
-      signupInviteCode = null;
-      signupInviteData = null;
+      clearSignupInviteInfo();
     }
 
     hideLoginModal();
@@ -2993,8 +3009,7 @@ async function submitProfile(e) {
     }
 
     // 초대코드 정보 초기화
-    signupInviteCode = null;
-    signupInviteData = null;
+    clearSignupInviteInfo();
     isOwnerSetupMode = false;
 
     hideProfileModal();
