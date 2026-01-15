@@ -999,8 +999,7 @@ body {
   }
 
   .main-nav-tab span {
-    display: block;
-    font-size: 11px;
+    display: none;
   }
 
   .main-nav-tab svg {
@@ -1066,7 +1065,8 @@ body {
   }
 
   .product-image {
-    height: 100px;
+    width: 220%;
+    height: 220%;
   }
 
   .product-name {
