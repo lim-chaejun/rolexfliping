@@ -834,6 +834,11 @@ body {
 }
 
 @media (max-width: 768px) {
+  /* 모바일에서 body padding 제거 (sticky 사용하므로 불필요) */
+  body {
+    padding-top: 0 !important;
+  }
+
   /* 헤더 - sticky로 상단 고정 (문서 흐름 유지) */
   .header {
     position: sticky !important;
@@ -3218,6 +3223,7 @@ body {
 }
 
 .mobile-search-bar .search-icon {
+  position: static;
   color: var(--text-muted);
   flex-shrink: 0;
 }
