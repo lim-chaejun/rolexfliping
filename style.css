@@ -1922,21 +1922,21 @@ body {
 
 .test-card {
   background: var(--bg-tertiary);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
 }
 
 .test-image-wrapper {
   aspect-ratio: 1;
-  max-width: 300px;
-  margin: 0 auto 20px;
+  max-width: 390px;
+  margin: 0 auto 10px;
   background: #f8f8f8;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 10px;
 }
 
 .test-image-wrapper img {
@@ -1950,53 +1950,53 @@ body {
 }
 
 .test-line {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .test-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .test-model {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.test-price {
-  font-size: 20px;
-  font-weight: 700;
   margin-bottom: 4px;
 }
 
+.test-price {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
 .test-material {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
 }
 
 /* 선택 버튼 */
 .test-choices {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
 .choice-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 20px 16px;
+  gap: 4px;
+  padding: 12px 8px;
   background: var(--bg-secondary);
   border: 2px solid var(--border-color);
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
