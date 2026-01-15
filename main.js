@@ -64,6 +64,7 @@ function canAccess(feature) {
     'tab:stats': ['member', 'dealer', 'sub_manager', 'manager', 'owner'],
     'tab:calc': ['dealer', 'sub_manager', 'manager', 'owner'],
     'tab:history': ['sub_manager', 'manager', 'owner'],
+    'tab:report': ['manager', 'owner'],
     'tab:admin': ['owner'],
 
     // 기능 권한
@@ -1980,6 +1981,9 @@ const mainNav = document.querySelector('.main-nav');
 const statsSection = document.getElementById('stats-section');
 const navCalc = document.getElementById('nav-calc');
 const calcSection = document.getElementById('calc-section');
+const navHistory = document.getElementById('nav-history');
+const navReport = document.getElementById('nav-report');
+const navGuide = document.getElementById('nav-guide');
 
 // 테스트 DOM 요소
 const testTypeSelect = document.getElementById('test-type-select');
@@ -2047,6 +2051,9 @@ navMain.addEventListener('click', () => switchTab('main'));
 navTest.addEventListener('click', () => switchTab('test'));
 if (navStats) navStats.addEventListener('click', () => switchTab('stats'));
 if (navCalc) navCalc.addEventListener('click', () => switchTab('calc'));
+if (navHistory) navHistory.addEventListener('click', () => switchTab('history'));
+if (navReport) navReport.addEventListener('click', () => switchTab('report'));
+if (navGuide) navGuide.addEventListener('click', () => switchTab('guide'));
 
 // 마진 계산기
 function calculateMargin() {
@@ -3255,6 +3262,263 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
+// 팀 리포트 기능
+// ==========================================
+
+let reportData = []; // 리포트 데이터 캐시
+
+// 팀 리포트 페이지 로드
+async function loadReportPage() {
+  const teamList = document.getElementById('report-team-list');
+  const teamCount = document.getElementById('report-team-count');
+  const totalTests = document.getElementById('report-total-tests');
+  const avgScore = document.getElementById('report-avg-score');
+
+  teamList.innerHTML = '<div class="report-loading">로딩 중...</div>';
+
+  try {
+    // 현재 매니저의 팀원 조회
+    const managerId = getWatchStatusesManagerId();
+    if (!managerId) {
+      teamList.innerHTML = '<div class="report-empty">데이터를 불러올 수 없습니다.</div>';
+      return;
+    }
+
+    // 팀원 목록 조회 (매니저 기준)
+    const usersSnapshot = await db.collection('users')
+      .where('managedBy', '==', managerId)
+      .where('status', '==', 'approved')
+      .get();
+
+    const teamMembers = [];
+    let allTotalTests = 0;
+    let allTotalCorrect = 0;
+
+    // 각 팀원의 테스트 결과 조회
+    for (const userDoc of usersSnapshot.docs) {
+      const userData = userDoc.data();
+
+      // 테스트 결과 조회
+      const resultsSnapshot = await db.collection('testResults')
+        .where('userId', '==', userDoc.id)
+        .orderBy('timestamp', 'desc')
+        .limit(50)
+        .get();
+
+      let memberTotalTests = 0;
+      let memberTotalCorrect = 0;
+      let memberTotalQuestions = 0;
+      let lastTestDate = null;
+
+      resultsSnapshot.docs.forEach(doc => {
+        const result = doc.data();
+        memberTotalTests++;
+        memberTotalCorrect += result.correctCount || 0;
+        memberTotalQuestions += result.totalQuestions || 0;
+        if (!lastTestDate && result.timestamp) {
+          lastTestDate = result.timestamp.toDate();
+        }
+      });
+
+      const accuracy = memberTotalQuestions > 0
+        ? Math.round((memberTotalCorrect / memberTotalQuestions) * 100)
+        : 0;
+
+      teamMembers.push({
+        id: userDoc.id,
+        name: userData.name || '이름 없음',
+        email: userData.email || '',
+        role: userData.role || 'member',
+        totalTests: memberTotalTests,
+        totalCorrect: memberTotalCorrect,
+        totalQuestions: memberTotalQuestions,
+        accuracy: accuracy,
+        lastTestDate: lastTestDate
+      });
+
+      allTotalTests += memberTotalTests;
+      allTotalCorrect += memberTotalCorrect;
+    }
+
+    // 정답률 기준 내림차순 정렬
+    teamMembers.sort((a, b) => b.accuracy - a.accuracy);
+    reportData = teamMembers;
+
+    // 요약 정보 업데이트
+    teamCount.textContent = teamMembers.length;
+    totalTests.textContent = allTotalTests;
+
+    const totalQuestions = teamMembers.reduce((sum, m) => sum + m.totalQuestions, 0);
+    const overallAccuracy = totalQuestions > 0
+      ? Math.round((allTotalCorrect / totalQuestions) * 100)
+      : 0;
+    avgScore.textContent = overallAccuracy + '%';
+
+    // 팀원 목록 렌더링
+    if (teamMembers.length === 0) {
+      teamList.innerHTML = '<div class="report-empty">팀원이 없습니다.</div>';
+      return;
+    }
+
+    teamList.innerHTML = teamMembers.map((member, index) => {
+      const roleLabels = {
+        'member': '멤버',
+        'dealer': '딜러',
+        'sub_manager': '부매니저',
+        'manager': '매니저',
+        'owner': '소유자'
+      };
+
+      const topClass = index < 3 ? `top-${index + 1}` : '';
+
+      const lastTestStr = member.lastTestDate
+        ? member.lastTestDate.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+        : '-';
+
+      return `
+        <div class="report-member-card">
+          <div class="report-member-rank ${topClass}">
+            ${index + 1}
+          </div>
+          <div class="report-member-info">
+            <div class="report-member-name">${member.name}</div>
+            <div class="report-member-role">${roleLabels[member.role] || member.role}</div>
+          </div>
+          <div class="report-member-stats">
+            <div class="report-stat">
+              <span class="report-stat-value">${member.totalTests}</span>
+              <span class="report-stat-label">테스트</span>
+            </div>
+            <div class="report-stat">
+              <span class="report-stat-value">${member.accuracy}%</span>
+              <span class="report-stat-label">정답률</span>
+            </div>
+            <div class="report-stat">
+              <span class="report-stat-value">${lastTestStr}</span>
+              <span class="report-stat-label">최근</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('리포트 로드 실패:', error);
+    teamList.innerHTML = '<div class="report-empty">데이터를 불러오는 중 오류가 발생했습니다.</div>';
+  }
+}
+
+// 리포트 CSV 내보내기
+function exportReportCSV() {
+  if (reportData.length === 0) {
+    alert('내보낼 데이터가 없습니다.');
+    return;
+  }
+
+  const roleLabels = {
+    'member': '멤버',
+    'dealer': '딜러',
+    'sub_manager': '부매니저',
+    'manager': '매니저',
+    'owner': '소유자'
+  };
+
+  // CSV 헤더
+  const headers = ['순위', '이름', '역할', '총 테스트', '정답 수', '총 문제', '정답률', '최근 테스트'];
+
+  // CSV 데이터
+  const rows = reportData.map((member, index) => {
+    const lastTestStr = member.lastTestDate
+      ? member.lastTestDate.toLocaleDateString('ko-KR')
+      : '-';
+
+    return [
+      index + 1,
+      member.name,
+      roleLabels[member.role] || member.role,
+      member.totalTests,
+      member.totalCorrect,
+      member.totalQuestions,
+      member.accuracy + '%',
+      lastTestStr
+    ];
+  });
+
+  // CSV 문자열 생성
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(cell => `"${cell}"`).join(','))
+    .join('\n');
+
+  // BOM 추가 (한글 지원)
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // 다운로드
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const today = new Date().toISOString().split('T')[0];
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `팀리포트_${today}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// ==========================================
+// 학습/가이드 기능
+// ==========================================
+
+// 가이드 탭 전환
+function switchGuideTab(tabName) {
+  // 탭 버튼 활성화
+  document.querySelectorAll('.guide-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.guideTab === tabName);
+  });
+
+  // 컨텐츠 표시/숨김
+  document.querySelectorAll('.guide-content').forEach(content => {
+    content.classList.remove('active');
+  });
+
+  const targetContent = document.getElementById(`guide-${tabName}`);
+  if (targetContent) {
+    targetContent.classList.add('active');
+  }
+}
+
+// FAQ 토글
+function toggleFaq(element) {
+  element.classList.toggle('open');
+}
+
+// 모델 가이드 상세 보기 (추후 확장 가능)
+function showGuideDetail(modelName) {
+  // 현재는 간단한 알림으로 처리, 추후 모달이나 별도 페이지로 확장 가능
+  const modelInfo = {
+    submariner: '서브마리너는 1953년 출시된 롤렉스의 대표적인 다이버 워치입니다. 300m 방수와 세라크롬 베젤이 특징이며, 데이트/노데이트 버전이 있습니다.',
+    datejust: '데이트저스트는 1945년 출시된 롤렉스의 클래식 라인입니다. 날짜 표시 창과 플루티드 베젤이 특징이며, 36mm와 41mm 사이즈가 있습니다.',
+    daytona: '코스모그래프 데이토나는 1963년 출시된 롤렉스의 크로노그래프 워치입니다. 레이싱을 위한 타키미터 베젤이 특징입니다.',
+    gmtmaster: 'GMT 마스터 II는 1955년 출시된 듀얼 타임존 워치입니다. 양방향 회전 베젤로 세 번째 시간대까지 읽을 수 있습니다.',
+    daydate: '데이데이트는 1956년 출시된 프레지던트 워치입니다. 요일과 날짜를 전체 표기하며, 골드나 플래티넘 소재만 사용됩니다.',
+    skydweller: '스카이드웰러는 2012년 출시된 롤렉스의 복잡한 컴플리케이션 워치입니다. 연간 캘린더와 듀얼 타임존 기능이 특징입니다.'
+  };
+
+  alert(modelInfo[modelName] || '모델 정보를 찾을 수 없습니다.');
+}
+
+// 가이드 탭 이벤트 리스너
+document.addEventListener('DOMContentLoaded', () => {
+  const guideTabs = document.querySelectorAll('.guide-tab');
+  guideTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      switchGuideTab(tab.dataset.guideTab);
+    });
+  });
+});
+
+// ==========================================
 // 사용자 프로필 및 승인 시스템
 // ==========================================
 
@@ -3621,6 +3885,7 @@ function showRejectedScreen() {
 function updateUIByRole() {
   const navCalc = document.getElementById('nav-calc');
   const navHistory = document.getElementById('nav-history');
+  const navReport = document.getElementById('nav-report');
   const navAdmin = document.getElementById('nav-admin');
   const dropdownInviteCode = document.getElementById('dropdown-invite-code');
 
@@ -3632,6 +3897,11 @@ function updateUIByRole() {
   // 히스토리 탭: sub_manager 이상만 표시
   if (navHistory) {
     navHistory.style.display = canAccess('tab:history') ? 'flex' : 'none';
+  }
+
+  // 리포트 탭: manager/owner만 표시
+  if (navReport) {
+    navReport.style.display = canAccess('tab:report') ? 'flex' : 'none';
   }
 
   // 관리자 탭: owner만 표시
@@ -4305,9 +4575,11 @@ switchTab = function(tab) {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
 
-  // calc-section, history-section 직접 DOM 조회
+  // calc-section, history-section, report-section, guide-section 직접 DOM 조회
   const calcEl = document.getElementById('calc-section');
   const historyEl = document.getElementById('history-section');
+  const reportEl = document.getElementById('report-section');
+  const guideEl = document.getElementById('guide-section');
 
   // 컨텐츠 전환
   if (tab === 'main') {
@@ -4319,6 +4591,8 @@ switchTab = function(tab) {
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
     if (historyEl) historyEl.style.display = 'none';
+    if (reportEl) reportEl.style.display = 'none';
+    if (guideEl) guideEl.style.display = 'none';
   } else if (tab === 'test') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -4328,6 +4602,8 @@ switchTab = function(tab) {
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
     if (historyEl) historyEl.style.display = 'none';
+    if (reportEl) reportEl.style.display = 'none';
+    if (guideEl) guideEl.style.display = 'none';
     showTestTypeSelect();
   } else if (tab === 'stats') {
     mainContainer.style.display = 'none';
@@ -4338,6 +4614,8 @@ switchTab = function(tab) {
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
     if (historyEl) historyEl.style.display = 'none';
+    if (reportEl) reportEl.style.display = 'none';
+    if (guideEl) guideEl.style.display = 'none';
     loadStatsPage();
   } else if (tab === 'calc') {
     mainContainer.style.display = 'none';
@@ -4348,6 +4626,8 @@ switchTab = function(tab) {
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'block';
     if (historyEl) historyEl.style.display = 'none';
+    if (reportEl) reportEl.style.display = 'none';
+    if (guideEl) guideEl.style.display = 'none';
   } else if (tab === 'history') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -4357,7 +4637,32 @@ switchTab = function(tab) {
     if (adminSection) adminSection.style.display = 'none';
     if (calcEl) calcEl.style.display = 'none';
     if (historyEl) historyEl.style.display = 'block';
+    if (reportEl) reportEl.style.display = 'none';
+    if (guideEl) guideEl.style.display = 'none';
     loadHistoryPage();
+  } else if (tab === 'report') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
+    if (historyEl) historyEl.style.display = 'none';
+    if (reportEl) reportEl.style.display = 'block';
+    if (guideEl) guideEl.style.display = 'none';
+    loadReportPage();
+  } else if (tab === 'guide') {
+    mainContainer.style.display = 'none';
+    vizSection.style.display = 'none';
+    lineTabsWrapper.style.display = 'none';
+    testSection.style.display = 'none';
+    if (statsSection) statsSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+    if (calcEl) calcEl.style.display = 'none';
+    if (historyEl) historyEl.style.display = 'none';
+    if (reportEl) reportEl.style.display = 'none';
+    if (guideEl) guideEl.style.display = 'block';
   } else if (tab === 'admin') {
     mainContainer.style.display = 'none';
     vizSection.style.display = 'none';
@@ -4367,6 +4672,8 @@ switchTab = function(tab) {
     if (adminSection) adminSection.style.display = 'block';
     if (calcEl) calcEl.style.display = 'none';
     if (historyEl) historyEl.style.display = 'none';
+    if (reportEl) reportEl.style.display = 'none';
+    if (guideEl) guideEl.style.display = 'none';
     loadAdminPage();
   }
 }
