@@ -2795,6 +2795,17 @@ function showProfileModal() {
   profileModal.classList.add('active');
   // 네비게이션 숨기기 (프로필 미등록 상태)
   if (mainNav) mainNav.style.display = 'none';
+
+  // 초대코드 정보 표시
+  const inviteCodeDisplay = document.getElementById('profile-invite-code');
+  const inviteManagerDisplay = document.getElementById('profile-invite-manager');
+  if (inviteCodeDisplay && signupInviteCode) {
+    inviteCodeDisplay.value = signupInviteCode;
+  }
+  if (inviteManagerDisplay && signupInviteData) {
+    inviteManagerDisplay.textContent = signupInviteData.managerName ?
+      `초대자: ${signupInviteData.managerName}` : '';
+  }
 }
 
 // 프로필 모달 숨기기
@@ -2870,21 +2881,37 @@ async function submitProfile(e) {
   const name = document.getElementById('profile-name').value.trim();
   const nickname = document.getElementById('profile-nickname').value.trim();
   const phone = document.getElementById('profile-phone').value.trim();
+  const inviteCodeFromForm = document.getElementById('profile-invite-code')?.value?.trim();
 
   if (!name || !nickname || !phone) {
     alert('이름, 닉네임, 연락처는 필수입니다.');
     return;
   }
 
-  // 초대코드 필수 확인 (회원가입 시 미리 검증됨)
+  // 초대코드 확인 (폼에서 읽어오기)
+  const finalInviteCode = signupInviteCode || inviteCodeFromForm;
   console.log('[DEBUG] submitProfile - signupInviteCode:', signupInviteCode);
+  console.log('[DEBUG] submitProfile - inviteCodeFromForm:', inviteCodeFromForm);
+  console.log('[DEBUG] submitProfile - finalInviteCode:', finalInviteCode);
   console.log('[DEBUG] submitProfile - signupInviteData:', signupInviteData);
-  console.log('[DEBUG] submitProfile - authUser:', authUser?.uid);
-  if (!signupInviteCode || !signupInviteData) {
+
+  if (!finalInviteCode) {
     alert('초대코드 정보가 없습니다. 다시 회원가입을 진행해주세요.');
     await auth.signOut();
     window.location.reload();
     return;
+  }
+
+  // signupInviteData가 없으면 다시 조회
+  let inviteData = signupInviteData;
+  if (!inviteData) {
+    inviteData = await validateInviteCode(finalInviteCode);
+    if (!inviteData) {
+      alert('초대코드가 유효하지 않습니다. 다시 회원가입을 진행해주세요.');
+      await auth.signOut();
+      window.location.reload();
+      return;
+    }
   }
 
   try {
@@ -2901,7 +2928,7 @@ async function submitProfile(e) {
     const existingData = existingDoc.exists ? existingDoc.data() : {};
 
     // 초대코드 가입
-    const managerId = signupInviteData.managerId;
+    const managerId = inviteData.managerId;
     const userData = {
       ...existingData,
       name,
@@ -2911,7 +2938,7 @@ async function submitProfile(e) {
       photoURL: authUser.photoURL,
       status: 'approved',
       managerId: managerId,
-      linkedByCode: signupInviteCode,
+      linkedByCode: finalInviteCode,
       createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };

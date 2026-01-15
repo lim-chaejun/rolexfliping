@@ -2627,6 +2627,15 @@ body {
   color: var(--text-muted);
 }
 
+.form-group input.invite-code-display {
+  background: var(--bg-tertiary);
+  color: var(--accent-gold);
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 2px;
+  cursor: not-allowed;
+}
+
 .submit-profile-btn {
   margin-top: 8px;
   padding: 14px 24px;

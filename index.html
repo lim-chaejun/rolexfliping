@@ -517,6 +517,11 @@
       <p class="modal-subtitle">서비스 이용을 위해 정보를 입력해주세요.</p>
       <form id="profile-form" class="profile-form">
         <div class="form-group">
+          <label for="profile-invite-code">초대코드</label>
+          <input type="text" id="profile-invite-code" disabled class="invite-code-display">
+          <span class="form-hint" id="profile-invite-manager"></span>
+        </div>
+        <div class="form-group">
           <label for="profile-name">이름 *</label>
           <input type="text" id="profile-name" required placeholder="실명을 입력하세요">
         </div>
