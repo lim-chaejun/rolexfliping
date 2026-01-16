@@ -4060,6 +4060,61 @@ function updateUIByRole() {
   if (mobileEditModeSection) {
     mobileEditModeSection.style.display = canAccess('watch:edit_status') ? 'block' : 'none';
   }
+
+  // 모바일 헤더 매니저 표시
+  updateMobileHeaderManager();
+}
+
+// 모바일 헤더에 소속 매니저 표시
+async function updateMobileHeaderManager() {
+  const logoText = document.getElementById('header-logo-text');
+  const managerLink = document.getElementById('header-manager-link');
+  const managerName = document.getElementById('header-manager-name');
+
+  if (!logoText || !managerLink || !managerName) return;
+
+  // 매니저/소유자는 기본 로고 표시
+  if (['manager', 'owner'].includes(userRole)) {
+    logoText.style.display = 'block';
+    managerLink.style.display = 'none';
+    return;
+  }
+
+  // 소속 매니저가 없으면 기본 로고 표시
+  if (!currentManagerId) {
+    logoText.style.display = 'block';
+    managerLink.style.display = 'none';
+    return;
+  }
+
+  // 소속 매니저 정보 가져오기
+  try {
+    const managerDoc = await db.collection('users').doc(currentManagerId).get();
+    if (managerDoc.exists) {
+      const managerData = managerDoc.data();
+      const displayName = getDisplayName(managerData);
+      const chatLink = managerData.openChatLink || '';
+
+      // 모바일에서만 매니저 이름 표시 (CSS로 제어)
+      managerName.textContent = displayName;
+      managerLink.href = chatLink || '#';
+      managerLink.onclick = (e) => {
+        if (!chatLink) {
+          e.preventDefault();
+          alert('매니저의 오픈채팅 링크가 설정되지 않았습니다.');
+        } else {
+          window.open(chatLink, '_blank');
+          e.preventDefault();
+        }
+      };
+
+      // 모바일에서 매니저 링크 표시, 로고 숨기기
+      logoText.classList.add('hide-on-mobile');
+      managerLink.classList.add('show-on-mobile');
+    }
+  } catch (error) {
+    console.error('매니저 정보 로드 실패:', error);
+  }
 }
 
 // 관리자 네비게이션 표시 (하위 호환성)
@@ -4125,8 +4180,24 @@ function switchAdminTab(tab) {
     dataSourceSelector.style.display = (tab === 'approved') ? 'flex' : 'none';
   }
 
-  // 사용자 목록 렌더링
-  renderAdminUserList();
+  // 회원 필터 바 및 사용자 목록 표시/숨김
+  const adminFilterBar = document.querySelector('.admin-filter-bar');
+  const adminUserList = document.getElementById('admin-user-list');
+  const managerSection = document.getElementById('manager-management-section');
+
+  if (tab === 'managers') {
+    // 매니저관리 탭
+    if (adminFilterBar) adminFilterBar.style.display = 'none';
+    if (adminUserList) adminUserList.style.display = 'none';
+    if (managerSection) managerSection.style.display = 'block';
+    renderManagerList();
+  } else {
+    // 내 회원 / 전체 회원 탭
+    if (adminFilterBar) adminFilterBar.style.display = 'flex';
+    if (adminUserList) adminUserList.style.display = 'flex';
+    if (managerSection) managerSection.style.display = 'none';
+    renderAdminUserList();
+  }
 }
 
 // 관리자 페이지 로드
@@ -4155,6 +4226,12 @@ async function loadAdminPage() {
 
     // 검색 이벤트 리스너
     initAdminSearchListener();
+
+    // 매니저관리 탭 표시 (소유자 전용)
+    const managersTab = document.getElementById('admin-tab-managers');
+    if (managersTab) {
+      managersTab.style.display = (userRole === 'owner') ? 'inline-flex' : 'none';
+    }
 
     renderAdminUserList();
   } catch (error) {
@@ -4381,6 +4458,72 @@ function renderAdminUserList() {
       </div>
     `;
   }).join('');
+}
+
+// 매니저 목록 렌더링 (소유자 전용)
+function renderManagerList() {
+  const managerList = document.getElementById('manager-list');
+  if (!managerList) return;
+
+  // 매니저 등급 사용자만 필터링
+  const managers = allUsers.filter(u => u.role === 'manager' && u.status === 'approved');
+
+  if (managers.length === 0) {
+    managerList.innerHTML = '<div class="empty-user-list">등록된 매니저가 없습니다.</div>';
+    return;
+  }
+
+  managerList.innerHTML = managers.map(manager => {
+    // 해당 매니저에 소속된 회원 수
+    const memberCount = allUsers.filter(u => u.managerId === manager.id && u.status === 'approved').length;
+
+    return `
+      <div class="manager-card" data-manager-id="${manager.id}">
+        <div class="manager-avatar">
+          <img src="${manager.photoURL || 'https://via.placeholder.com/56'}" alt="">
+        </div>
+        <div class="manager-info">
+          <div class="manager-name">${getDisplayName(manager)}</div>
+          <div class="manager-email">${manager.email}</div>
+          <div class="manager-member-count">소속 회원: ${memberCount}명</div>
+        </div>
+        <div class="manager-chat-link">
+          <label>오픈채팅방 링크</label>
+          <input type="url"
+                 id="chat-link-${manager.id}"
+                 value="${manager.openChatLink || ''}"
+                 placeholder="https://open.kakao.com/..."
+          >
+          <button class="save-chat-link-btn" onclick="saveManagerChatLink('${manager.id}')">저장</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 매니저 오픈채팅 링크 저장
+async function saveManagerChatLink(managerId) {
+  const input = document.getElementById(`chat-link-${managerId}`);
+  if (!input) return;
+
+  const link = input.value.trim();
+
+  try {
+    await db.collection('users').doc(managerId).update({
+      openChatLink: link
+    });
+
+    // 로컬 데이터 업데이트
+    const manager = allUsers.find(u => u.id === managerId);
+    if (manager) {
+      manager.openChatLink = link;
+    }
+
+    alert('오픈채팅 링크가 저장되었습니다.');
+  } catch (error) {
+    console.error('오픈채팅 링크 저장 실패:', error);
+    alert('저장에 실패했습니다.');
+  }
 }
 
 // 사용자 승인

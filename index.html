@@ -13,7 +13,13 @@
   <header class="header">
     <div class="header-inner">
       <div class="logo">
-        <h1>ROLEXFLIP</h1>
+        <h1 id="header-logo-text">ROLEXFLIP</h1>
+        <a href="#" id="header-manager-link" class="header-manager-link" style="display: none;">
+          <span id="header-manager-name"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+        </a>
         <span class="tagline">프리미엄 시계 인사이트</span>
       </div>
       <div class="header-stats">
@@ -713,6 +719,9 @@
         <button class="admin-tab" data-admin-tab="approved" id="admin-tab-approved">
           전체 회원
         </button>
+        <button class="admin-tab" data-admin-tab="managers" id="admin-tab-managers" style="display:none;">
+          매니저관리
+        </button>
       </div>
 
       <!-- 회원 필터 영역 (매니저 선택 + 검색) -->
@@ -744,6 +753,13 @@
 
       <div class="admin-user-list" id="admin-user-list">
         <!-- 동적 생성 -->
+      </div>
+
+      <!-- 매니저 관리 섹션 (소유자 전용) -->
+      <div class="manager-management-section" id="manager-management-section" style="display:none;">
+        <div class="manager-list" id="manager-list">
+          <!-- 동적 생성 -->
+        </div>
       </div>
     </div>
   </section>
