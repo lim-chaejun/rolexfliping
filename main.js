@@ -133,6 +133,53 @@ async function createUniqueInviteCode() {
   return code;
 }
 
+// 등급별 초대코드 세트 생성
+async function createInviteCodesForUser(userId, userRole, userName, managerId) {
+  const allowedTypes = ROLE_INVITE_PERMISSIONS[userRole] || [];
+  const inviteCodes = {};
+
+  // 소속될 매니저 결정
+  let effectiveManagerId = managerId;
+  let effectiveManagerName = '';
+
+  // owner나 manager는 본인이 매니저
+  if (['owner', 'manager'].includes(userRole)) {
+    effectiveManagerId = userId;
+    effectiveManagerName = userName;
+  } else if (managerId) {
+    // 매니저 이름 조회
+    try {
+      const managerDoc = await db.collection('users').doc(managerId).get();
+      if (managerDoc.exists) {
+        effectiveManagerName = getDisplayName(managerDoc.data());
+      }
+    } catch (e) {
+      console.error('매니저 정보 조회 실패:', e);
+    }
+  }
+
+  for (const codeType of allowedTypes) {
+    const code = await createUniqueInviteCode();
+    const targetRole = CODE_TYPE_TO_ROLE[codeType];
+
+    await db.collection('inviteCodes').doc(code).set({
+      managerId: effectiveManagerId,
+      managerName: effectiveManagerName,
+      creatorId: userId,
+      creatorRole: userRole,
+      creatorName: userName,
+      targetRole: targetRole,
+      codeType: codeType,
+      active: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    inviteCodes[codeType] = code;
+  }
+
+  return inviteCodes;
+}
+
 // 클립보드에 초대코드 복사
 function copyInviteCode() {
   if (!myInviteCode) return;
@@ -1791,29 +1838,87 @@ const inviteCodeModalClose = document.getElementById('invite-code-modal-close');
 const dropdownInviteCode = document.getElementById('dropdown-invite-code');
 const modalCopyInviteCode = document.getElementById('modal-copy-invite-code');
 
-// 초대코드 모달 표시
+// 초대코드 모달 표시 (다중 코드 지원)
 async function showInviteCodeModal() {
   if (!inviteCodeModal) return;
 
-  // 초대코드 표시
-  const codeDisplay = document.getElementById('modal-invite-code');
-  if (codeDisplay) {
-    codeDisplay.textContent = myInviteCode || '------';
+  const modalBody = document.querySelector('.invite-code-modal-body');
+  if (!modalBody) return;
+
+  // 사용자의 inviteCodes 맵 가져오기
+  let inviteCodes = {};
+  try {
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      inviteCodes = userData.inviteCodes || {};
+
+      // 하위 호환: 기존 단일 inviteCode가 있으면 for_member로 사용
+      if (!inviteCodes.for_member && userData.inviteCode) {
+        inviteCodes.for_member = userData.inviteCode;
+      }
+    }
+  } catch (e) {
+    console.error('초대코드 조회 실패:', e);
   }
 
-  // 초대된 회원 수 조회
+  // 동적 HTML 생성
+  let codesHTML = '';
+  const codeEntries = Object.entries(inviteCodes);
+
+  if (codeEntries.length === 0) {
+    codesHTML = '<div class="invite-code-empty">초대코드가 없습니다.</div>';
+  } else {
+    codesHTML = '<div class="invite-codes-list">';
+    for (const [codeType, code] of codeEntries) {
+      const label = CODE_TYPE_LABELS[codeType] || codeType;
+      codesHTML += `
+        <div class="invite-code-item" data-code-type="${codeType}">
+          <div class="invite-code-label">${label}</div>
+          <div class="invite-code-row">
+            <span class="invite-code-value">${code}</span>
+            <button class="invite-code-copy-btn-small" onclick="copyInviteCodeByType('${code}', this)">
+              복사
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    codesHTML += '</div>';
+  }
+
+  // 초대된 회원 수 조회 (나를 추천인으로 가입한 사람)
+  let invitedCount = 0;
   try {
     const linkedUsersSnapshot = await db.collection('users')
-      .where('managerId', '==', currentUser.uid)
+      .where('referredByUid', '==', currentUser.uid)
       .get();
-
-    const invitedCount = document.getElementById('invited-members-count');
-    if (invitedCount) {
-      invitedCount.textContent = linkedUsersSnapshot.size;
-    }
+    invitedCount = linkedUsersSnapshot.size;
   } catch (e) {
     console.log('초대된 회원 수 조회 실패:', e);
   }
+
+  // 모달 내용 업데이트
+  modalBody.innerHTML = `
+    ${codesHTML}
+    <div class="invite-code-info">
+      <div class="invite-code-info-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 00-3-3.87"/>
+          <path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        <span>코드로 가입한 회원은 해당 등급으로 자동 적용됩니다</span>
+      </div>
+    </div>
+    <div class="invite-code-stats">
+      <div class="invite-stat-item">
+        <span class="invite-stat-value">${invitedCount}</span>
+        <span class="invite-stat-label">초대한 회원</span>
+      </div>
+    </div>
+  `;
 
   inviteCodeModal.classList.add('active');
 }
@@ -1825,40 +1930,40 @@ function hideInviteCodeModal() {
   }
 }
 
-// 초대코드 복사 (모달용)
-async function copyInviteCodeFromModal() {
-  if (!myInviteCode) return;
+// 특정 코드 복사 (모달용)
+async function copyInviteCodeByType(code, btn) {
+  if (!code) return;
 
   try {
-    await navigator.clipboard.writeText(myInviteCode);
+    await navigator.clipboard.writeText(code);
 
     // 복사 완료 피드백
-    const copyBtn = document.getElementById('modal-copy-invite-code');
-    if (copyBtn) {
-      const originalHTML = copyBtn.innerHTML;
-      copyBtn.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-        복사됨!
-      `;
-      copyBtn.classList.add('copied');
+    if (btn) {
+      const originalText = btn.textContent;
+      btn.textContent = '복사됨!';
+      btn.classList.add('copied');
 
       setTimeout(() => {
-        copyBtn.innerHTML = originalHTML;
-        copyBtn.classList.remove('copied');
+        btn.textContent = originalText;
+        btn.classList.remove('copied');
       }, 2000);
     }
   } catch (e) {
     // 클립보드 API 실패 시 fallback
     const textarea = document.createElement('textarea');
-    textarea.value = myInviteCode;
+    textarea.value = code;
     document.body.appendChild(textarea);
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-    alert('초대코드가 복사되었습니다: ' + myInviteCode);
+    alert('초대코드가 복사되었습니다: ' + code);
   }
+}
+
+// 초대코드 복사 (모달용) - 하위 호환
+async function copyInviteCodeFromModal() {
+  if (!myInviteCode) return;
+  await copyInviteCodeByType(myInviteCode, document.getElementById('modal-copy-invite-code'));
 }
 
 // 초대코드 버튼 클릭 이벤트
@@ -3651,8 +3756,8 @@ async function checkUserProfile() {
       // 소속 매니저 ID 설정
       currentManagerId = data.managerId || null;
 
-      // 내 초대코드 설정 (매니저 이상)
-      myInviteCode = data.inviteCode || null;
+      // 내 초대코드 설정 (하위 호환: 단일 코드 또는 for_member 코드)
+      myInviteCode = data.inviteCode || (data.inviteCodes?.for_member) || null;
 
       return {
         name: data.name,
@@ -3664,7 +3769,10 @@ async function checkUserProfile() {
         createdAt: data.createdAt,
         managerId: data.managerId,
         inviteCode: data.inviteCode,
-        linkedByCode: data.linkedByCode
+        inviteCodes: data.inviteCodes || {},
+        linkedByCode: data.linkedByCode,
+        referredByUid: data.referredByUid,
+        referredByName: data.referredByName
       };
     }
     return null;
@@ -3817,8 +3925,10 @@ async function submitProfile(e) {
     const existingDoc = await userRef.get();
     const existingData = existingDoc.exists ? existingDoc.data() : {};
 
-    // 초대코드 가입
+    // 초대코드 가입 - 등급 자동 적용
     const managerId = inviteData.managerId;
+    const targetRole = inviteData.targetRole || 'member';  // 초대코드에 지정된 등급
+
     const userData = {
       ...existingData,
       name,
@@ -3827,14 +3937,35 @@ async function submitProfile(e) {
       email: authUser.email,
       photoURL: authUser.photoURL,
       status: 'approved',
+      role: targetRole,  // 초대코드의 targetRole 적용
       managerId: managerId,
       linkedByCode: finalInviteCode,
+      referredByUid: inviteData.creatorId || null,      // 추천인 UID
+      referredByName: inviteData.creatorName || null,   // 추천인 이름
       termsAgreedAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     await userRef.set(userData, { merge: true });
+
+    // 신규 가입자도 등급에 맞는 초대코드 자동 생성
+    try {
+      const newInviteCodes = await createInviteCodesForUser(
+        authUser.uid,
+        targetRole,
+        nickname || name,
+        managerId
+      );
+
+      if (Object.keys(newInviteCodes).length > 0) {
+        await userRef.update({ inviteCodes: newInviteCodes });
+        userData.inviteCodes = newInviteCodes;
+      }
+    } catch (codeError) {
+      console.error('초대코드 생성 실패:', codeError);
+      // 초대코드 생성 실패해도 가입은 진행
+    }
 
     // 초대코드 정보 초기화
     clearSignupInviteInfo();
@@ -3843,6 +3974,7 @@ async function submitProfile(e) {
 
     // 자동 승인 - 바로 메인 콘텐츠 표시
     userProfile = { ...userData };
+    userRole = targetRole;  // 등급 설정
     currentManagerId = userData.managerId || null;
     isApproved = true;
     if (!dataLoaded) {
@@ -3888,21 +4020,25 @@ async function handleAuthStateChange(user) {
       isUsingOtherManagerData = !!dataSourceManagerId;
 
       // 소유자 초대코드/watchStatuses 초기화 (최초 1회)
-      if (!myInviteCode) {
+      const hasInviteCodes = userProfile.inviteCodes && Object.keys(userProfile.inviteCodes).length > 0;
+      if (!hasInviteCodes && !myInviteCode) {
         try {
-          const newCode = await createUniqueInviteCode();
+          // 다중 초대코드 생성
+          const newInviteCodes = await createInviteCodesForUser(
+            user.uid,
+            'owner',
+            getDisplayName(userProfile) || user.email,
+            null
+          );
+
           await db.collection('users').doc(user.uid).update({
-            inviteCode: newCode,
+            inviteCodes: newInviteCodes,
             role: 'owner',
             status: 'approved'
           });
-          await db.collection('inviteCodes').doc(newCode).set({
-            managerId: user.uid,
-            managerName: getDisplayName(userProfile) || user.email,
-            active: true,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          myInviteCode = newCode;
+
+          // 하위 호환: myInviteCode는 for_member 코드 사용
+          myInviteCode = newInviteCodes.for_member || null;
 
           // 레거시 watchStatuses를 소유자 문서로 마이그레이션
           const legacyDoc = await db.collection('settings').doc('watchStatuses').get();
@@ -3914,7 +4050,7 @@ async function handleAuthStateChange(user) {
             console.log('레거시 watchStatuses 마이그레이션 완료');
           }
 
-          console.log('소유자 초대코드 생성:', newCode);
+          console.log('소유자 초대코드 생성:', newInviteCodes);
         } catch (e) {
           console.log('소유자 초대코드 생성 실패 (이미 존재할 수 있음):', e);
         }
@@ -4014,9 +4150,9 @@ function updateUIByRole() {
     navAdmin.style.display = canAccess('tab:admin') ? 'flex' : 'none';
   }
 
-  // 초대코드 버튼: manager/owner만 표시
+  // 초대코드 버튼: 모든 승인된 회원에게 표시
   if (dropdownInviteCode) {
-    dropdownInviteCode.style.display = ['manager', 'owner'].includes(userRole) ? 'flex' : 'none';
+    dropdownInviteCode.style.display = isApproved ? 'flex' : 'none';
   }
 
   // 수정모드 토글: watch:edit_status 권한 있는 사용자만 표시
@@ -4403,7 +4539,7 @@ function renderAdminUserList() {
           <div class="user-name">${getDisplayName(user)}</div>
           <div class="user-email">${user.email}</div>
           <div class="user-phone">${user.phone || '-'}</div>
-          <div class="user-referrer">${user.referrer ? '추천인: ' + user.referrer : ''}</div>
+          <div class="user-referrer">${user.referredByName ? '추천인: <strong>' + user.referredByName + '</strong>' : ''}</div>
           <div class="user-date">가입신청: ${dateStr}</div>
           ${roleDisplay}
           ${managerDisplay}
@@ -4637,48 +4773,56 @@ async function changeUserRole(selectEl) {
       roleUpdatedBy: currentUser.email
     };
 
-    // 매니저 이상으로 승급 시 초대코드 생성 또는 재활성화
-    if (!wasManager && isManager) {
-      // 기존 초대코드가 있으면 재활성화, 없으면 새로 생성
-      if (user.inviteCode) {
-        // 기존 코드 재활성화
-        await db.collection('inviteCodes').doc(user.inviteCode).update({
-          active: true,
-          reactivatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } else {
-        // 새 코드 생성
-        const newCode = await createUniqueInviteCode();
-        updateData.inviteCode = newCode;
-
-        // inviteCodes 컬렉션에 등록
-        await db.collection('inviteCodes').doc(newCode).set({
-          managerId: userId,
-          managerName: getDisplayName(user),
-          active: true,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // watchStatuses 초기화 (모든 상품 불가 상태)
-        const initialStatuses = {};
-        watches.forEach(watch => {
-          initialStatuses[watch.model_number] = 'no';
-        });
-        initialStatuses.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-        await db.collection('watchStatuses').doc(userId).set(initialStatuses);
+    // 등급이 변경되면 기존 초대코드 비활성화 후 새 등급에 맞는 코드 생성
+    if (oldRole !== newRole) {
+      // 기존 초대코드들 비활성화
+      if (user.inviteCodes) {
+        for (const code of Object.values(user.inviteCodes)) {
+          try {
+            await db.collection('inviteCodes').doc(code).update({
+              active: false,
+              deactivatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          } catch (e) {
+            console.log('기존 코드 비활성화 실패:', code, e);
+          }
+        }
       }
+      // 하위 호환: 기존 단일 inviteCode도 비활성화
+      if (user.inviteCode) {
+        try {
+          await db.collection('inviteCodes').doc(user.inviteCode).update({
+            active: false,
+            deactivatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (e) {
+          console.log('기존 단일 코드 비활성화 실패:', e);
+        }
+      }
+
+      // 새 등급에 맞는 초대코드 생성
+      const newInviteCodes = await createInviteCodesForUser(
+        userId,
+        newRole,
+        getDisplayName(user),
+        user.managerId
+      );
+      updateData.inviteCodes = newInviteCodes;
     }
 
-    // 매니저에서 강등 시 초대코드 비활성화 + 소속 회원 승인 취소
-    if (wasManager && !isManager) {
-      // 초대코드 비활성화
-      if (user.inviteCode) {
-        await db.collection('inviteCodes').doc(user.inviteCode).update({
-          active: false,
-          deactivatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }
+    // 매니저 이상으로 승급 시 watchStatuses 초기화
+    if (!wasManager && isManager) {
+      // watchStatuses 초기화 (모든 상품 불가 상태)
+      const initialStatuses = {};
+      watches.forEach(watch => {
+        initialStatuses[watch.model_number] = 'no';
+      });
+      initialStatuses.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('watchStatuses').doc(userId).set(initialStatuses);
+    }
 
+    // 매니저에서 강등 시 소속 회원 승인 취소
+    if (wasManager && !isManager) {
       // 소속 회원 전원 승인 취소
       const linkedUsersSnapshot = await db.collection('users')
         .where('managerId', '==', userId)
@@ -4708,7 +4852,7 @@ async function changeUserRole(selectEl) {
     // 로컬 데이터 업데이트
     if (user) {
       user.role = newRole;
-      if (updateData.inviteCode) user.inviteCode = updateData.inviteCode;
+      if (updateData.inviteCodes) user.inviteCodes = updateData.inviteCodes;
     }
 
     // UI 업데이트
@@ -4935,3 +5079,74 @@ const loginRequiredBtn = document.getElementById('login-required-btn');
 if (loginRequiredBtn) {
   loginRequiredBtn.addEventListener('click', showLoginModal);
 }
+
+// ==========================================
+// 모바일 헤더 스크롤 처리
+// ==========================================
+(function() {
+  const header = document.querySelector('.header');
+  const mainNav = document.querySelector('.main-nav');
+  const mobileSearchBar = document.getElementById('mobile-search-bar');
+  const resultsHeader = document.querySelector('.results-header');
+
+  let lastScrollY = 0;
+  let headerHidden = false;
+
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+
+  function updateHeaderState() {
+    if (!isMobile() || !header) return;
+
+    const headerHeight = header.offsetHeight;
+    const scrollY = window.scrollY;
+
+    // 헤더가 뷰포트 밖으로 나갔는지 확인
+    const shouldHide = scrollY > headerHeight;
+
+    if (shouldHide !== headerHidden) {
+      headerHidden = shouldHide;
+
+      if (mainNav) {
+        mainNav.classList.toggle('header-hidden', headerHidden);
+      }
+      if (mobileSearchBar) {
+        mobileSearchBar.classList.toggle('header-hidden', headerHidden);
+      }
+      if (resultsHeader) {
+        resultsHeader.classList.toggle('header-hidden', headerHidden);
+      }
+    }
+
+    lastScrollY = scrollY;
+  }
+
+  // 스크롤 이벤트 (throttle 적용)
+  let ticking = false;
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      window.requestAnimationFrame(function() {
+        updateHeaderState();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+
+  // 리사이즈 시 상태 초기화
+  window.addEventListener('resize', function() {
+    if (!isMobile()) {
+      // PC 모드에서는 클래스 제거
+      headerHidden = false;
+      if (mainNav) mainNav.classList.remove('header-hidden');
+      if (mobileSearchBar) mobileSearchBar.classList.remove('header-hidden');
+      if (resultsHeader) resultsHeader.classList.remove('header-hidden');
+    } else {
+      updateHeaderState();
+    }
+  });
+
+  // 초기 상태 설정
+  updateHeaderState();
+})();

@@ -608,7 +608,7 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -45%); /* 이미지를 살짝 아래로 */
   width: 170%;
   height: 170%;
   object-fit: contain;
@@ -624,6 +624,7 @@ body {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
+  z-index: 2; /* 이미지보다 위에 표시 */
 }
 
 .product-badge.buy {
@@ -1005,10 +1006,10 @@ body {
     font-size: 20px;
   }
 
-  /* 메인 탭 - fixed로 상단 고정 */
+  /* 메인 탭 - fixed로 상단 고정 (헤더 아래에서 시작) */
   .main-nav {
     position: fixed !important;
-    top: 0 !important;
+    top: 60px !important; /* 초기값: 헤더 높이 */
     left: 0 !important;
     right: 0 !important;
     z-index: 1000 !important;
@@ -1018,6 +1019,12 @@ body {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    transition: top 0.2s ease;
+  }
+
+  /* 헤더가 숨겨졌을 때 main-nav를 상단으로 */
+  .main-nav.header-hidden {
+    top: 0 !important;
   }
 
   .main-nav::-webkit-scrollbar {
@@ -1066,23 +1073,35 @@ body {
     display: none !important;
   }
 
-  /* 모바일 검색바 표시 */
+  /* 모바일 검색바 표시 - 헤더 보일 때 */
   .mobile-search-bar {
     display: flex !important;
     position: fixed !important;
-    top: 48px; /* 네비게이션(48px) 아래 */
+    top: 108px; /* 헤더(60px) + 네비게이션(48px) 아래 */
     left: 16px !important;
     right: 16px !important;
     z-index: 999 !important;
     background: var(--bg-secondary);
     margin: 0;
     padding: 10px 12px;
+    transition: top 0.2s ease;
   }
 
-  /* 결과 헤더 조정 - 고정 요소(네비+검색바) 아래로 배치 */
+  /* 헤더 숨겨졌을 때 검색바 위치 */
+  .mobile-search-bar.header-hidden {
+    top: 48px !important;
+  }
+
+  /* 결과 헤더 조정 - 헤더 보일 때 */
   .results-header {
     padding: 8px 16px;
-    margin-top: 108px; /* 네비(48px) + 검색바(60px) */
+    margin-top: 168px; /* 헤더(60px) + 네비(48px) + 검색바(60px) */
+    transition: margin-top 0.2s ease;
+  }
+
+  /* 헤더 숨겨졌을 때 결과 헤더 위치 */
+  .results-header.header-hidden {
+    margin-top: 108px !important;
   }
 
   .product-grid {
@@ -1110,6 +1129,7 @@ body {
   .product-image {
     width: 220%;
     height: 220%;
+    transform: translate(-50%, -42%); /* 모바일에서 이미지를 더 아래로 */
   }
 
   .product-name {
@@ -1660,21 +1680,21 @@ body {
 
   .watch-detail-content {
     width: 100%;
-    max-height: 95vh;
+    max-height: 90vh; /* 높이 줄여서 스크롤 방지 */
     margin: 0;
     border-radius: 16px;
   }
 
   .watch-detail-hero {
     border-radius: 16px 16px 0 0;
-    min-height: 50vh;
+    min-height: 40vh; /* 높이 줄임 */
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
 
   .watch-detail-image {
-    transform: scale(1.5);
+    transform: scale(1.7); /* 이미지 더 확대 */
     transform-origin: center center;
   }
 
@@ -1691,10 +1711,10 @@ body {
   }
 
   .watch-detail-badge {
-    top: 10px;
-    left: 10px;
-    padding: 4px 8px;
-    font-size: 11px;
+    top: 12px;
+    left: 12px;
+    padding: 6px 12px; /* 패딩 늘림 */
+    font-size: 13px; /* 폰트 크기 키움 */
   }
 
   .watch-detail-specs-section {
@@ -5411,6 +5431,73 @@ body {
 .invite-stat-label {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* 다중 초대코드 리스트 */
+.invite-codes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.invite-code-item {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.invite-code-item .invite-code-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.invite-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.invite-code-item .invite-code-value {
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent-gold);
+}
+
+.invite-code-copy-btn-small {
+  padding: 8px 16px;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.invite-code-copy-btn-small:hover {
+  background: var(--accent-gold-hover);
+}
+
+.invite-code-copy-btn-small.copied {
+  background: #22c55e;
+}
+
+.invite-code-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 /* ==========================================

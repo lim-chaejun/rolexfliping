@@ -28,6 +28,31 @@ const ROLE_LABELS = {
   member: '일반회원'
 };
 
+// 등급별 생성 가능한 초대코드 타입
+const ROLE_INVITE_PERMISSIONS = {
+  owner: ['for_manager', 'for_dealer', 'for_member'],
+  manager: ['for_sub_manager', 'for_dealer', 'for_member'],
+  sub_manager: ['for_dealer', 'for_member'],
+  dealer: ['for_member'],
+  member: ['for_member']
+};
+
+// 초대코드 타입별 부여 등급
+const CODE_TYPE_TO_ROLE = {
+  for_manager: 'manager',
+  for_sub_manager: 'sub_manager',
+  for_dealer: 'dealer',
+  for_member: 'member'
+};
+
+// 초대코드 타입 라벨 (한국어)
+const CODE_TYPE_LABELS = {
+  for_manager: '매니저용',
+  for_sub_manager: '소속매니저용',
+  for_dealer: '딜러용',
+  for_member: '일반회원용'
+};
+
 // 초대코드 생성 함수 (6자리, 혼동 문자 제외)
 function generateInviteCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // O, 0, I, 1 제외
