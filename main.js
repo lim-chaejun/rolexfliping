@@ -4352,6 +4352,10 @@ function renderAdminUserList() {
       if (user.status !== 'approved') return false;
       if (user.role === 'owner') return false;
     }
+    if (currentAdminTab === 'pending') {
+      // 대기/취소 탭: 승인대기 또는 승인취소된 사용자
+      if (user.status !== 'pending' && user.status !== 'rejected') return false;
+    }
 
     // 2. 매니저 필터 (선택된 매니저의 소속 회원만)
     if (adminManagerFilter) {
