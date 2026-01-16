@@ -1135,6 +1135,21 @@ resetBtn.addEventListener('click', resetFilters);
 loadMoreBtn.addEventListener('click', loadMore);
 vizToggle.addEventListener('click', toggleVisualization);
 
+// 무한 스크롤 - Intersection Observer로 자동 로드
+const infiniteScrollObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && loadMoreContainer.style.display !== 'none') {
+      loadMore();
+    }
+  });
+}, {
+  rootMargin: '200px' // 200px 전에 미리 로드
+});
+
+if (loadMoreContainer) {
+  infiniteScrollObserver.observe(loadMoreContainer);
+}
+
 statusCheckboxes.forEach(cb => {
   cb.addEventListener('change', () => {
     displayedCount = 50;
