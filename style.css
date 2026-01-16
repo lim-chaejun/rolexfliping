@@ -1096,13 +1096,13 @@ body {
   /* 결과 헤더 조정 - 헤더 보일 때 */
   .results-header {
     padding: 8px 16px;
-    margin-top: 176px; /* 헤더(60px) + 네비(48px) + 간격(8px) + 검색바(60px) */
+    margin-top: 164px; /* 헤더(60px) + 네비(48px) + 검색바(56px) - 공백 축소 */
     transition: margin-top 0.2s ease;
   }
 
   /* 헤더 숨겨졌을 때 결과 헤더 위치 */
   .results-header.header-hidden {
-    margin-top: 116px !important;
+    margin-top: 104px !important;
   }
 
   .product-grid {
@@ -4675,7 +4675,7 @@ body {
 
 @media (max-width: 768px) {
   .report-container {
-    padding: 24px 16px;
+    padding: 12px 16px;
     margin-top: 116px; /* 헤더(60px) + 네비(48px) + 간격(8px) */
   }
 
@@ -5026,6 +5026,7 @@ body {
 @media (max-width: 768px) {
   .guide-section {
     padding: 20px 16px;
+    margin-top: 116px; /* 헤더(60px) + 네비(48px) + 간격(8px) */
   }
 
   .guide-title {
