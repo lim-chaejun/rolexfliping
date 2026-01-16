@@ -430,6 +430,17 @@
             <label>검색</label>
             <input type="text" id="history-search-input" placeholder="모델번호, 모델명 검색">
           </div>
+          <!-- 모바일 필터 버튼 -->
+          <button class="history-filter-btn" id="history-filter-btn" onclick="openHistoryFilterModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="6" x2="20" y2="6"/>
+              <line x1="4" y1="12" x2="20" y2="12"/>
+              <line x1="4" y1="18" x2="20" y2="18"/>
+              <circle cx="8" cy="6" r="2" fill="currentColor"/>
+              <circle cx="16" cy="12" r="2" fill="currentColor"/>
+              <circle cx="10" cy="18" r="2" fill="currentColor"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -450,6 +461,40 @@
       </div>
     </div>
   </section>
+
+  <!-- 히스토리 필터 모달 (모바일용) -->
+  <div class="filter-modal" id="history-filter-modal">
+    <div class="filter-modal-content">
+      <div class="filter-modal-header">
+        <h3>히스토리 필터</h3>
+        <button class="filter-modal-close" onclick="closeHistoryFilterModal()">&times;</button>
+      </div>
+      <div class="filter-modal-body">
+        <div class="filter-modal-section">
+          <div class="filter-modal-section-title">기간</div>
+          <select class="filter-modal-select" id="mobile-history-date-filter">
+            <option value="7">최근 7일</option>
+            <option value="30" selected>최근 30일</option>
+            <option value="90">최근 90일</option>
+            <option value="all">전체</option>
+          </select>
+        </div>
+        <div class="filter-modal-section">
+          <div class="filter-modal-section-title">상태</div>
+          <select class="filter-modal-select" id="mobile-history-status-filter">
+            <option value="">전체</option>
+            <option value="buy">매입</option>
+            <option value="pending">컨펌</option>
+            <option value="no">불가</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-modal-footer">
+        <button class="filter-reset-btn" onclick="resetHistoryFilter()">초기화</button>
+        <button class="filter-apply-btn" onclick="applyHistoryFilter()">적용하기</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 팀 리포트 섹션 -->
   <section class="report-section" id="report-section" style="display:none;">

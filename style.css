@@ -3041,6 +3041,11 @@ body {
 
   .test-container {
     padding: 24px 16px;
+    margin-top: 116px; /* 헤더(60px) + 네비(48px) + 간격(8px) */
+  }
+
+  .test-section {
+    min-height: calc(100vh - 60px);
   }
 
   .modal-content {
@@ -4095,6 +4100,12 @@ body {
 @media (max-width: 768px) {
   .calc-container {
     padding: 20px;
+    margin-top: 116px; /* 헤더(60px) + 네비(48px) + 간격(8px) */
+  }
+
+  .calc-title,
+  .calc-subtitle {
+    display: none !important; /* 모바일에서 타이틀 숨김 */
   }
 
   .calc-input-panel {
@@ -4324,16 +4335,61 @@ body {
 }
 
 @media (max-width: 768px) {
+  .history-title,
+  .history-subtitle {
+    display: none !important; /* 모바일에서 타이틀 숨김 */
+  }
+
   .history-container {
-    padding: 24px 16px;
+    padding: 0 0 80px 0;
+  }
+
+  /* 모바일 히스토리 필터 - 메인탭과 동일한 스타일 */
+  .history-filter {
+    position: fixed;
+    top: 116px; /* 헤더(60px) + 네비(48px) + 간격(8px) */
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: var(--bg-secondary);
+    border-radius: 0;
+    padding: 10px 16px;
+    margin-bottom: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .history-filter-row {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* 기간/상태 드롭다운 숨김 */
+  .history-filter-group:not(.search) {
+    display: none !important;
   }
 
   .history-filter-group.search {
+    flex: 1;
     min-width: auto;
+  }
+
+  .history-filter-group.search label {
+    display: none;
+  }
+
+  .history-filter-group.search input {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px 10px 36px;
+  }
+
+  /* 히스토리 목록 - 필터바 아래 시작 */
+  .history-list {
+    margin-top: 70px; /* 필터바 높이 */
+    padding: 16px;
   }
 
   .history-item {
@@ -4353,6 +4409,32 @@ body {
     justify-content: space-between;
     padding-top: 8px;
     border-top: 1px solid var(--border-color);
+  }
+}
+
+/* 모바일 히스토리 필터 버튼 */
+.history-filter-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .history-filter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .history-filter-btn svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
@@ -4594,11 +4676,56 @@ body {
 @media (max-width: 768px) {
   .report-container {
     padding: 24px 16px;
+    margin-top: 116px; /* 헤더(60px) + 네비(48px) + 간격(8px) */
   }
 
+  .report-title,
+  .report-subtitle {
+    display: none !important; /* 모바일에서 타이틀 숨김 */
+  }
+
+  /* 요약 카드 - 1행 3열 유지 */
   .report-summary {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .report-summary-card {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+
+  .report-summary-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .report-summary-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .report-summary-value {
+    font-size: 16px;
+  }
+
+  .report-summary-label {
+    display: none !important; /* 모바일에서 레이블 숨김 */
+  }
+
+  .report-summary-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* CSV 내보내기 버튼 숨김 */
+  .report-export-btn {
+    display: none !important;
   }
 
   .report-member-card {

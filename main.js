@@ -3507,6 +3507,63 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
+// 히스토리 필터 모달 (모바일)
+// ==========================================
+
+function openHistoryFilterModal() {
+  const modal = document.getElementById('history-filter-modal');
+  if (modal) {
+    // 현재 필터 값 동기화
+    const dateFilter = document.getElementById('history-date-filter');
+    const statusFilter = document.getElementById('history-status-filter');
+    const mobileDateFilter = document.getElementById('mobile-history-date-filter');
+    const mobileStatusFilter = document.getElementById('mobile-history-status-filter');
+
+    if (dateFilter && mobileDateFilter) {
+      mobileDateFilter.value = dateFilter.value;
+    }
+    if (statusFilter && mobileStatusFilter) {
+      mobileStatusFilter.value = statusFilter.value;
+    }
+
+    modal.classList.add('active');
+  }
+}
+
+function closeHistoryFilterModal() {
+  const modal = document.getElementById('history-filter-modal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+function applyHistoryFilter() {
+  const mobileDateFilter = document.getElementById('mobile-history-date-filter');
+  const mobileStatusFilter = document.getElementById('mobile-history-status-filter');
+  const dateFilter = document.getElementById('history-date-filter');
+  const statusFilter = document.getElementById('history-status-filter');
+
+  // PC 필터에 값 동기화
+  if (mobileDateFilter && dateFilter) {
+    dateFilter.value = mobileDateFilter.value;
+  }
+  if (mobileStatusFilter && statusFilter) {
+    statusFilter.value = mobileStatusFilter.value;
+  }
+
+  closeHistoryFilterModal();
+  loadHistoryPage();
+}
+
+function resetHistoryFilter() {
+  const mobileDateFilter = document.getElementById('mobile-history-date-filter');
+  const mobileStatusFilter = document.getElementById('mobile-history-status-filter');
+
+  if (mobileDateFilter) mobileDateFilter.value = '30';
+  if (mobileStatusFilter) mobileStatusFilter.value = '';
+}
+
+// ==========================================
 // 팀 리포트 기능
 // ==========================================
 
