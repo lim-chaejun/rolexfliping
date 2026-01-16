@@ -1468,7 +1468,6 @@ function debounce(func, wait) {
 // 인증 DOM 요소
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
-const loginBtnContainer = document.getElementById('login-btn-container');
 const userInfoContainer = document.getElementById('user-info-container');
 const userAvatar = document.getElementById('user-avatar');
 const userName = document.getElementById('user-name');
@@ -1488,7 +1487,6 @@ const dropdownEmail = document.getElementById('dropdown-email');
 // 인증 UI 업데이트
 function updateAuthUI() {
   if (currentUser) {
-    loginBtnContainer.style.display = 'none';
     userInfoContainer.style.display = 'flex';
 
     const photoURL = currentUser.photoURL || 'https://via.placeholder.com/32';
@@ -1503,7 +1501,6 @@ function updateAuthUI() {
     if (dropdownName) dropdownName.textContent = displayName;
     if (dropdownEmail) dropdownEmail.textContent = currentUser.email || '';
   } else {
-    loginBtnContainer.style.display = 'block';
     userInfoContainer.style.display = 'none';
     closeUserDropdown();
   }
@@ -2317,8 +2314,8 @@ async function logout() {
 
 // 인증 이벤트 리스너
 const googleSignupBtn = document.getElementById('google-signup-btn');
-loginBtn.addEventListener('click', showLoginModal);
-logoutBtn.addEventListener('click', logout);
+if (loginBtn) loginBtn.addEventListener('click', showLoginModal);
+if (logoutBtn) logoutBtn.addEventListener('click', logout);
 loginModalClose.addEventListener('click', () => {
   hideLoginModal();
   showLoginStepSelect();
