@@ -4780,86 +4780,109 @@ function renderAdminUserList() {
   }).join('');
 }
 
-// 채팅방설정 리스트 렌더링 (소유자: 전체, 매니저: 자기만)
+// 채팅방설정 리스트 렌더링
 function renderChatSettingsList() {
   const container = document.getElementById('chat-settings-list');
   if (!container) return;
 
-  let usersToShow = [];
+  // 내 정보
+  const myUser = allUsers.find(u => u.id === currentUser?.uid);
 
+  // 다른 매니저들 (소유자만 볼 수 있음)
+  let otherManagers = [];
   if (userRole === 'owner') {
-    // 소유자: 모든 소유자 + 매니저
-    usersToShow = allUsers.filter(u =>
-      (u.role === 'owner' || u.role === 'manager') && u.status === 'approved'
+    otherManagers = allUsers.filter(u =>
+      (u.role === 'owner' || u.role === 'manager') &&
+      u.status === 'approved' &&
+      u.id !== currentUser?.uid
     );
-  } else if (userRole === 'manager') {
-    // 매니저: 자기 카드만
-    usersToShow = allUsers.filter(u => u.id === currentUser.uid);
+    // 소유자 먼저, 그 다음 매니저 (가나다순)
+    otherManagers.sort((a, b) => {
+      if (a.role === 'owner' && b.role !== 'owner') return -1;
+      if (a.role !== 'owner' && b.role === 'owner') return 1;
+      return (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
+    });
   }
 
-  // 소유자 먼저, 그 다음 매니저 (가나다순)
-  usersToShow.sort((a, b) => {
-    if (a.role === 'owner' && b.role !== 'owner') return -1;
-    if (a.role !== 'owner' && b.role === 'owner') return 1;
-    return (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
-  });
+  let html = '';
 
-  if (usersToShow.length === 0) {
-    container.innerHTML = '<div class="empty-list">표시할 담당자가 없습니다.</div>';
-    return;
+  // 1. 내 채팅방 설정 (크게)
+  if (myUser) {
+    html += `
+    <div class="my-chat-settings-card">
+      <div class="my-chat-settings-title">내 채팅방 설정</div>
+      <div class="my-chat-settings-body">
+        <div class="my-chat-settings-profile">
+          <img class="my-chat-settings-avatar" src="${myUser.photoURL || 'https://via.placeholder.com/60'}" alt="">
+          <div class="my-chat-settings-name">${myUser.nickname || myUser.name || '이름없음'}</div>
+        </div>
+        <div class="my-chat-settings-inputs">
+          <div class="my-chat-input-group">
+            <label>공지방 링크</label>
+            <input type="url" id="notice-link-${myUser.id}"
+              value="${myUser.noticeChatLink || ''}"
+              placeholder="카카오톡 오픈채팅 링크를 입력하세요">
+          </div>
+          <div class="my-chat-input-group">
+            <label>1:1 문의 링크</label>
+            <input type="url" id="direct-link-${myUser.id}"
+              value="${myUser.directChatLink || ''}"
+              placeholder="카카오톡 오픈채팅 링크를 입력하세요">
+          </div>
+        </div>
+        <button class="my-chat-settings-save-btn" onclick="saveChatLinks('${myUser.id}')">저장</button>
+      </div>
+    </div>`;
   }
 
-  container.innerHTML = usersToShow.map(user => {
-    const isOwnCard = user.id === currentUser?.uid;
-    const canEdit = userRole === 'owner' || isOwnCard;
+  // 2. 다른 매니저들 (소유자만, 컴팩트하게)
+  if (otherManagers.length > 0) {
+    html += `
+    <div class="other-managers-section">
+      <div class="other-managers-title">매니저 채팅방 관리</div>
+      <div class="other-managers-list">
+        ${otherManagers.map(user => `
+          <div class="chat-settings-card" data-user-id="${user.id}">
+            <div class="chat-settings-header">
+              <img class="chat-settings-avatar" src="${user.photoURL || 'https://via.placeholder.com/32'}" alt="">
+              <div class="chat-settings-info">
+                <div class="chat-settings-name">${user.nickname || user.name || '이름없음'}</div>
+                <span class="chat-settings-role-badge ${user.role}">${ROLE_LABELS[user.role] || ''}</span>
+              </div>
+            </div>
+            <div class="chat-link-cards">
+              <div class="chat-link-card notice">
+                <div class="chat-link-card-header">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 4H2v16h20V4z"/>
+                    <path d="M22 4L12 13 2 4"/>
+                  </svg>
+                  <span>공지방</span>
+                </div>
+                <input type="url" id="notice-link-${user.id}"
+                  value="${user.noticeChatLink || ''}"
+                  placeholder="링크 입력">
+              </div>
+              <div class="chat-link-card direct">
+                <div class="chat-link-card-header">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                  <span>1:1</span>
+                </div>
+                <input type="url" id="direct-link-${user.id}"
+                  value="${user.directChatLink || ''}"
+                  placeholder="링크 입력">
+              </div>
+            </div>
+            <button class="chat-settings-save-btn" onclick="saveChatLinks('${user.id}')">저장</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }
 
-    return `
-    <div class="chat-settings-card ${isOwnCard ? 'own-card' : ''}" data-user-id="${user.id}">
-      <div class="chat-settings-header">
-        <img class="chat-settings-avatar" src="${user.photoURL || 'https://via.placeholder.com/48'}" alt="">
-        <div class="chat-settings-info">
-          <div class="chat-settings-name">${user.nickname || user.name || '이름없음'}</div>
-          <span class="chat-settings-role-badge ${user.role}">${ROLE_LABELS[user.role] || ''}</span>
-        </div>
-      </div>
-      <div class="chat-link-cards">
-        <div class="chat-link-card notice">
-          <div class="chat-link-card-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 4H2v16h20V4z"/>
-              <path d="M22 4L12 13 2 4"/>
-            </svg>
-            <span>공지방</span>
-          </div>
-          <input type="url" id="notice-link-${user.id}"
-            value="${user.noticeChatLink || ''}"
-            placeholder="카카오톡 오픈채팅 링크"
-            ${canEdit ? '' : 'disabled'}>
-        </div>
-        <div class="chat-link-card direct">
-          <div class="chat-link-card-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
-            <span>1:1 문의</span>
-          </div>
-          <input type="url" id="direct-link-${user.id}"
-            value="${user.directChatLink || ''}"
-            placeholder="카카오톡 오픈채팅 링크"
-            ${canEdit ? '' : 'disabled'}>
-        </div>
-      </div>
-      ${canEdit ? `<button class="chat-settings-save-btn" onclick="saveChatLinks('${user.id}')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-          <polyline points="17,21 17,13 7,13 7,21"/>
-          <polyline points="7,3 7,8 15,8"/>
-        </svg>
-        저장
-      </button>` : ''}
-    </div>
-  `;
-  }).join('');
+  container.innerHTML = html || '<div class="empty-list">표시할 담당자가 없습니다.</div>';
 }
 
 // 채팅방 링크 저장 (개별 사용자)
