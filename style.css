@@ -27,20 +27,15 @@ body {
   padding-top: 0; /* app-content에서 관리 */
 }
 
-/* 앱 헤더 래퍼 (헤더 + 네비게이션 고정) */
+/* 앱 헤더 래퍼 (헤더 + 네비게이션) */
 .app-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background: var(--bg-secondary);
+  /* static - 문서 흐름에 포함되어 app-content와 겹치지 않음 */
 }
 
 /* 앱 콘텐츠 영역 */
 .app-content {
-  padding-top: 140px; /* 헤더(86px) + 네비(54px) */
-  min-height: 100vh;
+  /* static - app-header 바로 아래에서 시작 (겹침 없음) */
+  min-height: calc(100vh - 140px);
 }
 
 /* 헤더 */
@@ -988,23 +983,20 @@ body {
     overflow-x: hidden;
   }
 
-  /* 모바일에서 app-header는 static (헤더 숨김 기능 위해) */
+  /* 모바일에서 app-header는 static (문서 흐름에 포함) */
   .app-header {
     position: static;
   }
 
-  /* 모바일에서 app-content 여백 */
+  /* 모바일에서 app-content - padding 불필요 (겹침 없음) */
   .app-content {
-    padding-top: 108px; /* 헤더(60px) + 네비(48px) */
+    padding-top: 0;
   }
 
-  /* 헤더 - 스크롤 시 고정 해제 (relative) */
+  /* 헤더 - 스크롤 시 위로 사라짐 */
   .header {
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    right: auto !important;
-    z-index: 1002 !important; /* 드롭다운이 네비/검색바 위에 표시되도록 */
+    position: static;
+    z-index: 1002; /* 드롭다운이 네비/검색바 위에 표시되도록 */
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
   }
@@ -1028,12 +1020,10 @@ body {
     font-size: 20px;
   }
 
-  /* 메인 탭 - fixed로 상단 고정 (헤더 아래에서 시작) */
+  /* 메인 탭 - sticky로 상단 고정 (스크롤 시 헤더가 사라지면 상단에 붙음) */
   .main-nav {
-    position: fixed !important;
-    top: 60px !important; /* 초기값: 헤더 높이 */
-    left: 0 !important;
-    right: 0 !important;
+    position: sticky !important;
+    top: 0 !important;
     z-index: 1000 !important;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
@@ -1041,12 +1031,6 @@ body {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    transition: top 0.2s ease;
-  }
-
-  /* 헤더가 숨겨졌을 때 main-nav를 상단으로 */
-  .main-nav.header-hidden {
-    top: 0 !important;
   }
 
   .main-nav::-webkit-scrollbar {
@@ -1095,36 +1079,22 @@ body {
     display: none !important;
   }
 
-  /* 모바일 검색바 표시 - 헤더 보일 때 */
+  /* 모바일 검색바 - sticky로 main-nav 아래 고정 */
   .mobile-search-bar {
     display: flex !important;
-    position: fixed !important;
-    top: 116px; /* 헤더(60px) + 네비게이션(48px) + 간격(8px) */
-    left: 0 !important;
-    right: 0 !important;
+    position: sticky !important;
+    top: 48px; /* main-nav 높이 */
     z-index: 999 !important;
     background: var(--bg-secondary);
     margin: 0;
     padding: 10px 16px;
     border-bottom: 1px solid var(--border-color);
-    transition: top 0.2s ease;
   }
 
-  /* 헤더 숨겨졌을 때 검색바 위치 */
-  .mobile-search-bar.header-hidden {
-    top: 56px !important; /* 네비(48px) + 간격(8px) */
-  }
-
-  /* 결과 헤더 조정 - 헤더 보일 때 */
+  /* 결과 헤더 */
   .results-header {
     padding: 8px 16px;
-    margin-top: 56px; /* 검색바 높이 (app-content padding-top에서 헤더+네비 관리) */
-    transition: margin-top 0.2s ease;
-  }
-
-  /* 헤더 숨겨졌을 때 결과 헤더 위치 (검색바 위치 변화에 대응) */
-  .results-header.header-hidden {
-    margin-top: 56px !important; /* 검색바 높이 유지 */
+    margin-top: 0;
   }
 
   .product-grid {
@@ -1192,7 +1162,9 @@ body {
 .main-nav {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  position: static; /* app-header 내부에서는 static */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .main-nav-inner {
