@@ -6920,3 +6920,79 @@ body {
   font-size: 14px;
   padding: 20px;
 }
+
+/* ==========================================
+   토스트 알림 스타일
+   ========================================== */
+
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  max-width: 360px;
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast.hide {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+.toast-message {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* 토스트 타입별 스타일 */
+.toast-success {
+  border-left: 4px solid var(--status-buy);
+}
+
+.toast-error {
+  border-left: 4px solid var(--status-no);
+}
+
+.toast-info {
+  border-left: 4px solid var(--accent-gold);
+}
+
+.toast-warning {
+  border-left: 4px solid #f59e0b;
+}
+
+@media (max-width: 768px) {
+  #toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .toast {
+    max-width: none;
+  }
+}

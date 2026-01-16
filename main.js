@@ -40,6 +40,41 @@ let dataSourceManagerId = null;  // 소유자가 선택한 매입 데이터 소�
 let isUsingOtherManagerData = false;  // 다른 매니저 데이터 사용 중 여부
 
 // ==========================================
+// 토스트 알림 시스템
+// ==========================================
+
+function showToast(message, type = 'info', duration = 3000) {
+  // 토스트 컨테이너가 없으면 생성
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  // 토스트 요소 생성
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <span class="toast-message">${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  // 애니메이션 시작
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // 자동 제거
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// ==========================================
 // 권한 체크 유틸리티 함수
 // ==========================================
 
@@ -5037,7 +5072,7 @@ async function deleteUser(userId) {
 // 사용자 등급 변경
 async function changeUserRole(selectEl) {
   if (!canAccess('user:change_role')) {
-    alert('등급을 변경할 권한이 없습니다.');
+    showToast('등급을 변경할 권한이 없습니다.', 'error');
     const user = allUsers.find(u => u.id === selectEl.dataset.userId);
     selectEl.value = user?.role || 'member';
     return;
@@ -5050,7 +5085,7 @@ async function changeUserRole(selectEl) {
 
   // 자기 자신의 등급은 변경 불가
   if (userId === currentUser.uid) {
-    alert('자신의 등급은 변경할 수 없습니다.');
+    showToast('자신의 등급은 변경할 수 없습니다.', 'error');
     selectEl.value = userRole;
     return;
   }
@@ -5164,12 +5199,14 @@ async function changeUserRole(selectEl) {
 
     // 성공 메시지
     if (!wasManager && isManager) {
-      alert(`${user.name || user.email}님이 ${ROLE_LABELS[newRole]}로 승급되었습니다. 초대코드가 생성되었습니다.`);
+      showToast(`${user.name || user.email}님이 ${ROLE_LABELS[newRole]}로 승급되었습니다. 초대코드가 생성되었습니다.`, 'success', 4000);
+    } else {
+      showToast(`${user.name || user.email}님의 등급이 ${ROLE_LABELS[newRole]}(으)로 변경되었습니다.`, 'success');
     }
 
   } catch (error) {
     console.error('등급 변경 실패:', error);
-    alert('등급 변경에 실패했습니다.');
+    showToast('등급 변경에 실패했습니다.', 'error');
     // 원래 값으로 복원
     selectEl.value = oldRole;
   }
@@ -5178,7 +5215,7 @@ async function changeUserRole(selectEl) {
 // 사용자 소속 매니저 변경 (소유자 전용)
 async function changeUserManager(selectEl) {
   if (userRole !== 'owner') {
-    alert('매니저 변경 권한이 없습니다.');
+    showToast('매니저 변경 권한이 없습니다.', 'error');
     return;
   }
 
@@ -5219,14 +5256,14 @@ async function changeUserManager(selectEl) {
 
     // 알림
     if (newManagerId) {
-      console.log(`${user.name || user.email}의 소속 매니저가 ${newManagerName}(으)로 변경되었습니다.`);
+      showToast(`${user.name || user.email}의 소속이 ${newManagerName}(으)로 변경되었습니다.`, 'success');
     } else {
-      console.log(`${user.name || user.email}의 소속 매니저가 해제되었습니다.`);
+      showToast(`${user.name || user.email}의 소속이 해제되었습니다.`, 'info');
     }
 
   } catch (error) {
     console.error('매니저 변경 실패:', error);
-    alert('매니저 변경에 실패했습니다.');
+    showToast('매니저 변경에 실패했습니다.', 'error');
     // 원래 값으로 복원
     selectEl.value = oldManagerId;
   }
