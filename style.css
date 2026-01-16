@@ -3913,14 +3913,8 @@ body {
    ========================================== */
 
 .calc-section {
-  position: fixed;
-  top: 125px; /* 헤더(73px) + 메인탭(52px) */
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow-y: auto;
   background: var(--bg-secondary);
-  z-index: 50;
+  min-height: calc(100vh - 140px);
   box-sizing: border-box;
 }
 
@@ -4112,14 +4106,8 @@ body {
    ========================================== */
 
 .history-section {
-  position: fixed;
-  top: 125px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow-y: auto;
   background: var(--bg-secondary);
-  z-index: 50;
+  min-height: calc(100vh - 140px);
   box-sizing: border-box;
 }
 
@@ -4433,14 +4421,8 @@ body {
    ========================================== */
 
 .report-section {
-  position: fixed;
-  top: 125px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow-y: auto;
   background: var(--bg-secondary);
-  z-index: 50;
+  min-height: calc(100vh - 140px);
   box-sizing: border-box;
 }
 
