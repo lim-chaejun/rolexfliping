@@ -128,7 +128,7 @@ body {
   position: sticky;
   top: 140px; /* 헤더(86px) + 메인탭(54px) */
   z-index: 99;
-  height: 82px; /* 라인탭 높이 고정 */
+  min-height: 110px; /* 라인탭 높이 */
 }
 
 .line-tabs-grid {
@@ -321,7 +321,7 @@ body {
   border-bottom: 1px solid var(--border-color);
   gap: 12px;
   position: sticky;
-  top: 222px; /* header(86px) + main-nav(54px) + line-tabs(82px) */
+  top: 250px; /* header(86px) + main-nav(54px) + line-tabs(110px) */
   background: var(--bg-primary);
   z-index: 90;
   margin: 0 -24px; /* 좌우 패딩 보정 */
