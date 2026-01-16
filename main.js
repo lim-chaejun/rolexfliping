@@ -4741,13 +4741,17 @@ function renderAdminUserList() {
       ? `${createdAt.getFullYear()}.${createdAt.getMonth()+1}.${createdAt.getDate()}`
       : '-';
 
-    // 등급 선택 드롭다운 (전체 회원 탭에서만 표시) - 컴팩트
-    const roleSelector = (currentAdminTab === 'approved') ? `
+    // 등급 선택 드롭다운 (전체 회원 탭 또는 내 회원 탭에서 표시) - 컴팩트
+    // 소유자: 전체 옵션, 매니저: 일반/딜러만
+    const showRoleSelector = currentAdminTab === 'approved' || (currentAdminTab === 'myMembers' && userRole === 'manager');
+    const roleSelector = showRoleSelector ? `
       <select class="role-select compact" data-user-id="${user.id}" onchange="changeUserRole(this)">
         <option value="member" ${user.role === 'member' || !user.role ? 'selected' : ''}>일반</option>
         <option value="dealer" ${user.role === 'dealer' ? 'selected' : ''}>딜러</option>
-        <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
-        <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
+        ${userRole === 'owner' ? `
+          <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
+          <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
+        ` : ''}
       </select>
     ` : '';
 
@@ -4777,7 +4781,7 @@ function renderAdminUserList() {
           <div class="user-primary">
             <div class="user-name-row">
               <span class="user-name">${getDisplayName(user)}</span>
-              ${currentAdminTab === 'approved' ? roleBadge : ''}
+              ${(currentAdminTab === 'approved' || currentAdminTab === 'myMembers') ? roleBadge : ''}
             </div>
             <div class="user-phone">${user.phone || '-'}</div>
           </div>
@@ -5071,13 +5075,6 @@ async function deleteUser(userId) {
 
 // 사용자 등급 변경
 async function changeUserRole(selectEl) {
-  if (!canAccess('user:change_role')) {
-    showToast('등급을 변경할 권한이 없습니다.', 'error');
-    const user = allUsers.find(u => u.id === selectEl.dataset.userId);
-    selectEl.value = user?.role || 'member';
-    return;
-  }
-
   const userId = selectEl.dataset.userId;
   const newRole = selectEl.value;
   const user = allUsers.find(u => u.id === userId);
@@ -5090,11 +5087,29 @@ async function changeUserRole(selectEl) {
     return;
   }
 
-  // 매니저 이상에서 딜러/일반회원으로 강등 시 경고
-  const wasManager = ['manager', 'owner'].includes(oldRole);
-  const isManager = ['manager', 'owner'].includes(newRole);
+  // 권한 체크: 소유자는 모두 가능, 매니저는 자기 회원만 가능
+  const isOwner = userRole === 'owner';
+  const isManager = userRole === 'manager';
+  const isMyMember = user?.managerId === currentUser.uid;
 
-  if (wasManager && !isManager) {
+  if (!isOwner && !(isManager && isMyMember)) {
+    showToast('등급을 변경할 권한이 없습니다.', 'error');
+    selectEl.value = oldRole;
+    return;
+  }
+
+  // 매니저는 딜러 이하만 설정 가능 (sub_manager, manager, owner 불가)
+  if (isManager && !isOwner && ['sub_manager', 'manager', 'owner'].includes(newRole)) {
+    showToast('매니저는 딜러 등급까지만 설정할 수 있습니다.', 'error');
+    selectEl.value = oldRole;
+    return;
+  }
+
+  // 매니저 이상에서 딜러/일반회원으로 강등 시 경고
+  const wasManagerRole = ['manager', 'owner'].includes(oldRole);
+  const willBeManagerRole = ['manager', 'owner'].includes(newRole);
+
+  if (wasManagerRole && !willBeManagerRole) {
     const linkedCount = allUsers.filter(u => u.managerId === userId).length;
     const message = linkedCount > 0
       ? `이 매니저에게 연결된 ${linkedCount}명의 회원이 모두 승인 취소됩니다. 계속하시겠습니까?`
@@ -5150,7 +5165,7 @@ async function changeUserRole(selectEl) {
     }
 
     // 매니저 이상으로 승급 시 watchStatuses 초기화
-    if (!wasManager && isManager) {
+    if (!wasManagerRole && willBeManagerRole) {
       // watchStatuses 초기화 (모든 상품 불가 상태)
       const initialStatuses = {};
       watches.forEach(watch => {
@@ -5161,7 +5176,7 @@ async function changeUserRole(selectEl) {
     }
 
     // 매니저에서 강등 시 소속 회원 승인 취소
-    if (wasManager && !isManager) {
+    if (wasManagerRole && !willBeManagerRole) {
       // 소속 회원 전원 승인 취소
       const linkedUsersSnapshot = await db.collection('users')
         .where('managerId', '==', userId)
@@ -5198,7 +5213,7 @@ async function changeUserRole(selectEl) {
     renderAdminUserList();
 
     // 성공 메시지
-    if (!wasManager && isManager) {
+    if (!wasManagerRole && willBeManagerRole) {
       showToast(`${user.name || user.email}님이 ${ROLE_LABELS[newRole]}로 승급되었습니다. 초대코드가 생성되었습니다.`, 'success', 4000);
     } else {
       showToast(`${user.name || user.email}님의 등급이 ${ROLE_LABELS[newRole]}(으)로 변경되었습니다.`, 'success');
