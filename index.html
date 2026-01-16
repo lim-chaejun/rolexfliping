@@ -1075,13 +1075,11 @@
       <button class="modal-close" id="watch-detail-close">&times;</button>
       <!-- 이미지 + 오버레이 정보 -->
       <div class="watch-detail-hero">
+        <span class="watch-detail-badge" id="watch-detail-badge"></span>
         <img id="watch-detail-image" class="watch-detail-image" src="" alt="">
         <div class="watch-detail-overlay">
-          <span class="watch-detail-badge" id="watch-detail-badge"></span>
           <div class="watch-detail-overlay-info">
-            <div class="watch-detail-line" id="watch-detail-line"></div>
-            <h2 class="watch-detail-title" id="watch-detail-title"></h2>
-            <div class="watch-detail-model" id="watch-detail-model"></div>
+            <div class="watch-detail-title-line" id="watch-detail-title-line"></div>
             <div class="watch-detail-summary" id="watch-detail-summary"></div>
           </div>
         </div>
@@ -1094,7 +1092,13 @@
       <!-- 상세 스펙 -->
       <div class="watch-detail-specs-section">
         <div class="watch-detail-price" id="watch-detail-price"></div>
-        <div class="watch-detail-specs">
+        <button class="specs-toggle-btn" id="specs-toggle-btn" onclick="toggleWatchSpecs()">
+          상세 정보 보기
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="watch-detail-specs" id="watch-detail-specs">
           <div class="watch-detail-spec">
             <span class="spec-label">지름</span>
             <span class="spec-value" id="watch-detail-diameter"></span>

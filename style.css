@@ -939,10 +939,12 @@ body {
     overflow-x: hidden;
   }
 
-  /* 헤더 - sticky로 상단 고정 (문서 흐름 유지) */
+  /* 헤더 - fixed로 상단 고정 */
   .header {
-    position: sticky !important;
+    position: fixed !important;
     top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
     z-index: 1001 !important;
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
@@ -967,10 +969,12 @@ body {
     font-size: 20px;
   }
 
-  /* 메인 탭 - sticky로 헤더 아래 고정 (문서 흐름 유지) */
+  /* 메인 탭 - fixed로 헤더 아래 고정 */
   .main-nav {
-    position: sticky !important;
+    position: fixed !important;
     top: 52px !important;
+    left: 0 !important;
+    right: 0 !important;
     z-index: 1000 !important;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
@@ -1029,17 +1033,20 @@ body {
   /* 모바일 검색바 표시 */
   .mobile-search-bar {
     display: flex !important;
-    margin: 12px 16px;
-    position: sticky;
-    top: 104px; /* 헤더(52px) + 네비(52px) */
-    z-index: 99;
-    background: var(--bg-primary);
-    padding: 8px 0;
+    position: fixed !important;
+    top: 100px; /* 헤더(52px) + 네비(48px) */
+    left: 16px !important;
+    right: 16px !important;
+    z-index: 999 !important;
+    background: var(--bg-secondary);
+    margin: 0;
+    padding: 10px 12px;
   }
 
-  /* 결과 헤더 조정 */
+  /* 결과 헤더 조정 - 고정 요소(헤더+네비+검색바) 아래로 배치 */
   .results-header {
     padding: 8px 16px;
+    margin-top: 160px; /* 헤더(52px) + 네비(48px) + 검색바(60px) */
   }
 
   .product-grid {
@@ -1413,7 +1420,7 @@ body {
 /* 히어로 섹션 (이미지 + 오버레이) */
 .watch-detail-hero {
   position: relative;
-  background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+  background: #f5f5f5;
   border-radius: 16px 16px 0 0;
   overflow: hidden;
 }
@@ -1430,87 +1437,107 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 60px 24px 24px;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+  padding: 40px 20px 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
   color: white;
 }
 
 .watch-detail-overlay-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .watch-detail-badge {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  padding: 6px 12px;
+  top: 12px;
+  left: 12px;
+  padding: 5px 10px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
+  z-index: 1;
 }
 
 .watch-detail-badge.buy {
-  background: rgba(34, 197, 94, 0.9);
+  background: rgba(34, 197, 94, 0.95);
   color: white;
 }
 
 .watch-detail-badge.pending {
-  background: rgba(234, 179, 8, 0.9);
+  background: rgba(234, 179, 8, 0.95);
   color: white;
 }
 
 .watch-detail-badge.no {
-  background: rgba(239, 68, 68, 0.9);
+  background: rgba(239, 68, 68, 0.95);
   color: white;
 }
 
-.watch-detail-line {
-  font-size: 13px;
-  color: rgba(255,255,255,0.7);
-}
-
-.watch-detail-title {
-  font-size: 24px;
+.watch-detail-title-line {
+  font-size: 18px;
   font-weight: 700;
-  margin: 0;
-  line-height: 1.2;
   color: white;
-}
-
-.watch-detail-model {
-  font-size: 20px;
-  font-weight: 600;
-  color: white;
-  font-family: monospace;
+  line-height: 1.3;
 }
 
 .watch-detail-summary {
-  font-size: 14px;
-  color: rgba(255,255,255,0.8);
-  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
 }
 
 /* 스펙 섹션 */
 .watch-detail-specs-section {
-  padding: 20px 24px;
+  padding: 16px 20px;
   background: var(--bg-primary);
 }
 
 .watch-detail-price {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+
+.specs-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.specs-toggle-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.specs-toggle-btn svg {
+  transition: transform 0.2s;
+}
+
+.specs-toggle-btn.expanded svg {
+  transform: rotate(180deg);
 }
 
 .watch-detail-specs {
-  display: flex;
+  display: none;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.watch-detail-specs.expanded {
+  display: flex;
 }
 
 .watch-detail-spec {
@@ -1605,30 +1632,32 @@ body {
     border-radius: 16px 16px 0 0;
   }
 
-  .watch-detail-title {
-    font-size: 20px;
-  }
-
-  .watch-detail-model {
+  .watch-detail-title-line {
     font-size: 16px;
   }
 
   .watch-detail-summary {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .watch-detail-overlay {
-    padding: 40px 16px 16px;
+    padding: 30px 14px 12px;
+  }
+
+  .watch-detail-badge {
+    top: 10px;
+    left: 10px;
+    padding: 4px 8px;
+    font-size: 11px;
   }
 
   .watch-detail-specs-section {
-    padding: 16px;
+    padding: 14px;
   }
 
   .watch-detail-price {
     font-size: 18px;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
+    margin-bottom: 10px;
   }
 
   .related-models-section {

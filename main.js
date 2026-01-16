@@ -765,11 +765,15 @@ function showWatchDetail(modelNumber) {
   };
   document.getElementById('watch-detail-badge').textContent = statusText[watch.buy_status];
   document.getElementById('watch-detail-badge').className = `watch-detail-badge ${watch.buy_status}`;
-  document.getElementById('watch-detail-line').textContent = lineNames[watch.line] || watch.line;
-  document.getElementById('watch-detail-title').textContent = watch.title;
-  document.getElementById('watch-detail-model').textContent = modelNum;
+  document.getElementById('watch-detail-title-line').textContent = `${watch.title} ${modelNum}`;
   document.getElementById('watch-detail-summary').textContent = `${watch.diameter}, ${dialColor}, ${braceletType}`;
   document.getElementById('watch-detail-price').textContent = watch.formatted_price;
+
+  // 스펙 섹션 초기화 (접힌 상태)
+  const specsEl = document.getElementById('watch-detail-specs');
+  const specsToggleBtn = document.getElementById('specs-toggle-btn');
+  if (specsEl) specsEl.classList.remove('expanded');
+  if (specsToggleBtn) specsToggleBtn.classList.remove('expanded');
 
   // 스펙 항목 설정 (데이터 없으면 숨김)
   const setSpecValue = (id, value) => {
@@ -828,6 +832,19 @@ function showWatchDetail(modelNumber) {
 function hideWatchDetail() {
   watchDetailModal.classList.remove('active');
   document.body.style.overflow = '';
+}
+
+// 상세 스펙 토글
+function toggleWatchSpecs() {
+  const specsEl = document.getElementById('watch-detail-specs');
+  const toggleBtn = document.getElementById('specs-toggle-btn');
+  if (specsEl && toggleBtn) {
+    specsEl.classList.toggle('expanded');
+    toggleBtn.classList.toggle('expanded');
+    toggleBtn.innerHTML = specsEl.classList.contains('expanded')
+      ? '상세 정보 접기 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>'
+      : '상세 정보 보기 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+  }
 }
 
 // 모달 닫기 이벤트
