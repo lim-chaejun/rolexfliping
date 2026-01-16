@@ -713,7 +713,7 @@ function renderProducts() {
         <div class="product-info">
           <div class="product-title">${watch.title} <strong>${modelNum}</strong></div>
           <div class="product-specs">${size}mm, ${dialColor}, ${braceletType}</div>
-          <div class="product-price">${watch.formatted_price}</div>
+          <div class="product-price">${watch.price.toLocaleString('ko-KR')} 원</div>
           ${adminControls}
         </div>
       </div>
@@ -773,7 +773,7 @@ function showWatchDetail(modelNumber) {
   document.getElementById('watch-detail-badge').className = `watch-detail-badge ${watch.buy_status}`;
   document.getElementById('watch-detail-title-line').textContent = `${watch.title} ${modelNum}`;
   document.getElementById('watch-detail-summary').textContent = `${watch.diameter}, ${dialColor}, ${braceletType}`;
-  document.getElementById('watch-detail-price').textContent = watch.formatted_price;
+  document.getElementById('watch-detail-price').textContent = `${watch.price.toLocaleString('ko-KR')} 원`;
 
   // 스펙 섹션 초기화 (접힌 상태)
   const specsEl = document.getElementById('watch-detail-specs');
@@ -1133,21 +1133,6 @@ searchInput.addEventListener('input', debounce(() => {
   applyFilters();
 }, 300));
 
-// PC 가격 필터 이벤트 리스너
-if (desktopPriceMin) {
-  desktopPriceMin.addEventListener('input', debounce(() => {
-    displayedCount = 50;
-    applyFilters();
-  }, 500));
-}
-
-if (desktopPriceMax) {
-  desktopPriceMax.addEventListener('input', debounce(() => {
-    displayedCount = 50;
-    applyFilters();
-  }, 500));
-}
-
 // 필터 드롭다운 이벤트는 모달로 이동됨 (applyMobileFilters에서 처리)
 
 resetBtn.addEventListener('click', resetFilters);
@@ -1203,6 +1188,21 @@ const desktopPriceMin = document.getElementById('desktop-price-min');
 const desktopPriceMax = document.getElementById('desktop-price-max');
 const mobileSortSelect = document.getElementById('mobile-sort-select');
 const mobileStatusChips = document.querySelectorAll('.filter-status-chip');
+
+// PC 가격 필터 이벤트 리스너
+if (desktopPriceMin) {
+  desktopPriceMin.addEventListener('input', debounce(() => {
+    displayedCount = 50;
+    applyFilters();
+  }, 500));
+}
+
+if (desktopPriceMax) {
+  desktopPriceMax.addEventListener('input', debounce(() => {
+    displayedCount = 50;
+    applyFilters();
+  }, 500));
+}
 
 // 모달 열기
 function openFilterModal() {
@@ -2448,7 +2448,7 @@ function showSpecQuestion() {
   document.getElementById('test-line-name').textContent = lineNames[question.line] || question.line;
   document.getElementById('test-title').textContent = question.title;
   document.getElementById('test-model').textContent = question.model_number;
-  document.getElementById('test-price').textContent = question.formatted_price;
+  document.getElementById('test-price').textContent = `${question.price.toLocaleString('ko-KR')} 원`;
   document.getElementById('test-material').textContent = '???'; // 숨김
 
   // 질문 유형 표시
@@ -2652,7 +2652,7 @@ function showQuestion() {
   document.getElementById('test-line-name').textContent = lineNames[question.line] || question.line;
   document.getElementById('test-title').textContent = question.title;
   document.getElementById('test-model').textContent = question.model_number;
-  document.getElementById('test-price').textContent = question.formatted_price;
+  document.getElementById('test-price').textContent = `${question.price.toLocaleString('ko-KR')} 원`;
   document.getElementById('test-material').textContent = materialNames[question.material] || question.material;
 
   // 버튼 초기화
