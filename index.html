@@ -776,6 +776,12 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
+          <div class="price-filter-inline">
+            <span class="price-filter-label">가격</span>
+            <input type="number" class="price-input-sm" id="desktop-price-min" placeholder="최소(만)">
+            <span class="price-range-sep">~</span>
+            <input type="number" class="price-input-sm" id="desktop-price-max" placeholder="최대(만)">
+          </div>
         </div>
       </div>
       <div class="filter-right">
@@ -1218,20 +1224,12 @@
 
         <!-- 가격 -->
         <div class="filter-modal-section">
-          <div class="filter-modal-section-title">가격</div>
-          <select class="filter-modal-select" id="mobile-price-filter">
-            <option value="">전체 가격</option>
-            <option value="0-10000000">1천만원 이하</option>
-            <option value="10000000-15000000">1천~1.5천만원</option>
-            <option value="15000000-20000000">1.5천~2천만원</option>
-            <option value="20000000-30000000">2천~3천만원</option>
-            <option value="30000000-40000000">3천~4천만원</option>
-            <option value="40000000-50000000">4천~5천만원</option>
-            <option value="50000000-70000000">5천~7천만원</option>
-            <option value="70000000-100000000">7천만~1억원</option>
-            <option value="100000000-150000000">1억~1.5억원</option>
-            <option value="150000000-999999999">1.5억원 이상</option>
-          </select>
+          <div class="filter-modal-section-title">가격 (만원)</div>
+          <div class="price-range-inputs">
+            <input type="number" class="price-input" id="mobile-price-min" placeholder="최소">
+            <span class="price-range-separator">~</span>
+            <input type="number" class="price-input" id="mobile-price-max" placeholder="최대">
+          </div>
         </div>
 
         <!-- 정렬 -->

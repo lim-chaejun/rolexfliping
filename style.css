@@ -5020,6 +5020,98 @@ body {
   border-color: var(--accent-gold);
 }
 
+/* 가격 범위 입력 (모바일) */
+.price-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.price-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.price-input::placeholder {
+  color: var(--text-muted);
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.price-range-separator {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* 가격 필터 인라인 (PC) */
+.price-filter-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.price-filter-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.price-input-sm {
+  width: 80px;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.price-input-sm::placeholder {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.price-input-sm:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.price-range-sep {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* number input 화살표 제거 */
+.price-input::-webkit-outer-spin-button,
+.price-input::-webkit-inner-spin-button,
+.price-input-sm::-webkit-outer-spin-button,
+.price-input-sm::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.price-input[type=number],
+.price-input-sm[type=number] {
+  -moz-appearance: textfield;
+}
+
+@media (max-width: 768px) {
+  .price-filter-inline {
+    display: none;
+  }
+}
+
 /* 푸터 버튼 */
 .filter-modal-footer {
   display: flex;

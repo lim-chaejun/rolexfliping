@@ -493,7 +493,12 @@ function updateFilterOptions() {
 // 기본 필터 조건 (라인, 카테고리, 상태, 검색, 가격)으로 필터링
 function getBaseFilteredWatches() {
   const searchTerm = searchInput.value.toLowerCase().trim();
-  const selectedPrice = mobilePriceFilter ? mobilePriceFilter.value : '';
+  // 가격 필터 (만원 단위 입력 → 원 단위로 변환)
+  const priceMinVal = desktopPriceMin?.value || mobilePriceMin?.value || '';
+  const priceMaxVal = desktopPriceMax?.value || mobilePriceMax?.value || '';
+  const priceMin = priceMinVal ? parseInt(priceMinVal) * 10000 : null;
+  const priceMax = priceMaxVal ? parseInt(priceMaxVal) * 10000 : null;
+
   const selectedStatuses = Array.from(statusCheckboxes)
     .filter(cb => cb.checked)
     .map(cb => cb.value);
@@ -522,10 +527,8 @@ function getBaseFilteredWatches() {
     }
 
     // 가격 필터
-    if (selectedPrice) {
-      const [min, max] = selectedPrice.split('-').map(Number);
-      if (watch.price < min || watch.price > max) return false;
-    }
+    if (priceMin !== null && watch.price < priceMin) return false;
+    if (priceMax !== null && watch.price > priceMax) return false;
 
     return true;
   });
@@ -560,7 +563,12 @@ function applyFilters() {
   const selectedMaterial = mobileMaterialFilter ? mobileMaterialFilter.value : '';
   const selectedBezel = mobileBezelFilter ? mobileBezelFilter.value : '';
   const selectedBracelet = mobileBraceletFilter ? mobileBraceletFilter.value : '';
-  const selectedPrice = mobilePriceFilter ? mobilePriceFilter.value : '';
+
+  // 가격 필터 (만원 단위 입력 → 원 단위로 변환)
+  const priceMinVal = desktopPriceMin?.value || mobilePriceMin?.value || '';
+  const priceMaxVal = desktopPriceMax?.value || mobilePriceMax?.value || '';
+  const priceMin = priceMinVal ? parseInt(priceMinVal) * 10000 : null;
+  const priceMax = priceMaxVal ? parseInt(priceMaxVal) * 10000 : null;
 
   // 선택된 상태들
   const selectedStatuses = Array.from(statusCheckboxes)
@@ -601,10 +609,8 @@ function applyFilters() {
     if (selectedBracelet && normalizeBracelet(watch.bracelet) !== selectedBracelet) return false;
 
     // 가격 필터
-    if (selectedPrice) {
-      const [min, max] = selectedPrice.split('-').map(Number);
-      if (watch.price < min || watch.price > max) return false;
-    }
+    if (priceMin !== null && watch.price < priceMin) return false;
+    if (priceMax !== null && watch.price > priceMax) return false;
 
     return true;
   });
@@ -861,9 +867,14 @@ function resetFilters() {
   if (mobileMaterialFilter) mobileMaterialFilter.value = '';
   if (mobileBezelFilter) mobileBezelFilter.value = '';
   if (mobileBraceletFilter) mobileBraceletFilter.value = '';
-  if (mobilePriceFilter) mobilePriceFilter.value = '';
+  if (mobilePriceMin) mobilePriceMin.value = '';
+  if (mobilePriceMax) mobilePriceMax.value = '';
   if (mobileSortSelect) mobileSortSelect.value = 'price-asc';
   if (mobileSearchInput) mobileSearchInput.value = '';
+
+  // PC 가격 필터 초기화
+  if (desktopPriceMin) desktopPriceMin.value = '';
+  if (desktopPriceMax) desktopPriceMax.value = '';
 
   selectedLine = '';
   displayedCount = 50;
@@ -1122,6 +1133,21 @@ searchInput.addEventListener('input', debounce(() => {
   applyFilters();
 }, 300));
 
+// PC 가격 필터 이벤트 리스너
+if (desktopPriceMin) {
+  desktopPriceMin.addEventListener('input', debounce(() => {
+    displayedCount = 50;
+    applyFilters();
+  }, 500));
+}
+
+if (desktopPriceMax) {
+  desktopPriceMax.addEventListener('input', debounce(() => {
+    displayedCount = 50;
+    applyFilters();
+  }, 500));
+}
+
 // 필터 드롭다운 이벤트는 모달로 이동됨 (applyMobileFilters에서 처리)
 
 resetBtn.addEventListener('click', resetFilters);
@@ -1171,7 +1197,10 @@ const mobileMainSearch = document.getElementById('mobile-main-search');
 const mobileMaterialFilter = document.getElementById('mobile-material-filter');
 const mobileBezelFilter = document.getElementById('mobile-bezel-filter');
 const mobileBraceletFilter = document.getElementById('mobile-bracelet-filter');
-const mobilePriceFilter = document.getElementById('mobile-price-filter');
+const mobilePriceMin = document.getElementById('mobile-price-min');
+const mobilePriceMax = document.getElementById('mobile-price-max');
+const desktopPriceMin = document.getElementById('desktop-price-min');
+const desktopPriceMax = document.getElementById('desktop-price-max');
 const mobileSortSelect = document.getElementById('mobile-sort-select');
 const mobileStatusChips = document.querySelectorAll('.filter-status-chip');
 
@@ -1218,6 +1247,10 @@ function syncDesktopToMobile() {
   if (mobileEditModeCheckbox) {
     mobileEditModeCheckbox.checked = editModeEnabled;
   }
+
+  // 가격 필터 동기화 (PC → 모바일)
+  if (mobilePriceMin) mobilePriceMin.value = desktopPriceMin?.value || '';
+  if (mobilePriceMax) mobilePriceMax.value = desktopPriceMax?.value || '';
 }
 
 // 모바일 필터 → 데스크톱 동기화 및 적용
@@ -1243,6 +1276,10 @@ function applyMobileFilters() {
     selectLine(lineName);
   }
 
+  // 가격 필터 동기화 (모바일 → PC)
+  if (desktopPriceMin) desktopPriceMin.value = mobilePriceMin?.value || '';
+  if (desktopPriceMax) desktopPriceMax.value = mobilePriceMax?.value || '';
+
   displayedCount = 50;
   applyFilters();
   closeFilterModal();
@@ -1251,11 +1288,12 @@ function applyMobileFilters() {
 // 모바일 필터 초기화
 function resetMobileFilters() {
   if (mobileSearchInput) mobileSearchInput.value = '';
-  mobileMaterialFilter.value = '';
-  mobileBezelFilter.value = '';
-  mobileBraceletFilter.value = '';
-  mobilePriceFilter.value = '';
-  mobileSortSelect.value = 'price-asc';
+  if (mobileMaterialFilter) mobileMaterialFilter.value = '';
+  if (mobileBezelFilter) mobileBezelFilter.value = '';
+  if (mobileBraceletFilter) mobileBraceletFilter.value = '';
+  if (mobilePriceMin) mobilePriceMin.value = '';
+  if (mobilePriceMax) mobilePriceMax.value = '';
+  if (mobileSortSelect) mobileSortSelect.value = 'price-asc';
 
   // 상태 칩 모두 활성화
   mobileStatusChips.forEach(chip => {
