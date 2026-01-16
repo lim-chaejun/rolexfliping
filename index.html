@@ -9,8 +9,10 @@
   <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
-  <!-- 헤더 -->
-  <header class="header">
+  <!-- 헤더 영역 래퍼 (fixed) -->
+  <div class="app-header">
+    <!-- 헤더 -->
+    <header class="header">
     <div class="header-inner">
       <div class="logo">
         <h1 id="header-logo-text">ROLEXFLIP</h1>
@@ -161,9 +163,11 @@
       </button>
     </div>
   </nav>
+  </div><!-- /.app-header -->
 
   <!-- 콘텐츠 영역 래퍼 -->
-  <div class="content-wrapper" id="content-wrapper">
+  <main class="app-content">
+    <div class="content-wrapper" id="content-wrapper">
 
   <!-- 라인 탭 필터 (메인 탭에서만 표시) -->
   <nav class="line-tabs-wrapper" id="line-tabs-wrapper">
@@ -932,7 +936,8 @@
     </div>
   </div>
 
-  </div><!-- content-wrapper 끝 -->
+    </div><!-- content-wrapper 끝 -->
+  </main><!-- /.app-content -->
 
   <!-- 로그인 모달 -->
   <div class="modal-overlay" id="login-modal">
