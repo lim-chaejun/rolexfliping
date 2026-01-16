@@ -494,8 +494,8 @@ function updateFilterOptions() {
 function getBaseFilteredWatches() {
   const searchTerm = searchInput.value.toLowerCase().trim();
   // 가격 필터 (만원 단위 입력 → 원 단위로 변환)
-  const priceMinVal = desktopPriceMin?.value || mobilePriceMin?.value || '';
-  const priceMaxVal = desktopPriceMax?.value || mobilePriceMax?.value || '';
+  const priceMinVal = mobilePriceMin?.value || '';
+  const priceMaxVal = mobilePriceMax?.value || '';
   const priceMin = priceMinVal ? parseInt(priceMinVal) * 10000 : null;
   const priceMax = priceMaxVal ? parseInt(priceMaxVal) * 10000 : null;
 
@@ -565,8 +565,8 @@ function applyFilters() {
   const selectedBracelet = mobileBraceletFilter ? mobileBraceletFilter.value : '';
 
   // 가격 필터 (만원 단위 입력 → 원 단위로 변환)
-  const priceMinVal = desktopPriceMin?.value || mobilePriceMin?.value || '';
-  const priceMaxVal = desktopPriceMax?.value || mobilePriceMax?.value || '';
+  const priceMinVal = mobilePriceMin?.value || '';
+  const priceMaxVal = mobilePriceMax?.value || '';
   const priceMin = priceMinVal ? parseInt(priceMinVal) * 10000 : null;
   const priceMax = priceMaxVal ? parseInt(priceMaxVal) * 10000 : null;
 
@@ -872,10 +872,6 @@ function resetFilters() {
   if (mobileSortSelect) mobileSortSelect.value = 'price-asc';
   if (mobileSearchInput) mobileSearchInput.value = '';
 
-  // PC 가격 필터 초기화
-  if (desktopPriceMin) desktopPriceMin.value = '';
-  if (desktopPriceMax) desktopPriceMax.value = '';
-
   selectedLine = '';
   displayedCount = 50;
 
@@ -1148,22 +1144,10 @@ statusCheckboxes.forEach(cb => {
 
 // 수정모드 토글 이벤트 리스너
 const editModeCheckbox = document.getElementById('edit-mode-checkbox');
-const mobileEditModeCheckbox = document.getElementById('mobile-edit-mode-checkbox');
 
 if (editModeCheckbox) {
   editModeCheckbox.addEventListener('change', () => {
     editModeEnabled = editModeCheckbox.checked;
-    // 모바일 토글 동기화
-    if (mobileEditModeCheckbox) mobileEditModeCheckbox.checked = editModeEnabled;
-    renderProducts();
-  });
-}
-
-if (mobileEditModeCheckbox) {
-  mobileEditModeCheckbox.addEventListener('change', () => {
-    editModeEnabled = mobileEditModeCheckbox.checked;
-    // PC 토글 동기화
-    if (editModeCheckbox) editModeCheckbox.checked = editModeEnabled;
     renderProducts();
   });
 }
@@ -1184,25 +1168,8 @@ const mobileBezelFilter = document.getElementById('mobile-bezel-filter');
 const mobileBraceletFilter = document.getElementById('mobile-bracelet-filter');
 const mobilePriceMin = document.getElementById('mobile-price-min');
 const mobilePriceMax = document.getElementById('mobile-price-max');
-const desktopPriceMin = document.getElementById('desktop-price-min');
-const desktopPriceMax = document.getElementById('desktop-price-max');
 const mobileSortSelect = document.getElementById('mobile-sort-select');
 const mobileStatusChips = document.querySelectorAll('.filter-status-chip');
-
-// PC 가격 필터 이벤트 리스너
-if (desktopPriceMin) {
-  desktopPriceMin.addEventListener('input', debounce(() => {
-    displayedCount = 50;
-    applyFilters();
-  }, 500));
-}
-
-if (desktopPriceMax) {
-  desktopPriceMax.addEventListener('input', debounce(() => {
-    displayedCount = 50;
-    applyFilters();
-  }, 500));
-}
 
 // 모달 열기
 function openFilterModal() {
@@ -1241,16 +1208,6 @@ function syncDesktopToMobile() {
       btn.classList.toggle('active', btn.dataset.line === selectedLine);
     });
   }
-
-  // 수정모드 토글 동기화
-  const mobileEditModeCheckbox = document.getElementById('mobile-edit-mode-checkbox');
-  if (mobileEditModeCheckbox) {
-    mobileEditModeCheckbox.checked = editModeEnabled;
-  }
-
-  // 가격 필터 동기화 (PC → 모바일)
-  if (mobilePriceMin) mobilePriceMin.value = desktopPriceMin?.value || '';
-  if (mobilePriceMax) mobilePriceMax.value = desktopPriceMax?.value || '';
 }
 
 // 모바일 필터 → 데스크톱 동기화 및 적용
@@ -1275,10 +1232,6 @@ function applyMobileFilters() {
     const lineName = activeLineBtn.dataset.line;
     selectLine(lineName);
   }
-
-  // 가격 필터 동기화 (모바일 → PC)
-  if (desktopPriceMin) desktopPriceMin.value = mobilePriceMin?.value || '';
-  if (desktopPriceMax) desktopPriceMax.value = mobilePriceMax?.value || '';
 
   displayedCount = 50;
   applyFilters();
@@ -4053,12 +4006,8 @@ function updateUIByRole() {
 
   // 수정모드 토글: watch:edit_status 권한 있는 사용자만 표시
   const editModeToggle = document.getElementById('edit-mode-toggle');
-  const mobileEditModeSection = document.getElementById('mobile-edit-mode-section');
   if (editModeToggle) {
     editModeToggle.style.display = canAccess('watch:edit_status') ? 'flex' : 'none';
-  }
-  if (mobileEditModeSection) {
-    mobileEditModeSection.style.display = canAccess('watch:edit_status') ? 'block' : 'none';
   }
 
   // 모바일 헤더 매니저 표시
