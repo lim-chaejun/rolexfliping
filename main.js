@@ -4050,7 +4050,7 @@ auth.onAuthStateChanged(handleAuthStateChange);
 // 관리자 페이지 기능
 // ==========================================
 
-let currentAdminTab = 'pending';
+let currentAdminTab = 'myteam';
 let allUsers = [];
 let adminManagerFilter = '';  // 선택된 매니저/소유자 ID
 let adminSearchTerm = '';     // 회원 검색어
@@ -4091,13 +4091,6 @@ async function loadAdminPage() {
         ...data
       });
     });
-
-    // 대기 중인 사용자 수 업데이트
-    const pendingCount = allUsers.filter(u => u.status === 'pending').length;
-    const pendingCountEl = document.getElementById('pending-count');
-    if (pendingCountEl) {
-      pendingCountEl.textContent = pendingCount;
-    }
 
     // 매입 데이터 소스 드롭다운 초기화 (소유자 전용)
     initDataSourceSelector();
@@ -4213,10 +4206,20 @@ function renderAdminUserList() {
   if (!userList) return;
 
   const filteredUsers = allUsers.filter(user => {
-    // 1. 탭 필터 (상태)
-    if (currentAdminTab === 'pending' && user.status !== 'pending') return false;
-    if (currentAdminTab === 'approved' && user.status !== 'approved') return false;
-    if (currentAdminTab === 'rejected' && user.status !== 'rejected') return false;
+    // 1. 탭 필터
+    if (currentAdminTab === 'myteam') {
+      // 내 회원 탭: 승인된 사용자 중 내 소속 회원만 표시
+      if (user.status !== 'approved') return false;
+      // 자기 자신은 제외
+      if (user.id === currentUser.uid) return false;
+      // managerId가 현재 사용자와 일치하는 회원만
+      if (user.managerId !== currentUser.uid) return false;
+    }
+    if (currentAdminTab === 'approved') {
+      // 전체 회원 탭: 승인된 사용자 (소유자 제외)
+      if (user.status !== 'approved') return false;
+      if (user.role === 'owner') return false;
+    }
 
     // 2. 매니저 필터 (선택된 매니저의 소속 회원만)
     if (adminManagerFilter) {
@@ -4251,7 +4254,7 @@ function renderAdminUserList() {
       ? `${createdAt.getFullYear()}.${createdAt.getMonth()+1}.${createdAt.getDate()}`
       : '-';
 
-    // 등급 선택 드롭다운 (승인 완료 탭에서만 표시)
+    // 등급 선택 드롭다운 (전체 회원 탭에서만 표시)
     const roleSelector = (currentAdminTab === 'approved') ? `
       <div class="role-selector">
         <select class="role-select" data-user-id="${user.id}" onchange="changeUserRole(this)">
@@ -4259,7 +4262,6 @@ function renderAdminUserList() {
           <option value="dealer" ${user.role === 'dealer' ? 'selected' : ''}>딜러</option>
           <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
           <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
-          <option value="owner" ${user.role === 'owner' ? 'selected' : ''}>소유자</option>
         </select>
       </div>
     ` : '';
@@ -4346,13 +4348,6 @@ async function approveUser(userId) {
       user.managerId = currentUser.uid;
     }
 
-    // UI 업데이트
-    const pendingCount = allUsers.filter(u => u.status === 'pending').length;
-    const pendingCountEl = document.getElementById('pending-count');
-    if (pendingCountEl) {
-      pendingCountEl.textContent = pendingCount;
-    }
-
     renderAdminUserList();
 
   } catch (error) {
@@ -4375,13 +4370,6 @@ async function rejectUser(userId) {
     // 로컬 데이터 업데이트
     const user = allUsers.find(u => u.id === userId);
     if (user) user.status = 'rejected';
-
-    // UI 업데이트
-    const pendingCount = allUsers.filter(u => u.status === 'pending').length;
-    const pendingCountEl = document.getElementById('pending-count');
-    if (pendingCountEl) {
-      pendingCountEl.textContent = pendingCount;
-    }
 
     renderAdminUserList();
 
