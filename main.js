@@ -4885,13 +4885,28 @@ function renderChatSettingsList() {
   container.innerHTML = html || '<div class="empty-list">표시할 담당자가 없습니다.</div>';
 }
 
+// URL에 https:// 자동 추가
+function ensureHttps(url) {
+  if (!url) return '';
+  url = url.trim();
+  if (!url) return '';
+  // 이미 http:// 또는 https://로 시작하면 그대로
+  if (/^https?:\/\//i.test(url)) return url;
+  // 아니면 https:// 붙이기
+  return 'https://' + url;
+}
+
 // 채팅방 링크 저장 (개별 사용자)
 async function saveChatLinks(userId) {
   const noticeInput = document.getElementById(`notice-link-${userId}`);
   const directInput = document.getElementById(`direct-link-${userId}`);
 
-  const noticeChatLink = noticeInput?.value?.trim() || '';
-  const directChatLink = directInput?.value?.trim() || '';
+  const noticeChatLink = ensureHttps(noticeInput?.value);
+  const directChatLink = ensureHttps(directInput?.value);
+
+  // 입력창에도 https:// 붙은 값으로 업데이트
+  if (noticeInput) noticeInput.value = noticeChatLink;
+  if (directInput) directInput.value = directChatLink;
 
   try {
     await db.collection('users').doc(userId).update({
