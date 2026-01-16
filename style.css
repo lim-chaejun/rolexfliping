@@ -3584,22 +3584,32 @@ body {
 .admin-user-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
+/* 개선된 컴팩트 카드 */
 .admin-user-card {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
+  padding: 14px 18px;
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border-color);
 }
 
+/* 좌측: 프로필 영역 */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+  flex-shrink: 0;
+}
+
 .admin-user-card .user-avatar {
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -3611,83 +3621,242 @@ body {
   object-fit: cover;
 }
 
-.admin-user-card .user-info {
-  flex: 1;
+.user-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .admin-user-card .user-name {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.admin-user-card .user-email {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .admin-user-card .user-phone {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.admin-user-card .user-referrer {
-  font-size: 12px;
-  color: var(--accent-gold);
-  margin-top: 4px;
-}
-
-.admin-user-card .user-date {
   font-size: 12px;
   color: var(--text-muted);
-  margin-top: 4px;
 }
 
+/* 등급 배지 */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.role-badge.member {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.role-badge.dealer {
+  background: rgba(166, 124, 82, 0.15);
+  color: var(--accent-gold);
+}
+
+.role-badge.sub_manager {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.role-badge.manager {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.role-badge.owner {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+/* 중간: 메타 정보 영역 */
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 120px;
+  max-width: 180px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.meta-label {
+  color: var(--text-muted);
+  min-width: 28px;
+}
+
+.meta-value {
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta-value.highlight {
+  color: var(--accent-gold);
+}
+
+.meta-value.empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* 우측: 액션 영역 */
 .admin-user-card .user-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
+/* 컴팩트 드롭다운 */
+.role-select.compact,
+.manager-select.compact {
+  padding: 6px 10px;
+  font-size: 12px;
+  min-width: 80px;
+  max-width: 110px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.role-select.compact:focus,
+.manager-select.compact:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+/* 컴팩트 액션 버튼 */
+.action-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.action-btn.approve {
+  background: var(--status-buy);
+  color: #fff;
+}
+
+.action-btn.approve:hover {
+  background: #1db954;
+}
+
+.action-btn.reject {
+  background: var(--status-no);
+  color: #fff;
+}
+
+.action-btn.reject:hover {
+  background: #dc2626;
+}
+
+/* 관리자 회원 카드 반응형 */
+@media (max-width: 768px) {
+  .admin-user-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .user-profile {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .user-meta {
+    max-width: none;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  .admin-user-card .user-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+
+  .role-select.compact,
+  .manager-select.compact {
+    flex: 1;
+    min-width: 100px;
+    max-width: none;
+  }
+
+  .action-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.action-btn.delete {
+  background: #7f1d1d;
+  color: #fff;
+}
+
+.action-btn.delete:hover {
+  background: #991b1b;
+}
+
+/* 기존 버튼 호환성 유지 */
 .approve-btn {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: var(--status-buy);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
 }
 
 .approve-btn:hover {
   background: #1db954;
 }
 
-.approve-btn:active {
-  transform: scale(0.98);
-}
-
 .reject-btn {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: var(--status-no);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
 }
 
 .reject-btn:hover {
   background: #dc2626;
-}
-
-.reject-btn:active {
-  transform: scale(0.98);
 }
 
 .empty-user-list {

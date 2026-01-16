@@ -4706,73 +4706,78 @@ function renderAdminUserList() {
       ? `${createdAt.getFullYear()}.${createdAt.getMonth()+1}.${createdAt.getDate()}`
       : '-';
 
-    // 등급 선택 드롭다운 (전체 회원 탭에서만 표시)
+    // 등급 선택 드롭다운 (전체 회원 탭에서만 표시) - 컴팩트
     const roleSelector = (currentAdminTab === 'approved') ? `
-      <div class="role-selector">
-        <select class="role-select" data-user-id="${user.id}" onchange="changeUserRole(this)">
-          <option value="member" ${user.role === 'member' || !user.role ? 'selected' : ''}>일반회원</option>
-          <option value="dealer" ${user.role === 'dealer' ? 'selected' : ''}>딜러</option>
-          <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
-          <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
-        </select>
-      </div>
+      <select class="role-select compact" data-user-id="${user.id}" onchange="changeUserRole(this)">
+        <option value="member" ${user.role === 'member' || !user.role ? 'selected' : ''}>일반</option>
+        <option value="dealer" ${user.role === 'dealer' ? 'selected' : ''}>딜러</option>
+        <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
+        <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
+      </select>
     ` : '';
 
-    // 매니저 선택 드롭다운 (승인 완료 탭 + 일반회원/딜러만 표시)
-    const isNonManager = !['manager', 'owner'].includes(user.role);
-    const managerSelector = (currentAdminTab === 'approved' && isNonManager && userRole === 'owner') ? `
-      <div class="manager-selector">
-        <select class="manager-select" data-user-id="${user.id}" onchange="changeUserManager(this)">
-          <option value="">소속 매니저 선택</option>
-          ${managers.map(m => `
-            <option value="${m.id}" ${user.managerId === m.id ? 'selected' : ''}>
-              ${getDisplayName(m)} ${m.role === 'owner' ? '(소유자)' : '(매니저)'}
-            </option>
-          `).join('')}
-        </select>
-      </div>
-    ` : '';
-
-    // 현재 등급 표시 (승인 완료 탭에서만)
-    const roleDisplay = (currentAdminTab === 'approved') ? `
-      <div class="user-role">등급: <strong>${ROLE_LABELS[user.role] || '일반회원'}</strong></div>
-    ` : '';
-
-    // 소속 매니저 표시 (매니저가 아닌 회원만)
+    // 매니저 선택 드롭다운 (승인 완료 탭 + 일반회원/딜러만 표시) - 컴팩트
+    const isNonManager = !['manager', 'owner', 'sub_manager'].includes(user.role);
     const currentManager = user.managerId ? managers.find(m => m.id === user.managerId) : null;
-    const managerDisplay = (currentAdminTab === 'approved' && isNonManager && currentManager) ? `
-      <div class="user-manager">소속: <strong>${getDisplayName(currentManager)}</strong></div>
-    ` : (currentAdminTab === 'approved' && isNonManager && !currentManager) ? `
-      <div class="user-manager no-manager">소속: <strong>미지정</strong></div>
+    const managerSelector = (currentAdminTab === 'approved' && isNonManager && userRole === 'owner') ? `
+      <select class="manager-select compact" data-user-id="${user.id}" onchange="changeUserManager(this)">
+        <option value="">소속선택</option>
+        ${managers.map(m => `
+          <option value="${m.id}" ${user.managerId === m.id ? 'selected' : ''}>
+            ${getDisplayName(m)}
+          </option>
+        `).join('')}
+      </select>
     ` : '';
+
+    // 등급 배지 (이름 옆에 표시)
+    const roleBadge = `<span class="role-badge ${user.role || 'member'}">${ROLE_LABELS[user.role] || '일반'}</span>`;
 
     return `
       <div class="admin-user-card" data-user-id="${user.id}">
-        <div class="user-avatar">
-          <img src="${user.photoURL || 'https://via.placeholder.com/48'}" alt="">
+        <div class="user-profile">
+          <div class="user-avatar">
+            <img src="${user.photoURL || 'https://via.placeholder.com/40'}" alt="">
+          </div>
+          <div class="user-primary">
+            <div class="user-name-row">
+              <span class="user-name">${getDisplayName(user)}</span>
+              ${currentAdminTab === 'approved' ? roleBadge : ''}
+            </div>
+            <div class="user-phone">${user.phone || '-'}</div>
+          </div>
         </div>
-        <div class="user-info">
-          <div class="user-name">${getDisplayName(user)}</div>
-          <div class="user-email">${user.email}</div>
-          <div class="user-phone">${user.phone || '-'}</div>
-          <div class="user-referrer">${user.referredByName ? '추천인: <strong>' + user.referredByName + '</strong>' : ''}</div>
-          <div class="user-date">가입신청: ${dateStr}</div>
-          ${roleDisplay}
-          ${managerDisplay}
+        <div class="user-meta">
+          ${currentAdminTab === 'approved' && isNonManager ? `
+            <div class="meta-item">
+              <span class="meta-label">소속</span>
+              <span class="meta-value ${currentManager ? 'highlight' : 'empty'}">${currentManager ? getDisplayName(currentManager) : '미지정'}</span>
+            </div>
+          ` : ''}
+          ${user.referredByName ? `
+            <div class="meta-item">
+              <span class="meta-label">추천</span>
+              <span class="meta-value highlight">${user.referredByName}</span>
+            </div>
+          ` : ''}
+          <div class="meta-item">
+            <span class="meta-label">가입</span>
+            <span class="meta-value">${dateStr}</span>
+          </div>
         </div>
         <div class="user-actions">
           ${roleSelector}
           ${managerSelector}
           ${user.status === 'pending' ? `
-            <button class="approve-btn" onclick="approveUser('${user.id}')">승인</button>
-            <button class="reject-btn" onclick="rejectUser('${user.id}')">거절</button>
+            <button class="action-btn approve" onclick="approveUser('${user.id}')">승인</button>
+            <button class="action-btn reject" onclick="rejectUser('${user.id}')">거절</button>
           ` : ''}
           ${user.status === 'approved' ? `
-            <button class="reject-btn" onclick="rejectUser('${user.id}')">승인 취소</button>
+            <button class="action-btn reject" onclick="rejectUser('${user.id}')">취소</button>
           ` : ''}
           ${user.status === 'rejected' ? `
-            <button class="approve-btn" onclick="approveUser('${user.id}')">승인</button>
-            <button class="delete-btn" onclick="deleteUser('${user.id}')">삭제</button>
+            <button class="action-btn approve" onclick="approveUser('${user.id}')">승인</button>
+            <button class="action-btn delete" onclick="deleteUser('${user.id}')">삭제</button>
           ` : ''}
         </div>
       </div>
