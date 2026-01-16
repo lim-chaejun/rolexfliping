@@ -1973,101 +1973,75 @@ function hideInviteCodeModal() {
 }
 
 // ==========================================
-// 채팅방 설정 기능
-// ==========================================
-
-// 내 채팅방 링크 저장
-async function saveMyChatLinks() {
-  const noticeChatLink = document.getElementById('notice-chat-link')?.value?.trim() || '';
-  const directChatLink = document.getElementById('direct-chat-link')?.value?.trim() || '';
-
-  try {
-    await db.collection('users').doc(currentUser.uid).update({
-      noticeChatLink,
-      directChatLink,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    alert('채팅방 링크가 저장되었습니다.');
-  } catch (error) {
-    console.error('채팅방 링크 저장 실패:', error);
-    alert('저장에 실패했습니다.');
-  }
-}
-
-// 내 채팅방 링크 로드 (채팅방설정 탭 열 때)
-async function loadMyChatLinks() {
-  try {
-    const userDoc = await db.collection('users').doc(currentUser.uid).get();
-    if (userDoc.exists) {
-      const data = userDoc.data();
-      const noticeInput = document.getElementById('notice-chat-link');
-      const directInput = document.getElementById('direct-chat-link');
-      if (noticeInput) noticeInput.value = data.noticeChatLink || '';
-      if (directInput) directInput.value = data.directChatLink || '';
-    }
-  } catch (error) {
-    console.error('채팅방 링크 로드 실패:', error);
-  }
-}
-
-// ==========================================
 // 담당자 문의 기능
 // ==========================================
 
-// 담당자 문의 모달 표시
+// 담당자 문의 모달 표시 (소유자 전체 + 내 담당 매니저)
 async function showContactManagerModal() {
   const modal = document.getElementById('contact-manager-modal');
-  if (!modal) return;
-
-  // 내 매니저 정보 가져오기
-  const managerId = currentManagerId || userProfile?.managerId;
-  if (!managerId) {
-    alert('담당자 정보를 찾을 수 없습니다.');
-    return;
-  }
+  const listContainer = document.getElementById('contact-manager-list');
+  if (!modal || !listContainer) return;
 
   try {
-    const managerDoc = await db.collection('users').doc(managerId).get();
-    if (!managerDoc.exists) {
-      alert('담당자 정보를 찾을 수 없습니다.');
+    // 1. 모든 소유자 가져오기
+    const ownersSnapshot = await db.collection('users')
+      .where('role', '==', 'owner')
+      .where('status', '==', 'approved')
+      .get();
+
+    const owners = [];
+    ownersSnapshot.forEach(doc => {
+      owners.push({ id: doc.id, ...doc.data() });
+    });
+
+    // 2. 내 담당 매니저 가져오기 (있는 경우)
+    const managerId = currentManagerId || userProfile?.managerId;
+    let myManager = null;
+    if (managerId) {
+      const managerDoc = await db.collection('users').doc(managerId).get();
+      if (managerDoc.exists) {
+        myManager = { id: managerDoc.id, ...managerDoc.data() };
+      }
+    }
+
+    // 3. 표시할 사용자 목록 (소유자들 + 내 담당 매니저)
+    const contactList = [...owners];
+    if (myManager && myManager.role !== 'owner') {
+      contactList.push(myManager);
+    }
+
+    if (contactList.length === 0) {
+      listContainer.innerHTML = '<p class="contact-empty-msg">연락할 수 있는 담당자가 없습니다.</p>';
+      modal.classList.add('active');
       return;
     }
 
-    const manager = managerDoc.data();
+    // 4. 카드 렌더링
+    listContainer.innerHTML = contactList.map(user => {
+      const hasNotice = user.noticeChatLink;
+      const hasDirect = user.directChatLink;
+      const hasLinks = hasNotice || hasDirect;
 
-    // 담당자 정보 표시
-    document.getElementById('contact-manager-name').textContent = manager.nickname || manager.name || '담당자';
-    const avatarImg = document.getElementById('contact-manager-avatar');
-    if (avatarImg) {
-      avatarImg.src = manager.photoURL || '';
-      avatarImg.onerror = function() { this.src = ''; this.style.display = 'none'; };
-      avatarImg.style.display = manager.photoURL ? 'block' : 'none';
-    }
-
-    // 링크 설정
-    const noticeLink = document.getElementById('contact-notice-link');
-    const directLink = document.getElementById('contact-direct-link');
-    const noLinksMsg = document.getElementById('contact-no-links');
-
-    const hasNotice = manager.noticeChatLink;
-    const hasDirect = manager.directChatLink;
-
-    if (hasNotice) {
-      noticeLink.href = manager.noticeChatLink;
-      noticeLink.style.display = 'flex';
-    } else {
-      noticeLink.style.display = 'none';
-    }
-
-    if (hasDirect) {
-      directLink.href = manager.directChatLink;
-      directLink.style.display = 'flex';
-    } else {
-      directLink.style.display = 'none';
-    }
-
-    // 링크가 하나도 없으면 안내 메시지
-    noLinksMsg.style.display = (!hasNotice && !hasDirect) ? 'block' : 'none';
+      return `
+        <div class="contact-manager-card">
+          <div class="contact-manager-card-header">
+            <img class="contact-manager-card-avatar" src="${user.photoURL || 'https://via.placeholder.com/44'}" alt="">
+            <div>
+              <div class="contact-manager-card-name">${user.nickname || user.name || '담당자'}</div>
+              <div class="contact-manager-card-role">${ROLE_LABELS[user.role] || ''}</div>
+            </div>
+          </div>
+          ${hasLinks ? `
+            <div class="contact-manager-card-links">
+              ${hasNotice ? `<a href="${user.noticeChatLink}" class="contact-link-btn" target="_blank" rel="noopener">공지방 입장</a>` : ''}
+              ${hasDirect ? `<a href="${user.directChatLink}" class="contact-link-btn primary" target="_blank" rel="noopener">1:1 채팅방</a>` : ''}
+            </div>
+          ` : `
+            <p class="contact-no-link-msg">채팅방 링크가 설정되지 않았습니다.</p>
+          `}
+        </div>
+      `;
+    }).join('');
 
     modal.classList.add('active');
   } catch (error) {
@@ -4515,8 +4489,7 @@ function switchAdminTab(tab) {
     if (adminFilterBar) adminFilterBar.style.display = 'none';
     if (adminUserList) adminUserList.style.display = 'none';
     if (managerSection) managerSection.style.display = 'block';
-    loadMyChatLinks();  // 내 채팅방 링크 로드
-    renderManagerList();
+    renderChatSettingsList();  // 채팅방 설정 리스트 렌더링
   } else {
     // 내 회원 / 전체 회원 탭
     if (adminFilterBar) adminFilterBar.style.display = 'flex';
@@ -4561,13 +4534,13 @@ async function loadAdminPage() {
     const adminPageTitle = document.querySelector('.admin-page-title');
 
     if (userRole === 'manager') {
-      // 매니저: 채팅방설정 탭만 표시하고 자동 전환
+      // 매니저: 내 회원 + 채팅방설정 탭 표시
       if (managersTab) managersTab.style.display = 'inline-flex';
-      if (myteamTab) myteamTab.style.display = 'none';
+      if (myteamTab) myteamTab.style.display = 'inline-flex';
       if (approvedTab) approvedTab.style.display = 'none';
       if (pendingTab) pendingTab.style.display = 'none';
-      if (adminPageTitle) adminPageTitle.textContent = '채팅방 설정';
-      switchAdminTab('managers');
+      if (adminPageTitle) adminPageTitle.textContent = '회원 관리';
+      switchAdminTab('myteam');
     } else if (userRole === 'owner') {
       // 소유자: 모든 탭 표시
       if (managersTab) managersTab.style.display = 'inline-flex';
@@ -4807,68 +4780,113 @@ function renderAdminUserList() {
   }).join('');
 }
 
-// 매니저 목록 렌더링 (소유자 전용)
-function renderManagerList() {
-  const managerList = document.getElementById('manager-list');
-  if (!managerList) return;
+// 채팅방설정 리스트 렌더링 (소유자: 전체, 매니저: 자기만)
+function renderChatSettingsList() {
+  const container = document.getElementById('chat-settings-list');
+  if (!container) return;
 
-  // 매니저 등급 사용자만 필터링
-  const managers = allUsers.filter(u => u.role === 'manager' && u.status === 'approved');
+  let usersToShow = [];
 
-  if (managers.length === 0) {
-    managerList.innerHTML = '<div class="empty-user-list">등록된 매니저가 없습니다.</div>';
+  if (userRole === 'owner') {
+    // 소유자: 모든 소유자 + 매니저
+    usersToShow = allUsers.filter(u =>
+      (u.role === 'owner' || u.role === 'manager') && u.status === 'approved'
+    );
+  } else if (userRole === 'manager') {
+    // 매니저: 자기 카드만
+    usersToShow = allUsers.filter(u => u.id === currentUser.uid);
+  }
+
+  // 소유자 먼저, 그 다음 매니저 (가나다순)
+  usersToShow.sort((a, b) => {
+    if (a.role === 'owner' && b.role !== 'owner') return -1;
+    if (a.role !== 'owner' && b.role === 'owner') return 1;
+    return (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
+  });
+
+  if (usersToShow.length === 0) {
+    container.innerHTML = '<div class="empty-list">표시할 담당자가 없습니다.</div>';
     return;
   }
 
-  managerList.innerHTML = managers.map(manager => {
-    // 해당 매니저에 소속된 회원 수
-    const memberCount = allUsers.filter(u => u.managerId === manager.id && u.status === 'approved').length;
+  container.innerHTML = usersToShow.map(user => {
+    const isOwnCard = user.id === currentUser?.uid;
+    const canEdit = userRole === 'owner' || isOwnCard;
 
     return `
-      <div class="manager-card" data-manager-id="${manager.id}">
-        <div class="manager-avatar">
-          <img src="${manager.photoURL || 'https://via.placeholder.com/56'}" alt="">
-        </div>
-        <div class="manager-info">
-          <div class="manager-name">${getDisplayName(manager)}</div>
-          <div class="manager-email">${manager.email}</div>
-          <div class="manager-member-count">소속 회원: ${memberCount}명</div>
-        </div>
-        <div class="manager-chat-link">
-          <label>오픈채팅방 링크</label>
-          <input type="url"
-                 id="chat-link-${manager.id}"
-                 value="${manager.openChatLink || ''}"
-                 placeholder="https://open.kakao.com/..."
-          >
-          <button class="save-chat-link-btn" onclick="saveManagerChatLink('${manager.id}')">저장</button>
+    <div class="chat-settings-card ${isOwnCard ? 'own-card' : ''}" data-user-id="${user.id}">
+      <div class="chat-settings-header">
+        <img class="chat-settings-avatar" src="${user.photoURL || 'https://via.placeholder.com/48'}" alt="">
+        <div class="chat-settings-info">
+          <div class="chat-settings-name">${user.nickname || user.name || '이름없음'}</div>
+          <span class="chat-settings-role-badge ${user.role}">${ROLE_LABELS[user.role] || ''}</span>
         </div>
       </div>
-    `;
+      <div class="chat-link-cards">
+        <div class="chat-link-card notice">
+          <div class="chat-link-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 4H2v16h20V4z"/>
+              <path d="M22 4L12 13 2 4"/>
+            </svg>
+            <span>공지방</span>
+          </div>
+          <input type="url" id="notice-link-${user.id}"
+            value="${user.noticeChatLink || ''}"
+            placeholder="카카오톡 오픈채팅 링크"
+            ${canEdit ? '' : 'disabled'}>
+        </div>
+        <div class="chat-link-card direct">
+          <div class="chat-link-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+            <span>1:1 문의</span>
+          </div>
+          <input type="url" id="direct-link-${user.id}"
+            value="${user.directChatLink || ''}"
+            placeholder="카카오톡 오픈채팅 링크"
+            ${canEdit ? '' : 'disabled'}>
+        </div>
+      </div>
+      ${canEdit ? `<button class="chat-settings-save-btn" onclick="saveChatLinks('${user.id}')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+          <polyline points="17,21 17,13 7,13 7,21"/>
+          <polyline points="7,3 7,8 15,8"/>
+        </svg>
+        저장
+      </button>` : ''}
+    </div>
+  `;
   }).join('');
 }
 
-// 매니저 오픈채팅 링크 저장
-async function saveManagerChatLink(managerId) {
-  const input = document.getElementById(`chat-link-${managerId}`);
-  if (!input) return;
+// 채팅방 링크 저장 (개별 사용자)
+async function saveChatLinks(userId) {
+  const noticeInput = document.getElementById(`notice-link-${userId}`);
+  const directInput = document.getElementById(`direct-link-${userId}`);
 
-  const link = input.value.trim();
+  const noticeChatLink = noticeInput?.value?.trim() || '';
+  const directChatLink = directInput?.value?.trim() || '';
 
   try {
-    await db.collection('users').doc(managerId).update({
-      openChatLink: link
+    await db.collection('users').doc(userId).update({
+      noticeChatLink,
+      directChatLink,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     // 로컬 데이터 업데이트
-    const manager = allUsers.find(u => u.id === managerId);
-    if (manager) {
-      manager.openChatLink = link;
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+      user.noticeChatLink = noticeChatLink;
+      user.directChatLink = directChatLink;
     }
 
-    alert('오픈채팅 링크가 저장되었습니다.');
+    alert('저장되었습니다.');
   } catch (error) {
-    console.error('오픈채팅 링크 저장 실패:', error);
+    console.error('저장 실패:', error);
     alert('저장에 실패했습니다.');
   }
 }
