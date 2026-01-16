@@ -66,7 +66,7 @@ function canAccess(feature) {
     'tab:calc': ['dealer', 'sub_manager', 'manager', 'owner'],
     'tab:history': ['sub_manager', 'manager', 'owner'],
     'tab:report': ['manager', 'owner'],
-    'tab:admin': ['owner'],
+    'tab:admin': ['manager', 'owner'],  // 매니저도 관리자 탭 접근 (채팅방설정용)
 
     // 기능 권한
     'watch:edit_status': ['sub_manager', 'manager', 'owner'],  // 소속매니저도 수정 가능
@@ -1972,6 +1972,116 @@ function hideInviteCodeModal() {
   }
 }
 
+// ==========================================
+// 채팅방 설정 기능
+// ==========================================
+
+// 내 채팅방 링크 저장
+async function saveMyChatLinks() {
+  const noticeChatLink = document.getElementById('notice-chat-link')?.value?.trim() || '';
+  const directChatLink = document.getElementById('direct-chat-link')?.value?.trim() || '';
+
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      noticeChatLink,
+      directChatLink,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('채팅방 링크가 저장되었습니다.');
+  } catch (error) {
+    console.error('채팅방 링크 저장 실패:', error);
+    alert('저장에 실패했습니다.');
+  }
+}
+
+// 내 채팅방 링크 로드 (채팅방설정 탭 열 때)
+async function loadMyChatLinks() {
+  try {
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      const data = userDoc.data();
+      const noticeInput = document.getElementById('notice-chat-link');
+      const directInput = document.getElementById('direct-chat-link');
+      if (noticeInput) noticeInput.value = data.noticeChatLink || '';
+      if (directInput) directInput.value = data.directChatLink || '';
+    }
+  } catch (error) {
+    console.error('채팅방 링크 로드 실패:', error);
+  }
+}
+
+// ==========================================
+// 담당자 문의 기능
+// ==========================================
+
+// 담당자 문의 모달 표시
+async function showContactManagerModal() {
+  const modal = document.getElementById('contact-manager-modal');
+  if (!modal) return;
+
+  // 내 매니저 정보 가져오기
+  const managerId = currentManagerId || userProfile?.managerId;
+  if (!managerId) {
+    alert('담당자 정보를 찾을 수 없습니다.');
+    return;
+  }
+
+  try {
+    const managerDoc = await db.collection('users').doc(managerId).get();
+    if (!managerDoc.exists) {
+      alert('담당자 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    const manager = managerDoc.data();
+
+    // 담당자 정보 표시
+    document.getElementById('contact-manager-name').textContent = manager.nickname || manager.name || '담당자';
+    const avatarImg = document.getElementById('contact-manager-avatar');
+    if (avatarImg) {
+      avatarImg.src = manager.photoURL || '';
+      avatarImg.onerror = function() { this.src = ''; this.style.display = 'none'; };
+      avatarImg.style.display = manager.photoURL ? 'block' : 'none';
+    }
+
+    // 링크 설정
+    const noticeLink = document.getElementById('contact-notice-link');
+    const directLink = document.getElementById('contact-direct-link');
+    const noLinksMsg = document.getElementById('contact-no-links');
+
+    const hasNotice = manager.noticeChatLink;
+    const hasDirect = manager.directChatLink;
+
+    if (hasNotice) {
+      noticeLink.href = manager.noticeChatLink;
+      noticeLink.style.display = 'flex';
+    } else {
+      noticeLink.style.display = 'none';
+    }
+
+    if (hasDirect) {
+      directLink.href = manager.directChatLink;
+      directLink.style.display = 'flex';
+    } else {
+      directLink.style.display = 'none';
+    }
+
+    // 링크가 하나도 없으면 안내 메시지
+    noLinksMsg.style.display = (!hasNotice && !hasDirect) ? 'block' : 'none';
+
+    modal.classList.add('active');
+  } catch (error) {
+    console.error('담당자 정보 조회 실패:', error);
+    alert('담당자 정보를 불러올 수 없습니다.');
+  }
+}
+
+// 담당자 문의 모달 숨기기
+function hideContactManagerModal() {
+  const modal = document.getElementById('contact-manager-modal');
+  if (modal) modal.classList.remove('active');
+}
+
 // 특정 코드 복사 (모달용)
 async function copyInviteCodeByType(code, btn) {
   if (!code) return;
@@ -2013,6 +2123,15 @@ if (dropdownInviteCode) {
   dropdownInviteCode.addEventListener('click', () => {
     closeUserDropdown();
     showInviteCodeModal();
+  });
+}
+
+// 담당자 문의 버튼 클릭 이벤트
+const dropdownContactManager = document.getElementById('dropdown-contact-manager');
+if (dropdownContactManager) {
+  dropdownContactManager.addEventListener('click', () => {
+    closeUserDropdown();
+    showContactManagerModal();
   });
 }
 
@@ -4254,6 +4373,13 @@ function updateUIByRole() {
     dropdownInviteCode.style.display = isApproved ? 'flex' : 'none';
   }
 
+  // 담당자 문의 버튼: owner, manager 제외한 승인된 회원에게만 표시
+  const contactManagerBtn = document.getElementById('dropdown-contact-manager');
+  if (contactManagerBtn) {
+    const showContact = isApproved && !['owner', 'manager'].includes(userRole);
+    contactManagerBtn.style.display = showContact ? 'flex' : 'none';
+  }
+
   // 수정모드 토글: watch:edit_status 권한 있는 사용자만 표시
   const editModeToggle = document.getElementById('edit-mode-toggle');
   if (editModeToggle) {
@@ -4385,10 +4511,11 @@ function switchAdminTab(tab) {
   const managerSection = document.getElementById('manager-management-section');
 
   if (tab === 'managers') {
-    // 매니저관리 탭
+    // 채팅방설정 탭
     if (adminFilterBar) adminFilterBar.style.display = 'none';
     if (adminUserList) adminUserList.style.display = 'none';
     if (managerSection) managerSection.style.display = 'block';
+    loadMyChatLinks();  // 내 채팅방 링크 로드
     renderManagerList();
   } else {
     // 내 회원 / 전체 회원 탭
@@ -4426,13 +4553,30 @@ async function loadAdminPage() {
     // 검색 이벤트 리스너
     initAdminSearchListener();
 
-    // 매니저관리 탭 표시 (소유자 전용)
+    // 매니저/소유자에 따른 관리자 탭 표시 조정
     const managersTab = document.getElementById('admin-tab-managers');
-    if (managersTab) {
-      managersTab.style.display = (userRole === 'owner') ? 'inline-flex' : 'none';
-    }
+    const myteamTab = document.getElementById('admin-tab-myteam');
+    const approvedTab = document.getElementById('admin-tab-approved');
+    const pendingTab = document.getElementById('admin-tab-pending');
+    const adminPageTitle = document.querySelector('.admin-page-title');
 
-    renderAdminUserList();
+    if (userRole === 'manager') {
+      // 매니저: 채팅방설정 탭만 표시하고 자동 전환
+      if (managersTab) managersTab.style.display = 'inline-flex';
+      if (myteamTab) myteamTab.style.display = 'none';
+      if (approvedTab) approvedTab.style.display = 'none';
+      if (pendingTab) pendingTab.style.display = 'none';
+      if (adminPageTitle) adminPageTitle.textContent = '채팅방 설정';
+      switchAdminTab('managers');
+    } else if (userRole === 'owner') {
+      // 소유자: 모든 탭 표시
+      if (managersTab) managersTab.style.display = 'inline-flex';
+      if (myteamTab) myteamTab.style.display = 'inline-flex';
+      if (approvedTab) approvedTab.style.display = 'inline-flex';
+      if (pendingTab) pendingTab.style.display = 'inline-flex';
+      if (adminPageTitle) adminPageTitle.textContent = '회원 관리';
+      renderAdminUserList();
+    }
   } catch (error) {
     console.error('사용자 목록 로드 실패:', error);
   }
