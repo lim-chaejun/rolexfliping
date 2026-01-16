@@ -6,7 +6,7 @@
   <title>ROLEXFLIP</title>
   <link rel="icon" type="image/png" href="favicon/favicon.png">
   <link rel="apple-touch-icon" href="favicon/favicon.png">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
   <!-- 헤더 영역 래퍼 (fixed) -->
@@ -766,7 +766,7 @@
   <!-- 관리자 섹션 -->
   <section class="admin-section" id="admin-section" style="display:none;">
     <div class="admin-container">
-      <h2 class="admin-page-title">회원 관리</h2>
+      <h2 class="admin-page-title" style="display:none;">회원 관리</h2>
 
       <div class="admin-tabs">
         <button class="admin-tab active" data-admin-tab="myteam" id="admin-tab-myteam">
@@ -816,25 +816,8 @@
 
       <!-- 채팅방설정 섹션 (매니저/소유자) -->
       <div class="manager-management-section" id="manager-management-section" style="display:none;">
-        <!-- 내 채팅방 설정 -->
-        <div class="chat-settings-card" id="my-chat-settings">
-          <h3 class="chat-settings-title">내 채팅방 설정</h3>
-          <p class="chat-settings-desc">회원들이 연락할 수 있는 오픈채팅방 링크를 설정하세요.</p>
-
-          <div class="chat-link-group">
-            <label>공지방 링크</label>
-            <input type="url" id="notice-chat-link" placeholder="https://open.kakao.com/...">
-          </div>
-          <div class="chat-link-group">
-            <label>1:1 채팅방 링크</label>
-            <input type="url" id="direct-chat-link" placeholder="https://open.kakao.com/...">
-          </div>
-          <button class="save-chat-links-btn" onclick="saveMyChatLinks()">저장</button>
-        </div>
-
-        <!-- 매니저 목록 (소유자만 - 기존 기능 유지) -->
-        <div class="manager-list" id="manager-list">
-          <!-- 동적 생성 -->
+        <div class="chat-settings-list" id="chat-settings-list">
+          <!-- 동적 생성: 소유자/매니저 카드들 -->
         </div>
       </div>
     </div>
@@ -1134,34 +1117,8 @@
     <div class="modal-content contact-manager-modal-content">
       <button class="modal-close" onclick="hideContactManagerModal()">&times;</button>
       <h2 class="modal-title">담당자 문의</h2>
-      <div class="contact-manager-body">
-        <div class="contact-manager-info">
-          <div class="contact-manager-avatar">
-            <img id="contact-manager-avatar" src="" alt="">
-          </div>
-          <div class="contact-manager-details">
-            <span class="contact-manager-label">담당 업체</span>
-            <span class="contact-manager-name" id="contact-manager-name">-</span>
-          </div>
-        </div>
-        <div class="contact-manager-links">
-          <a href="#" id="contact-notice-link" class="contact-link-btn" target="_blank" rel="noopener">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 01-3.46 0"/>
-            </svg>
-            공지방 입장
-          </a>
-          <a href="#" id="contact-direct-link" class="contact-link-btn primary" target="_blank" rel="noopener">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
-            1:1 채팅방 입장
-          </a>
-        </div>
-        <p class="contact-manager-notice" id="contact-no-links" style="display:none;">
-          담당자가 아직 채팅방 링크를 설정하지 않았습니다.
-        </p>
+      <div class="contact-manager-list" id="contact-manager-list">
+        <!-- 동적 생성: 소유자들 + 내 담당 매니저 카드들 -->
       </div>
     </div>
   </div>
@@ -1411,6 +1368,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="main.js?v=12"></script>
+  <script src="main.js?v=13"></script>
 </body>
 </html>
