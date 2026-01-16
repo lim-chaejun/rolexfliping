@@ -1845,21 +1845,56 @@ async function showInviteCodeModal() {
   const modalBody = document.querySelector('.invite-code-modal-body');
   if (!modalBody) return;
 
+  // 로딩 표시
+  modalBody.innerHTML = '<div class="invite-code-empty">초대코드 로딩 중...</div>';
+  inviteCodeModal.classList.add('active');
+
   // 사용자의 inviteCodes 맵 가져오기
   let inviteCodes = {};
+  let currentUserRole = userRole;
   try {
     const userDoc = await db.collection('users').doc(currentUser.uid).get();
     if (userDoc.exists) {
       const userData = userDoc.data();
       inviteCodes = userData.inviteCodes || {};
+      currentUserRole = userData.role || 'member';
 
       // 하위 호환: 기존 단일 inviteCode가 있으면 for_member로 사용
       if (!inviteCodes.for_member && userData.inviteCode) {
         inviteCodes.for_member = userData.inviteCode;
       }
+
+      // 초대코드가 없거나 현재 등급에 맞지 않으면 새로 생성
+      const requiredTypes = ROLE_INVITE_PERMISSIONS[currentUserRole] || ['for_member'];
+      const hasAllCodes = requiredTypes.every(type => inviteCodes[type]);
+
+      if (!hasAllCodes) {
+        // 기존 코드들 비활성화
+        for (const code of Object.values(inviteCodes)) {
+          try {
+            await db.collection('inviteCodes').doc(code).update({ active: false });
+          } catch (e) { }
+        }
+
+        // 새 코드 생성
+        const newInviteCodes = await createInviteCodesForUser(
+          currentUser.uid,
+          currentUserRole,
+          getDisplayName(userData) || currentUser.email,
+          userData.managerId
+        );
+
+        // 사용자 문서 업데이트
+        await db.collection('users').doc(currentUser.uid).update({
+          inviteCodes: newInviteCodes
+        });
+
+        inviteCodes = newInviteCodes;
+        console.log('초대코드 자동 생성:', newInviteCodes);
+      }
     }
   } catch (e) {
-    console.error('초대코드 조회 실패:', e);
+    console.error('초대코드 조회/생성 실패:', e);
   }
 
   // 동적 HTML 생성
@@ -1867,7 +1902,7 @@ async function showInviteCodeModal() {
   const codeEntries = Object.entries(inviteCodes);
 
   if (codeEntries.length === 0) {
-    codesHTML = '<div class="invite-code-empty">초대코드가 없습니다.</div>';
+    codesHTML = '<div class="invite-code-empty">초대코드를 생성할 수 없습니다.</div>';
   } else {
     codesHTML = '<div class="invite-codes-list">';
     for (const [codeType, code] of codeEntries) {
