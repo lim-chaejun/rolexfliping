@@ -745,12 +745,19 @@ function renderProducts() {
     // 브레슬릿에서 종류만 (브레슬릿 제거, 마지막 단어 사용)
     const braceletType = (watch.bracelet || '').replace(/\s*브레슬릿\s*/g, '').trim().split(' ').pop() || '';
 
+    // 사이즈에 따른 이미지 위치 클래스 (모바일용)
+    const sizeNum = parseInt(size) || 36;
+    let imagePosClass = '';
+    if (sizeNum <= 28) imagePosClass = 'img-pos-small';
+    else if (sizeNum <= 31) imagePosClass = 'img-pos-medium';
+    else if (sizeNum >= 40) imagePosClass = 'img-pos-large';
+
     return `
       <div class="product-card line-${watch.line} ${sizeClass}" data-model="${watch.model_number}" onclick="showWatchDetail('${watch.model_number}')">
         <div class="product-image-wrapper">
           <span class="product-badge ${watch.buy_status}">${statusText[watch.buy_status]}</span>
           <img
-            class="product-image"
+            class="product-image ${imagePosClass}"
             src="${imagePath}"
             alt="${watch.title}"
             onerror="this.src='${watch.image_url}'"

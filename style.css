@@ -1132,6 +1132,17 @@ body {
     transform: translate(-50%, -42%); /* 모바일에서 이미지를 더 아래로 */
   }
 
+  /* 시계 사이즈별 이미지 위치 조정 (모바일 전용) */
+  .product-image.img-pos-small {
+    transform: translate(-50%, -50%); /* 28mm - 중앙 */
+  }
+  .product-image.img-pos-medium {
+    transform: translate(-50%, -46%); /* 31mm - 살짝 위로 */
+  }
+  .product-image.img-pos-large {
+    transform: translate(-50%, -40%); /* 40mm+ - 살짝 아래로 */
+  }
+
   .product-name {
     font-size: 11px;
     -webkit-line-clamp: 1;
