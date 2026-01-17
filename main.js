@@ -4740,14 +4740,14 @@ function renderAdminUserList() {
       : '-';
 
     // 등급 선택 드롭다운 (전체 회원 탭 또는 내 회원 탭에서 표시) - 컴팩트
-    // 소유자: 전체 옵션, 매니저: 일반/딜러만
+    // 소유자: 전체 옵션, 매니저: 일반/딜러/소속매니저
     const showRoleSelector = currentAdminTab === 'approved' || (currentAdminTab === 'myteam' && userRole === 'manager');
     const roleSelector = showRoleSelector ? `
       <select class="role-select compact" data-user-id="${user.id}" onchange="changeUserRole(this)">
         <option value="member" ${user.role === 'member' || !user.role ? 'selected' : ''}>일반</option>
         <option value="dealer" ${user.role === 'dealer' ? 'selected' : ''}>딜러</option>
+        <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
         ${userRole === 'owner' ? `
-          <option value="sub_manager" ${user.role === 'sub_manager' ? 'selected' : ''}>소속매니저</option>
           <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>매니저</option>
         ` : ''}
       </select>
@@ -5096,9 +5096,9 @@ async function changeUserRole(selectEl) {
     return;
   }
 
-  // 매니저는 딜러 이하만 설정 가능 (sub_manager, manager, owner 불가)
-  if (isManager && !isOwner && ['sub_manager', 'manager', 'owner'].includes(newRole)) {
-    showToast('매니저는 딜러 등급까지만 설정할 수 있습니다.', 'error');
+  // 매니저는 소속매니저까지 설정 가능 (manager, owner 불가)
+  if (isManager && !isOwner && ['manager', 'owner'].includes(newRole)) {
+    showToast('매니저는 소속매니저 등급까지만 설정할 수 있습니다.', 'error');
     selectEl.value = oldRole;
     return;
   }
