@@ -336,7 +336,7 @@ function getWatchStatusesManagerId() {
 async function init() {
   try {
     // 로컬 JSON 파일에서 시계 데이터 로드 (Firebase 읽기 한도 절약)
-    const response = await fetch('rolex_watches.json');
+    const response = await fetch('assets/data/rolex_watches.json');
     watches = await response.json();
 
     // 매니저별 watchStatuses 로드
