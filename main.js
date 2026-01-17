@@ -4524,7 +4524,8 @@ function switchAdminTab(tab) {
     renderChatSettingsList();  // 채팅방 설정 리스트 렌더링
   } else {
     // 내 회원 / 전체 회원 탭
-    if (adminFilterBar) adminFilterBar.style.display = 'flex';
+    // 내 회원 탭에서는 필터바 숨김 (매니저 선택 필터 불필요)
+    if (adminFilterBar) adminFilterBar.style.display = (tab === 'myteam') ? 'none' : 'flex';
     if (adminUserList) adminUserList.style.display = 'flex';
     if (managerSection) managerSection.style.display = 'none';
     renderAdminUserList();
@@ -4740,7 +4741,7 @@ function renderAdminUserList() {
 
     // 등급 선택 드롭다운 (전체 회원 탭 또는 내 회원 탭에서 표시) - 컴팩트
     // 소유자: 전체 옵션, 매니저: 일반/딜러만
-    const showRoleSelector = currentAdminTab === 'approved' || (currentAdminTab === 'myMembers' && userRole === 'manager');
+    const showRoleSelector = currentAdminTab === 'approved' || (currentAdminTab === 'myteam' && userRole === 'manager');
     const roleSelector = showRoleSelector ? `
       <select class="role-select compact" data-user-id="${user.id}" onchange="changeUserRole(this)">
         <option value="member" ${user.role === 'member' || !user.role ? 'selected' : ''}>일반</option>
@@ -4778,7 +4779,7 @@ function renderAdminUserList() {
           <div class="user-primary">
             <div class="user-name-row">
               <span class="user-name">${getDisplayName(user)}</span>
-              ${(currentAdminTab === 'approved' || currentAdminTab === 'myMembers') ? roleBadge : ''}
+              ${(currentAdminTab === 'approved' || currentAdminTab === 'myteam') ? roleBadge : ''}
             </div>
             <div class="user-phone">${user.phone || '-'}</div>
           </div>
